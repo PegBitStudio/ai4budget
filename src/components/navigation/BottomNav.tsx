@@ -60,7 +60,7 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-200 pb-[env(safe-area-inset-bottom)]"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/80 bg-white/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl"
       aria-label="Main navigation"
     >
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
@@ -76,16 +76,16 @@ export default function BottomNav() {
               href={item.href}
               className={`flex flex-col items-center justify-center gap-0.5 min-w-[64px] min-h-[44px] px-2 py-1 rounded-lg transition-colors ${
                 isActive
-                  ? "text-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "bg-violet-50 text-violet-700"
+                  : "text-slate-500 hover:text-slate-700"
               }`}
               aria-current={isActive ? "page" : undefined}
             >
-              <span className={isActive ? "text-blue-600" : "text-gray-400"}>
+              <span className={isActive ? "text-violet-700" : "text-slate-400"}>
                 {item.icon}
               </span>
               <span className={`text-[10px] font-medium leading-tight ${
-                isActive ? "text-blue-600" : "text-gray-500"
+                isActive ? "text-violet-700" : "text-slate-500"
               }`}>
                 {item.label}
               </span>

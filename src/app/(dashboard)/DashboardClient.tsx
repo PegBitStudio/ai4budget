@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CategoryBreakdown } from "@/components/charts";
 import type { CategoryBreakdownData } from "@/components/charts";
@@ -43,7 +43,6 @@ interface TransactionsResponse {
 // --- Main Dashboard Component ---
 
 export default function DashboardClient() {
-  const [disclaimerAcknowledged, setDisclaimerAcknowledged] = useState(true);
   const [alerts, setAlerts] = useState<SpendingAlert[]>([]);
   const [summary, setSummary] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
@@ -55,17 +54,6 @@ export default function DashboardClient() {
   const [categoryData, setCategoryData] = useState<CategoryBreakdownData[]>([]);
   const [trendData, setTrendData] = useState<SpendingTrendData[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Check disclaimer on mount
-  useEffect(() => {
-    const acknowledged = localStorage.getItem("disclaimer_acknowledged");
-    setDisclaimerAcknowledged(acknowledged === "true");
-  }, []);
-
-  const acknowledgeDisclaimer = useCallback(() => {
-    localStorage.setItem("disclaimer_acknowledged", "true");
-    setDisclaimerAcknowledged(true);
-  }, []);
 
   // Fetch dashboard data
   useEffect(() => {
@@ -206,27 +194,51 @@ export default function DashboardClient() {
     fetchDashboardData();
   }, []);
 
-  // Disclaimer modal
-  if (!disclaimerAcknowledged) {
-    return <DisclaimerModal onAcknowledge={acknowledgeDisclaimer} />;
-  }
-
   if (loading && summaryLoading) {
     return <LoadingState />;
   }
 
+  const income = quickStats?.income ?? 0;
+  const spending = quickStats?.spending ?? 0;
+  const net = quickStats?.net ?? 0;
+  const spentShare = income > 0 ? Math.min((spending / income) * 100, 100) : 0;
+  const dateLabel = new Date().toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
+
   return (
-    <div className="px-4 py-4 sm:px-6 md:px-8 pb-24">
-      <p className="text-sm text-gray-600">
-        Your financial overview at a glance.
-      </p>
+    <div className="mx-auto max-w-6xl px-4 py-5 pb-28 sm:px-6 md:px-8">
+      <section className="relative overflow-hidden rounded-[2rem] bg-[#27235b] px-6 py-7 text-white shadow-[0_24px_60px_rgba(49,46,129,0.22)] sm:px-8 sm:py-9">
+        <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-violet-400/25 blur-2xl" />
+        <div className="absolute -bottom-20 left-1/3 h-48 w-48 rounded-full bg-emerald-300/15 blur-2xl" />
+        <div className="relative flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-sm font-medium text-violet-200">Your money pulse · {dateLabel}</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+              {net >= 0 ? "You’re in control." : "Let’s steady the month."}
+            </h2>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-violet-100 sm:text-base">
+              {income > 0
+                ? `${formatCurrency(Math.max(net, 0))} is available after the spending you have logged.`
+                : "Add your income and first expenses to see a personal money plan."}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-white/15 bg-white/10 px-5 py-4 backdrop-blur-sm lg:min-w-64">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-200">Available now</p>
+            <p className="mt-1 text-3xl font-semibold tracking-tight">{formatCurrency(net)}</p>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/15">
+              <div className="h-full rounded-full bg-emerald-300" style={{ width: `${spentShare}%` }} />
+            </div>
+            <p className="mt-2 text-xs text-violet-100">{spentShare.toFixed(0)}% of logged income spent</p>
+          </div>
+        </div>
+      </section>
 
       {/* Active Alerts */}
       {alerts.length > 0 && (
-        <section className="mt-4" aria-labelledby="alerts-heading">
-          <h2 id="alerts-heading" className="sr-only">
-            Budget Alerts
-          </h2>
+        <section className="mt-6" aria-labelledby="alerts-heading">
+          <h2 id="alerts-heading" className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">Needs attention</h2>
           <div className="space-y-2">
             {alerts.map((alert) => (
               <AlertCard key={alert.id} alert={alert} />
@@ -235,71 +247,80 @@ export default function DashboardClient() {
         </section>
       )}
 
-      {/* Financial Summary */}
-      <section className="mt-6" aria-labelledby="summary-heading">
-        <h2
-          id="summary-heading"
-          className="text-lg font-medium text-gray-900"
-        >
-          Financial Summary
-        </h2>
-        <div className="mt-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+      <section className="mt-7 grid gap-4 lg:grid-cols-[1.35fr_0.65fr]" aria-labelledby="summary-heading">
+        <div className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-slate-900" id="summary-heading">Your coach’s take</p>
+              <p className="mt-1 text-sm text-slate-500">A plain-language view of your latest money activity.</p>
+            </div>
+            <Link href="/qa" className="rounded-full bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-100">Ask AI</Link>
+          </div>
+          <div className="mt-5 rounded-2xl bg-gradient-to-br from-violet-50 to-indigo-50 p-4">
           {summaryLoading ? (
             <div className="h-16 animate-pulse rounded bg-gray-100" />
           ) : summary ? (
-            <p className="text-sm text-gray-700 leading-relaxed">{summary}</p>
+            <p className="text-sm leading-6 text-slate-700">{summary}</p>
           ) : (
             <EmptyState />
           )}
+          </div>
+        </div>
+
+        <div className="rounded-[1.5rem] bg-emerald-400 p-5 text-emerald-950 shadow-sm sm:p-6">
+          <p className="text-sm font-semibold">This month’s focus</p>
+          <p className="mt-3 text-xl font-semibold tracking-tight">Build your spending plan before the next expense.</p>
+          <p className="mt-2 text-sm leading-6 text-emerald-950/75">A budget turns today’s transactions into an intentional plan.</p>
+          <Link href="/budget" className="mt-5 inline-flex rounded-xl bg-emerald-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-900">Create a budget</Link>
         </div>
       </section>
 
       {/* Quick Stats */}
-      {quickStats && (
-        <section className="mt-6" aria-labelledby="stats-heading">
-          <h2 id="stats-heading" className="sr-only">
-            Quick Stats
-          </h2>
+      <section className="mt-7" aria-labelledby="stats-heading">
+          <div className="mb-3 flex items-end justify-between">
+            <div><h2 id="stats-heading" className="text-lg font-semibold tracking-tight text-slate-900">Your month at a glance</h2><p className="mt-1 text-sm text-slate-500">Track the fundamentals before you optimise.</p></div>
+            <Link href="/transactions" className="text-sm font-semibold text-violet-700 hover:text-violet-900">View activity</Link>
+          </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <StatCard
               label="Total Income"
-              value={formatCurrency(quickStats.income)}
+              value={formatCurrency(income)}
               variant="green"
             />
             <StatCard
               label="Total Spending"
-              value={formatCurrency(quickStats.spending)}
+              value={formatCurrency(spending)}
               variant="red"
             />
             <StatCard
               label="Net"
-              value={formatCurrency(quickStats.net)}
-              variant={quickStats.net >= 0 ? "green" : "red"}
+              value={formatCurrency(net)}
+              variant={net >= 0 ? "green" : "red"}
             />
           </div>
-        </section>
-      )}
+      </section>
 
       {/* Charts Section */}
-      <section className="mt-6" aria-labelledby="charts-heading">
+      <section className="mt-8" aria-labelledby="charts-heading">
         <h2
           id="charts-heading"
-          className="text-lg font-medium text-gray-900"
+          className="text-lg font-semibold tracking-tight text-slate-900"
         >
           Spending Insights
         </h2>
-        <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <p className="mt-1 text-sm text-slate-500">See where your money is going and how your habits are changing.</p>
+        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
           {/* Category Breakdown */}
-          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">
+          <div className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm">
+            <h3 className="text-sm font-semibold text-slate-800 mb-3">
               Category Breakdown
             </h3>
             <CategoryBreakdown data={categoryData} />
           </div>
 
           {/* Spending Trend */}
-          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">
+          <div className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm">
+            <h3 className="text-sm font-semibold text-slate-800 mb-3">
               Spending Trend
             </h3>
             <SpendingTrend data={trendData} />
@@ -308,10 +329,8 @@ export default function DashboardClient() {
       </section>
 
       {/* Quick Actions */}
-      <section className="mt-6" aria-labelledby="actions-heading">
-        <h2 id="actions-heading" className="sr-only">
-          Quick Actions
-        </h2>
+      <section className="mt-8" aria-labelledby="actions-heading">
+        <h2 id="actions-heading" className="text-lg font-semibold tracking-tight text-slate-900">Take action</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <QuickActionLink
             href="/transactions"
@@ -384,48 +403,6 @@ export default function DashboardClient() {
 
 // --- Sub-Components ---
 
-function DisclaimerModal({ onAcknowledge }: { onAcknowledge: () => void }) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="disclaimer-title"
-    >
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-        <h2
-          id="disclaimer-title"
-          className="text-lg font-semibold text-gray-900"
-        >
-          Important Disclaimer
-        </h2>
-        <div className="mt-4 space-y-3 text-sm text-gray-700 leading-relaxed">
-          <p>
-            This application provides general budgeting support and does not
-            constitute professional financial, investment, tax, or legal advice.
-          </p>
-          <p>
-            The information, analysis, and recommendations provided are for
-            educational and informational purposes only. Always consult a
-            qualified financial professional before making significant financial
-            decisions.
-          </p>
-          <p>
-            By continuing, you acknowledge that you understand these limitations
-            and agree to use this tool as a supplementary budgeting aid only.
-          </p>
-        </div>
-        <button
-          onClick={onAcknowledge}
-          className="mt-6 w-full rounded-md bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px]"
-        >
-          I Understand — Continue
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function AlertCard({ alert }: { alert: SpendingAlert }) {
   const isExceeded = alert.type === "exceeded";
   const remaining = alert.budgeted_amount - alert.amount_spent;
@@ -474,13 +451,13 @@ function StatCard({
   variant: "green" | "red";
 }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+    <div className="rounded-2xl border border-white bg-white p-4 shadow-sm">
+      <p className="text-xs font-semibold text-slate-500 uppercase tracking-[0.12em]">
         {label}
       </p>
       <p
-        className={`mt-1 text-lg font-semibold ${
-          variant === "green" ? "text-green-700" : "text-red-700"
+        className={`mt-2 text-2xl font-semibold tracking-tight ${
+          variant === "green" ? "text-emerald-600" : "text-rose-600"
         }`}
       >
         {value}
@@ -501,10 +478,10 @@ function QuickActionLink({
   return (
     <Link
       href={href}
-      className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:border-blue-300 hover:bg-blue-50 transition-colors min-h-[44px]"
+      className="flex items-center gap-3 rounded-2xl border border-white bg-white p-4 shadow-sm hover:-translate-y-0.5 hover:bg-violet-50 transition-all min-h-[44px]"
     >
-      <span className="text-blue-600">{icon}</span>
-      <span className="text-sm font-medium text-gray-900">{label}</span>
+      <span className="rounded-xl bg-violet-100 p-2 text-violet-700">{icon}</span>
+      <span className="text-sm font-semibold text-slate-900">{label}</span>
     </Link>
   );
 }

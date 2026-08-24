@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const PAGE_TITLES: Record<string, string> = {
-  "/": "Dashboard",
+  "/": "Money pulse",
   "/budget": "Budget",
   "/analysis": "Analysis",
   "/qa": "AI Chat",
@@ -15,10 +15,10 @@ const PAGE_TITLES: Record<string, string> = {
 
 export default function TopHeader() {
   const pathname = usePathname();
-  const title = PAGE_TITLES[pathname] ?? "AI4Budget";
+  const title = PAGE_TITLES[pathname] ?? "AI Budget";
 
   return (
-    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+    <header className="sticky top-0 z-30 border-b border-white/70 bg-[#f5f7fb]/90 backdrop-blur-xl">
       <div className="flex items-center justify-between h-14 px-4 sm:px-6 max-w-5xl mx-auto">
         {/* Left: App branding / page title */}
         <div className="flex items-center gap-3">
@@ -27,11 +27,11 @@ export default function TopHeader() {
             className="flex items-center gap-2 min-h-[44px] min-w-[44px]"
             aria-label="Go to dashboard"
           >
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-700 to-blue-500 flex items-center justify-center shadow-sm">
-              <span className="text-white font-bold text-sm">$</span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-800 shadow-lg shadow-violet-300/40">
+              <span className="text-sm font-bold text-white">✦</span>
             </div>
           </Link>
-          <h1 className="text-lg font-semibold text-gray-900 truncate">
+          <h1 className="truncate text-lg font-semibold tracking-tight text-slate-900">
             {title}
           </h1>
         </div>
@@ -40,7 +40,7 @@ export default function TopHeader() {
         <div className="flex items-center gap-1">
           <Link
             href="/settings"
-            className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg text-gray-500 hover:text-blue-600 hover:bg-gray-50 transition-colors"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-violet-50 hover:text-violet-700"
             aria-label="Settings"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">

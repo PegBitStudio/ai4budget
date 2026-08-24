@@ -1,10 +1,31 @@
 @import "tailwindcss";
 
 :root {
+  --ink: #172033;
+  --muted: #65708a;
+  --canvas: #f5f7fb;
+  --surface: #ffffff;
+  --brand: #6658f6;
+  --brand-deep: #312e81;
+  --mint: #37c8a1;
+  --danger: #ef5b68;
   --sat: env(safe-area-inset-top);
   --sar: env(safe-area-inset-right);
   --sab: env(safe-area-inset-bottom);
   --sal: env(safe-area-inset-left);
+}
+
+body {
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(102, 88, 246, 0.10), transparent 28rem),
+    radial-gradient(circle at 100% 8%, rgba(55, 200, 161, 0.10), transparent 24rem),
+    var(--canvas);
+}
+
+::selection {
+  color: white;
+  background: var(--brand);
 }
 
 @media all and (display-mode: standalone) {
