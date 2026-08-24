@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head><title>AI4Budget Icon Generator</title></head>
+<body>
+<h1>AI4Budget Icon Generator</h1>
+<p>Right-click each canvas and "Save image as..." to the public/icons/ folder</p>
+
+<h3>icon-192x192.png</h3>
+<canvas id="icon192" width="192" height="192"></canvas>
+
+<h3>icon-512x512.png</h3>
+<canvas id="icon512" width="512" height="512"></canvas>
+
+<h3>icon-maskable-192x192.png (full bleed)</h3>
+<canvas id="maskable192" width="192" height="192"></canvas>
+
+<h3>icon-maskable-512x512.png (full bleed)</h3>
+<canvas id="maskable512" width="512" height="512"></canvas>
+
+<br><br>
+<button onclick="downloadAll()">Download All Icons</button>
+
+<script>
+function drawIcon(canvas, maskable) {
+  const size = canvas.width;
+  const ctx = canvas.getContext('2d');
+
+  // Background gradient
+  const gradient = ctx.createLinearGradient(0, 0, size, size);
+  gradient.addColorStop(0, '#1e40af');
+  gradient.addColorStop(1, '#3b82f6');
+
+  if (maskable) {
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
+  } else {
+    // Rounded rect
+    const r = size * 0.1875;
+    ctx.beginPath();
+    ctx.moveTo(r, 0);
+    ctx.lineTo(size - r, 0);
+    ctx.quadraticCurveTo(size, 0, size, r);
+    ctx.lineTo(size, size - r);
+    ctx.quadraticCurveTo(size, size, size - r, size);
+    ctx.lineTo(r, size);
+    ctx.quadraticCurveTo(0, size, 0, size - r);
+    ctx.lineTo(0, r);
+    ctx.quadraticCurveTo(0, 0, r, 0);
+    ctx.closePath();
+    ctx.fillStyle = gradient;
+    ctx.fill();
+  }
+
+  // Dollar sign
+  ctx.fillStyle = 'white';
+  ctx.font = `bold ${size * 0.47}px Arial`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('$', size * 0.5, size * 0.53);
+
+  // AI sparkle dots
+  const s = size / 512;
+  
+  ctx.beginPath();
+  ctx.arc(380 * s, 120 * s, 16 * s, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(410 * s, 155 * s, 10 * s, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(355 * s, 90 * s, 8 * s, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.fill();
+
+  // Connection lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+  ctx.lineWidth = 3 * s;
+  ctx.beginPath();
+  ctx.moveTo(370 * s, 130 * s);
+  ctx.lineTo(400 * s, 150 * s);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(370 * s, 120 * s);
+  ctx.lineTo(350 * s, 95 * s);
+  ctx.stroke();
+}
+
+// Draw all canvases
+drawIcon(document.getElementById('icon192'), false);
+drawIcon(document.getElementById('icon512'), false);
+drawIcon(document.getElementById('maskable192'), true);
+drawIcon(document.getElementById('maskable512'), true);
+
+function downloadAll() {
+  const pairs = [
+    ['icon192', 'icon-192x192.png'],
+    ['icon512', 'icon-512x512.png'],
+    ['maskable192', 'icon-maskable-192x192.png'],
+    ['maskable512', 'icon-maskable-512x512.png'],
+  ];
+  pairs.forEach(([id, filename]) => {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = document.getElementById(id).toDataURL('image/png');
+    link.click();
+  });
+}
+</script>
+</body>
+</html>
