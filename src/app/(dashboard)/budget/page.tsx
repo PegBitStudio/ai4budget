@@ -253,8 +253,7 @@ export default function BudgetPage() {
 
   if (loading) {
     return (
-      <div className="px-4 py-6 sm:px-6 md:px-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Budget</h1>
+      <div className="px-4 py-4 sm:px-6 md:px-8">
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
           <span className="ml-3 text-gray-600">Loading budget...</span>
@@ -264,8 +263,7 @@ export default function BudgetPage() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-6 md:px-8 pb-24">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Budget</h1>
+    <div className="px-4 py-4 sm:px-6 md:px-8 pb-24">
 
       {/* Period Selector */}
       <div className="flex gap-2 mb-6">

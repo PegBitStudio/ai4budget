@@ -73,11 +73,8 @@ export default function AnalysisPage() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-6 md:px-8">
-      <h1 className="text-xl font-semibold text-gray-900 sm:text-2xl">
-        Spending Analysis
-      </h1>
-      <p className="mt-1 text-sm text-gray-600">
+    <div className="px-4 py-4 sm:px-6 md:px-8">
+      <p className="text-sm text-gray-600">
         Unusual transactions and spending trends for this period.
       </p>
 
@@ -187,10 +184,7 @@ function TrendCard({ trend }: { trend: TrendData }) {
 function LoadingState() {
   return (
     <div className="px-4 py-6 sm:px-6 md:px-8">
-      <h1 className="text-xl font-semibold text-gray-900 sm:text-2xl">
-        Spending Analysis
-      </h1>
-      <div className="mt-6 space-y-4" aria-busy="true" aria-live="polite">
+      <div className="mt-4 space-y-4" aria-busy="true" aria-live="polite">
         {[1, 2, 3].map((i) => (
           <div
             key={i}
@@ -207,13 +201,10 @@ function LoadingState() {
 
 function ErrorState({ message }: { message: string }) {
   return (
-    <div className="px-4 py-6 sm:px-6 md:px-8">
-      <h1 className="text-xl font-semibold text-gray-900 sm:text-2xl">
-        Spending Analysis
-      </h1>
+    <div className="px-4 py-4 sm:px-6 md:px-8">
       <div
         role="alert"
-        className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4"
+        className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4"
       >
         <p className="font-medium text-red-800">Unable to load analysis</p>
         <p className="mt-1 text-sm text-red-700">{message}</p>
@@ -230,11 +221,8 @@ function ErrorState({ message }: { message: string }) {
 
 function NoPatternsState() {
   return (
-    <div className="px-4 py-6 sm:px-6 md:px-8">
-      <h1 className="text-xl font-semibold text-gray-900 sm:text-2xl">
-        Spending Analysis
-      </h1>
-      <div className="mt-6 flex flex-col items-center rounded-lg border border-gray-200 bg-white p-8 text-center">
+    <div className="px-4 py-4 sm:px-6 md:px-8">
+      <div className="mt-4 flex flex-col items-center rounded-lg border border-gray-200 bg-white p-8 text-center">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"

@@ -182,9 +182,6 @@ export default function SavingsPage() {
       {/* --- Your Savings Goals Section --- */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">
-            Your Savings Goals
-          </h1>
           <button
             onClick={() => setShowForm(!showForm)}
             className="min-h-[44px] min-w-[44px] px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"

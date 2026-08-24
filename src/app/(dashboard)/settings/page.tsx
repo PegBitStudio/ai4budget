@@ -215,8 +215,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="px-4 py-6 sm:px-6 md:px-8 lg:px-12 max-w-3xl mx-auto space-y-8 pb-24">
-      <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Settings</h1>
+    <div className="px-4 py-4 sm:px-6 md:px-8 lg:px-12 max-w-3xl mx-auto space-y-8 pb-24">
 
       {/* --- CSV Export Section --- */}
       <section className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">

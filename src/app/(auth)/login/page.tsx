@@ -98,15 +98,24 @@ export default function LoginPage() {
         {loading ? "Signing in..." : "Sign In"}
       </button>
 
-      <p className="text-center text-sm text-gray-600">
-        Don&apos;t have an account?{" "}
-        <Link
-          href="/signup"
-          className="font-medium text-blue-700 hover:text-blue-800"
+      <div className="flex items-center justify-between text-sm">
+        <p className="text-gray-600">
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/signup"
+            className="font-medium text-blue-700 hover:text-blue-800"
+          >
+            Create one
+          </Link>
+        </p>
+        <button
+          type="button"
+          onClick={() => alert("Please contact support to reset your password.")}
+          className="font-medium text-gray-500 hover:text-gray-700"
         >
-          Create one
-        </Link>
-      </p>
+          Forgot password?
+        </button>
+      </div>
     </form>
   );
 }
