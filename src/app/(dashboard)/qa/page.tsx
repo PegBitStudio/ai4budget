@@ -124,15 +124,19 @@ export default function QAPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-theme(spacing.20)-theme(spacing.16))] lg:h-[calc(100vh-theme(spacing.16))]">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-gray-200 bg-white">
-        <h1 className="text-lg font-semibold text-gray-900">Ask AI</h1>
+    <div className="flex flex-col h-[calc(100vh-theme(spacing.14)-theme(spacing.16))]">
+      {/* Subheader */}
+      <div className="px-4 py-2 border-b border-gray-100 bg-white">
         <p className="text-sm text-gray-500">Ask questions about your finances in plain English</p>
       </div>
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+      <div
+        className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
+        role="log"
+        aria-live="polite"
+        aria-label="Chat messages"
+      >
         {messages.map((message) => (
           <div
             key={message.id}

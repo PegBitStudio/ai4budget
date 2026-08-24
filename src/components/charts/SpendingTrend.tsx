@@ -3,6 +3,7 @@
 import "./ChartRegistration";
 import { Line } from "react-chartjs-2";
 import type { ChartOptions } from "chart.js";
+import { formatCurrency } from "@/utils/formatters";
 
 export interface SpendingTrendData {
   period: string;
@@ -51,7 +52,7 @@ export function SpendingTrend({ data }: SpendingTrendProps) {
         callbacks: {
           label(context) {
             const value = context.parsed?.y ?? 0;
-            return `Spending: $${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            return `Spending: ${formatCurrency(value)}`;
           },
         },
       },
@@ -66,7 +67,7 @@ export function SpendingTrend({ data }: SpendingTrendProps) {
         beginAtZero: true,
         ticks: {
           callback(value) {
-            return `$${Number(value).toLocaleString()}`;
+            return formatCurrency(Number(value));
           },
         },
       },

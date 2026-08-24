@@ -252,9 +252,7 @@ export default function DashboardClient() {
           ) : summary ? (
             <p className="text-sm text-gray-700 leading-relaxed">{summary}</p>
           ) : (
-            <p className="text-sm text-gray-500 italic">
-              Add some transactions to get started with your financial summary.
-            </p>
+            <EmptyState />
           )}
         </div>
       </section>
@@ -511,6 +509,33 @@ function QuickActionLink({
       <span className="text-blue-600">{icon}</span>
       <span className="text-sm font-medium text-gray-900">{label}</span>
     </Link>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center py-6 text-center">
+      <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7 text-blue-500">
+          <path d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 9a.75.75 0 0 0-1.5 0v2.25H9a.75.75 0 0 0 0 1.5h2.25V15a.75.75 0 0 0 1.5 0v-2.25H15a.75.75 0 0 0 0-1.5h-2.25V9Z" />
+        </svg>
+      </div>
+      <h3 className="text-sm font-medium text-gray-900 mb-1">
+        Get started with your first transaction
+      </h3>
+      <p className="text-sm text-gray-500 mb-4 max-w-xs">
+        Add income or expenses to see your AI-powered financial summary, spending insights, and budget recommendations.
+      </p>
+      <Link
+        href="/budget"
+        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors min-h-[44px]"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+          <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+        </svg>
+        Set up your budget
+      </Link>
+    </div>
   );
 }
 

@@ -6,6 +6,7 @@ import { CATEGORY_COLORS } from "@/config/categories";
 import type { Category } from "@/models/category";
 import type { ChartOptions } from "chart.js";
 import { useState, useEffect } from "react";
+import { formatCurrency } from "@/utils/formatters";
 
 export interface CategoryBreakdownData {
   category: string;
@@ -42,7 +43,7 @@ export function CategoryBreakdown({ data }: CategoryBreakdownProps) {
 
   const chartData = {
     labels: data.map(
-      (item) => `${item.category} ($${item.amount.toFixed(2)} · ${item.percentage.toFixed(1)}%)`
+      (item) => `${item.category} (${formatCurrency(item.amount)} · ${item.percentage.toFixed(1)}%)`
     ),
     datasets: [
       {
@@ -69,7 +70,7 @@ export function CategoryBreakdown({ data }: CategoryBreakdownProps) {
         callbacks: {
           label(context) {
             const item = data[context.dataIndex];
-            return `${item.category}: $${item.amount.toFixed(2)} (${item.percentage.toFixed(1)}%)`;
+            return `${item.category}: ${formatCurrency(item.amount)} (${item.percentage.toFixed(1)}%)`;
           },
         },
       },
