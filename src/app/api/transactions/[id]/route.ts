@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { CategorySchema } from '@/models/category';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Schema for PATCH request body — update transaction category.
  */

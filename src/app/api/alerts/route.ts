@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server';
 import { getActiveAlerts } from '@/lib/alertEngine';
 import { getCurrentMonthPeriod } from '@/utils/dateUtils';
 import { SpendingAlert } from '@/models/alert';
+
+export const dynamic = 'force-dynamic';
 import { Category } from '@/models/category';
 
 /**

@@ -7,6 +7,8 @@ import { getLLMClient } from '@/lib/llmClient';
 import { checkAlerts } from '@/lib/alertEngine';
 import { getCurrentMonthPeriod, getCurrentWeekPeriod } from '@/utils/dateUtils';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/transactions
  * Create a new transaction with auto-classification and budget alert checking.

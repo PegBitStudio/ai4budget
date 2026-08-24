@@ -4,6 +4,8 @@ import { answerQuestion } from '@/lib/qaEngine';
 import { getLLMClient } from '@/lib/llmClient';
 import { getCurrentMonthPeriod } from '@/utils/dateUtils';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/qa
  * Answers natural-language financial questions using local data and LLM fallback.

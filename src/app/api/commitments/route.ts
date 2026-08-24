@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { CreateCommitmentSchema } from '@/models/commitment';
 import { classify } from '@/lib/classifier';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/commitments
  * Returns the authenticated user's financial commitments.

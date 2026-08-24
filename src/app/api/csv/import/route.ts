@@ -5,6 +5,8 @@ import { classify } from '@/lib/classifier';
 import { getLLMClient } from '@/lib/llmClient';
 import { Category } from '@/models/category';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/csv/import
  *

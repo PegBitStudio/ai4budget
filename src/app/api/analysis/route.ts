@@ -9,6 +9,8 @@ import {
 import { getCurrentMonthPeriod, getPreviousPeriod } from '@/utils/dateUtils';
 import { Category } from '@/models/category';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/analysis
  * Detects spending anomalies and increasing category trends for the current period.

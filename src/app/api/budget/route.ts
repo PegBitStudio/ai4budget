@@ -10,6 +10,8 @@ import {
 } from '@/utils/dateUtils';
 import type { Json } from '@/lib/supabase/types';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/budget
  * Generate a new budget for the current period based on income,

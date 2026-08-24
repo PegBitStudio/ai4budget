@@ -4,6 +4,8 @@ import { CreateSavingsGoalSchema } from '@/models/savingsGoal';
 import { getRecommendation } from '@/lib/savingsAdvisor';
 import { getCurrentMonthPeriod } from '@/utils/dateUtils';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/savings
  * Returns the user's savings goals and a savings recommendation.

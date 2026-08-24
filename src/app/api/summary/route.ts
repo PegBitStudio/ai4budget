@@ -5,6 +5,8 @@ import { getLLMClient } from '@/lib/llmClient';
 import { getCurrentMonthPeriod } from '@/utils/dateUtils';
 import { Category } from '@/models/category';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/summary
  * Generates a plain-language financial summary for the current period using LLM.
