@@ -63,7 +63,9 @@ function buildTransactions(userId) {
 
   for (const { y, m, salary, dining, transport, subs } of months) {
     // Income
-    add(iso(y, m, 28), 'Salary - Zenith Bank credit', salary, 'Other', 'income');
+    // Payday on the 25th: the app rejects future-dated transactions, so a
+    // later payday would leave the current month's salary unenterable.
+    add(iso(y, m, 25), 'Salary - Zenith Bank credit', salary, 'Other', 'income');
     if (m !== 6) add(iso(y, m, 14), 'Freelance design payout', m === 8 ? 85000 : 60000, 'Other', 'income');
 
     // Housing

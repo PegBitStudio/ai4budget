@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { formatCurrency } from "@/utils/formatters";
+import AlertImporter from "@/components/transactions/AlertImporter";
 
 // --- Types ---
 
@@ -126,6 +127,8 @@ export default function TransactionsPage() {
 
   return (
     <div className="px-4 py-4 sm:px-6 md:px-8 max-w-3xl mx-auto">
+      <AlertImporter onImported={fetchTransactions} />
+
       {/* Action bar */}
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-gray-500">
