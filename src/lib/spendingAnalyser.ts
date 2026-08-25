@@ -5,6 +5,7 @@
 
 import { Category } from '@/models/category';
 import { BudgetComparison, CategoryAllocation } from '@/models/budget';
+import { formatCurrency } from '@/utils/formatters';
 
 export interface SpendingAnomaly {
   transaction: {
@@ -14,8 +15,17 @@ export interface SpendingAnomaly {
     date: string;
     description: string;
   };
+  /** The typical spend for this category — a median, not a mean. */
   categoryAverage: number;
   multiple: number;
+}
+
+/** A transaction from the user's history, used to build the baseline. */
+export interface HistoricTransaction {
+  amount: number;
+  category: Category;
+  description: string;
+  date: string;
 }
 
 export interface CategoryTrend {
@@ -64,12 +74,69 @@ export function getComparison(
   });
 }
 
+/** A transaction must exceed this multiple of the category median to be unusual. */
+const ANOMALY_MULTIPLE = 2;
+
+/** Below this many transactions a category has no meaningful baseline. */
+const MIN_CATEGORY_HISTORY = 3;
+
+/** Appearing in this many distinct months makes a charge recurring, not unusual. */
+const RECURRING_MONTHS = 2;
+
 /**
- * Detects anomalous transactions in the current period.
+ * The middle value of a list. Used instead of the mean because one large
+ * purchase drags a mean upward and then hides behind it — a ₦285,000 phone in
+ * a category of ₦15,000 purchases pulls the average high enough that the
+ * phone itself stops looking unusual.
+ */
+function median(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0
+    ? (sorted[mid - 1] + sorted[mid]) / 2
+    : sorted[mid];
+}
+
+/** Normalises a description for comparison: lowercase, alphanumeric only. */
+function merchantKey(description: string): string {
+  return description.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * Descriptions that appear in two or more distinct months. A gym membership
+ * charged the same amount every month is a commitment, not a surprise, and
+ * flagging it teaches the user to distrust the whole feature.
+ */
+function findRecurringMerchants(history: HistoricTransaction[]): Set<string> {
+  const monthsSeen = new Map<string, Set<string>>();
+
+  for (const t of history) {
+    const key = merchantKey(t.description);
+    if (!key) continue;
+    const months = monthsSeen.get(key) ?? new Set<string>();
+    months.add(t.date.slice(0, 7)); // YYYY-MM
+    monthsSeen.set(key, months);
+  }
+
+  const recurring = new Set<string>();
+  for (const [key, months] of Array.from(monthsSeen.entries())) {
+    if (months.size >= RECURRING_MONTHS) {
+      recurring.add(key);
+    }
+  }
+  return recurring;
+}
+
+/**
+ * Detects genuinely unusual transactions in the current period.
  *
- * A transaction is flagged as unusual when:
- * - Its amount > 2× the category average (computed from allTransactions)
- * - There are at least 3 prior transactions in that category
+ * A transaction is flagged when:
+ * - Its description is not a recurring charge, and
+ * - Its category has at least 3 transactions to compare against, and
+ * - Its amount is more than twice the category median.
+ *
+ * Worst offender first, so the biggest surprise leads.
  */
 export function detectAnomalies(
   transactions: {
@@ -79,25 +146,30 @@ export function detectAnomalies(
     description: string;
     id: string;
   }[],
-  allTransactions: { amount: number; category: Category }[]
+  allTransactions: HistoricTransaction[]
 ): SpendingAnomaly[] {
+  const recurring = findRecurringMerchants(allTransactions);
   const anomalies: SpendingAnomaly[] = [];
 
   for (const tx of transactions) {
-    const categoryTransactions = allTransactions.filter(
-      (t) => t.category === tx.category
-    );
-
-    if (categoryTransactions.length < 3) {
+    if (recurring.has(merchantKey(tx.description))) {
       continue;
     }
 
-    const categoryAverage =
-      categoryTransactions.reduce((sum, t) => sum + t.amount, 0) /
-      categoryTransactions.length;
+    const categoryAmounts = allTransactions
+      .filter((t) => t.category === tx.category)
+      .map((t) => t.amount);
 
-    if (tx.amount > 2 * categoryAverage) {
-      const multiple = tx.amount / categoryAverage;
+    if (categoryAmounts.length < MIN_CATEGORY_HISTORY) {
+      continue;
+    }
+
+    const categoryAverage = median(categoryAmounts);
+    if (categoryAverage <= 0) {
+      continue;
+    }
+
+    if (tx.amount > ANOMALY_MULTIPLE * categoryAverage) {
       anomalies.push({
         transaction: {
           id: tx.id,
@@ -107,12 +179,12 @@ export function detectAnomalies(
           description: tx.description,
         },
         categoryAverage,
-        multiple,
+        multiple: tx.amount / categoryAverage,
       });
     }
   }
 
-  return anomalies;
+  return anomalies.sort((a, b) => b.multiple - a.multiple);
 }
 
 /**
@@ -154,12 +226,12 @@ export function detectIncreasingCategories(
  * Generates a plain-language explanation for a spending anomaly.
  */
 export function generateExplanation(anomaly: SpendingAnomaly): string {
-  return `This ${anomaly.transaction.description} of ${anomaly.transaction.amount.toFixed(2)} is ${anomaly.multiple.toFixed(1)}× the average ${anomaly.transaction.category} transaction of ${anomaly.categoryAverage.toFixed(2)}`;
+  return `${anomaly.multiple.toFixed(1)}× your usual ${anomaly.transaction.category} spend of ${formatCurrency(anomaly.categoryAverage)}`;
 }
 
 /**
  * Generates a plain-language explanation for a category trend.
  */
 export function generateTrendExplanation(trend: CategoryTrend): string {
-  return `${trend.category} spending increased by ${trend.percentageChange.toFixed(0)}% from ${trend.previousAmount.toFixed(2)} to ${trend.currentAmount.toFixed(2)}`;
+  return `${trend.category} spending increased by ${trend.percentageChange.toFixed(0)}% from ${formatCurrency(trend.previousAmount)} to ${formatCurrency(trend.currentAmount)}`;
 }

@@ -226,13 +226,15 @@ describe('LLMClient', () => {
       const callArgs = mockClient.chat.completions.create.mock.calls[0][0];
       const userMessage = callArgs.messages[1].content;
 
-      expect(userMessage).toContain('5000.00');
-      expect(userMessage).toContain('3500.00');
+      // Amounts are grouped the same way the app displays them, so the figures
+      // the model echoes back match the ones on screen.
+      expect(userMessage).toContain('₦5,000.00');
+      expect(userMessage).toContain('₦3,500.00');
       expect(userMessage).toContain('Housing');
       expect(userMessage).toContain('Groceries');
       expect(userMessage).toContain('Transport');
-      expect(userMessage).toContain('2500.00');
-      expect(userMessage).toContain('10000.00');
+      expect(userMessage).toContain('₦2,500.00');
+      expect(userMessage).toContain('₦10,000.00');
       expect(userMessage).toContain('monthly');
     });
 

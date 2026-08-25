@@ -47,6 +47,10 @@ const FINANCIAL_KEYWORDS = [
   'month', 'monthly', 'week', 'weekly',
   'over budget', 'under budget',
   'allocation', 'allocations',
+  // How people actually phrase it when they want advice rather than a figure.
+  'cut', 'reduce', 'afford', 'overspend', 'overspending',
+  'left', 'remaining', 'goal', 'target', 'track',
+  'owe', 'debt', 'balance', 'naira',
 ];
 
 // --- Public Functions ---
@@ -151,8 +155,12 @@ export async function answerQuestion(params: QAParams): Promise<QAResult> {
     };
   }
 
-  // Check if the question is about finances
-  if (!isFinancialQuestion(question)) {
+  // A keyword match is a fast path to "yes, this is financial", not a gate.
+  // Refusing everything it does not recognise turned away perfectly ordinary
+  // questions — "what should I cut first?" contains no keyword at all. When the
+  // keywords miss and an LLM is available, let the model judge; its system
+  // prompt already instructs it to decline anything off-topic.
+  if (!isFinancialQuestion(question) && !llmClient) {
     return {
       answer: 'I can only answer questions about your financial data. Try asking about your spending, budget, income, or savings.',
       source: 'error',

@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { Category, CATEGORIES } from '@/models/category';
 import type { RawParsedAlert } from './alertParser';
+import { formatCurrency } from '@/utils/formatters';
 
 // --- Interfaces ---
 
@@ -221,20 +222,20 @@ export class LLMClient implements ILLMClient {
 
   private buildSummaryPrompt(data: SummaryInput): string {
     let prompt = `Please summarize the following financial data for the ${data.periodType} period:\n\n`;
-    prompt += `- Total Income: ${CURRENCY}${data.totalIncome.toFixed(2)}\n`;
-    prompt += `- Total Spending: ${CURRENCY}${data.totalSpending.toFixed(2)}\n`;
-    prompt += `- Net: ${CURRENCY}${(data.totalIncome - data.totalSpending).toFixed(2)}\n\n`;
+    prompt += `- Total Income: ${formatCurrency(data.totalIncome)}\n`;
+    prompt += `- Total Spending: ${formatCurrency(data.totalSpending)}\n`;
+    prompt += `- Net: ${formatCurrency(data.totalIncome - data.totalSpending)}\n\n`;
 
     if (data.topCategories.length > 0) {
       prompt += 'Top spending categories:\n';
       for (const cat of data.topCategories) {
-        prompt += `  - ${cat.name}: ${CURRENCY}${cat.amount.toFixed(2)}\n`;
+        prompt += `  - ${cat.name}: ${formatCurrency(cat.amount)}\n`;
       }
       prompt += '\n';
     }
 
     if (data.savingsProgress) {
-      prompt += `Savings progress: ${CURRENCY}${data.savingsProgress.current.toFixed(2)} saved toward a ${CURRENCY}${data.savingsProgress.goal.toFixed(2)} goal.\n`;
+      prompt += `Savings progress: ${formatCurrency(data.savingsProgress.current)} saved toward a ${formatCurrency(data.savingsProgress.goal)} goal.\n`;
     }
 
     return prompt;
@@ -246,7 +247,7 @@ export class LLMClient implements ILLMClient {
     if (context.transactions.length > 0) {
       prompt += 'Recent transactions:\n';
       for (const t of context.transactions) {
-        prompt += `  - ${t.date}: ${t.category} - ${CURRENCY}${t.amount.toFixed(2)}\n`;
+        prompt += `  - ${t.date}: ${t.category} - ${formatCurrency(t.amount)}\n`;
       }
       prompt += '\n';
     }
@@ -254,7 +255,7 @@ export class LLMClient implements ILLMClient {
     if (context.budget && context.budget.length > 0) {
       prompt += 'Budget breakdown:\n';
       for (const b of context.budget) {
-        prompt += `  - ${b.category}: Budgeted ${CURRENCY}${b.budgeted.toFixed(2)}, Actual ${CURRENCY}${b.actual.toFixed(2)}\n`;
+        prompt += `  - ${b.category}: Budgeted ${formatCurrency(b.budgeted)}, Actual ${formatCurrency(b.actual)}\n`;
       }
       prompt += '\n';
     }

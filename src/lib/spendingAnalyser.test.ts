@@ -6,6 +6,7 @@ import {
   generateExplanation,
   generateTrendExplanation,
   SpendingAnomaly,
+  HistoricTransaction,
   CategoryTrend,
 } from './spendingAnalyser';
 import { CategoryAllocation } from '@/models/budget';
@@ -120,146 +121,222 @@ describe('getComparison', () => {
 });
 
 describe('detectAnomalies', () => {
-  it('flags a transaction when amount > 2× category average with >= 3 prior transactions', () => {
-    const transactions = [
-      {
-        id: 'tx1',
-        amount: 500,
-        category: 'Groceries' as Category,
-        date: '2025-01-15',
-        description: 'Big grocery haul',
-      },
-    ];
-    const allTransactions = [
-      { amount: 50, category: 'Groceries' as Category },
-      { amount: 60, category: 'Groceries' as Category },
-      { amount: 70, category: 'Groceries' as Category },
-    ];
+  /** Three months of an ordinary, repeating grocery habit. */
+  const groceryHistory: HistoricTransaction[] = [
+    { amount: 9500, category: 'Groceries', description: 'Mile 12 market', date: '2026-06-09' },
+    { amount: 11000, category: 'Groceries', description: 'Mile 12 market', date: '2026-07-09' },
+    { amount: 9500, category: 'Groceries', description: 'Mile 12 market', date: '2026-08-09' },
+    { amount: 14500, category: 'Groceries', description: 'Shoprite top-up', date: '2026-06-16' },
+    { amount: 14500, category: 'Groceries', description: 'Shoprite top-up', date: '2026-07-16' },
+    { amount: 14500, category: 'Groceries', description: 'Shoprite top-up', date: '2026-08-16' },
+  ];
 
-    const result = detectAnomalies(transactions, allTransactions);
+  it('flags a one-off purchase far above the category median', () => {
+    const result = detectAnomalies(
+      [
+        {
+          id: 'tx1',
+          amount: 90000,
+          category: 'Groceries',
+          date: '2026-08-20',
+          description: 'Party supplies for owambe',
+        },
+      ],
+      groceryHistory
+    );
 
     expect(result).toHaveLength(1);
     expect(result[0].transaction.id).toBe('tx1');
-    expect(result[0].categoryAverage).toBe(60);
-    expect(result[0].multiple).toBeCloseTo(500 / 60, 5);
+    expect(result[0].categoryAverage).toBe(12750); // median of the six
   });
 
-  it('does not flag when less than 3 prior transactions exist', () => {
-    const transactions = [
-      {
-        id: 'tx1',
-        amount: 500,
-        category: 'Groceries' as Category,
-        date: '2025-01-15',
-        description: 'Big grocery haul',
-      },
-    ];
-    const allTransactions = [
-      { amount: 50, category: 'Groceries' as Category },
-      { amount: 60, category: 'Groceries' as Category },
+  it('does not flag a recurring charge, however large', () => {
+    // The gym membership is the same amount every month. It is a commitment,
+    // not a surprise, and flagging it makes the whole feature untrustworthy.
+    const history: HistoricTransaction[] = [
+      { amount: 2500, category: 'Subscriptions', description: 'Spotify', date: '2026-06-07' },
+      { amount: 2500, category: 'Subscriptions', description: 'Spotify', date: '2026-07-07' },
+      { amount: 2500, category: 'Subscriptions', description: 'Spotify', date: '2026-08-07' },
+      { amount: 25000, category: 'Subscriptions', description: 'Gym membership', date: '2026-06-12' },
+      { amount: 25000, category: 'Subscriptions', description: 'Gym membership', date: '2026-07-12' },
+      { amount: 25000, category: 'Subscriptions', description: 'Gym membership', date: '2026-08-12' },
     ];
 
-    const result = detectAnomalies(transactions, allTransactions);
+    const result = detectAnomalies(
+      [
+        {
+          id: 'gym',
+          amount: 25000,
+          category: 'Subscriptions',
+          date: '2026-08-12',
+          description: 'Gym membership',
+        },
+      ],
+      history
+    );
 
-    expect(result).toHaveLength(0);
+    expect(result).toEqual([]);
   });
 
-  it('does not flag when amount is exactly 2× the average', () => {
-    const transactions = [
-      {
-        id: 'tx1',
-        amount: 120,
-        category: 'Dining' as Category,
-        date: '2025-01-15',
-        description: 'Fancy dinner',
-      },
+  it('matches a recurring merchant despite formatting differences', () => {
+    const history: HistoricTransaction[] = [
+      { amount: 25000, category: 'Subscriptions', description: 'Gym membership - i-Fitness', date: '2026-06-12' },
+      { amount: 25000, category: 'Subscriptions', description: 'GYM MEMBERSHIP I FITNESS', date: '2026-07-12' },
+      { amount: 2500, category: 'Subscriptions', description: 'Spotify', date: '2026-07-07' },
+      { amount: 2500, category: 'Subscriptions', description: 'Spotify', date: '2026-08-07' },
     ];
-    const allTransactions = [
-      { amount: 50, category: 'Dining' as Category },
-      { amount: 60, category: 'Dining' as Category },
-      { amount: 70, category: 'Dining' as Category },
-    ];
-    // Average = 60, 2× = 120, amount = 120 (not > 120)
 
-    const result = detectAnomalies(transactions, allTransactions);
+    const result = detectAnomalies(
+      [
+        {
+          id: 'gym',
+          amount: 25000,
+          category: 'Subscriptions',
+          date: '2026-08-12',
+          description: 'gym membership ifitness',
+        },
+      ],
+      history
+    );
 
-    expect(result).toHaveLength(0);
+    expect(result).toEqual([]);
   });
 
-  it('flags when amount is just above 2× the average', () => {
-    const transactions = [
-      {
-        id: 'tx1',
-        amount: 120.01,
-        category: 'Dining' as Category,
-        date: '2025-01-15',
-        description: 'Fancy dinner',
-      },
-    ];
-    const allTransactions = [
-      { amount: 50, category: 'Dining' as Category },
-      { amount: 60, category: 'Dining' as Category },
-      { amount: 70, category: 'Dining' as Category },
+  it('still flags a charge seen only once before', () => {
+    // One prior month is not enough to call something recurring.
+    const history: HistoricTransaction[] = [
+      ...groceryHistory,
+      { amount: 90000, category: 'Groceries', description: 'Party supplies', date: '2026-08-20' },
     ];
 
-    const result = detectAnomalies(transactions, allTransactions);
+    const result = detectAnomalies(
+      [
+        {
+          id: 'tx1',
+          amount: 90000,
+          category: 'Groceries',
+          date: '2026-08-20',
+          description: 'Party supplies',
+        },
+      ],
+      history
+    );
 
     expect(result).toHaveLength(1);
   });
 
-  it('only considers transactions from the same category', () => {
-    const transactions = [
-      {
-        id: 'tx1',
-        amount: 200,
-        category: 'Entertainment' as Category,
-        date: '2025-01-15',
-        description: 'Concert tickets',
-      },
+  it('uses the median so one huge purchase cannot hide behind its own average', () => {
+    // The mean of these is 82,875 — the phone is only 3.4x that, and every
+    // ordinary purchase gets dragged up with it. The median is 15,500, which
+    // is what this person actually spends on Shopping.
+    const history: HistoricTransaction[] = [
+      { amount: 15500, category: 'Shopping', description: 'Jumia items', date: '2026-06-19' },
+      { amount: 15500, category: 'Shopping', description: 'Jumia items', date: '2026-07-19' },
+      { amount: 15500, category: 'Shopping', description: 'Jumia items', date: '2026-08-19' },
+      { amount: 285000, category: 'Shopping', description: 'Slot - replacement phone', date: '2026-08-22' },
     ];
-    const allTransactions = [
-      { amount: 50, category: 'Groceries' as Category },
-      { amount: 60, category: 'Groceries' as Category },
-      { amount: 70, category: 'Groceries' as Category },
-      { amount: 80, category: 'Entertainment' as Category },
-      { amount: 90, category: 'Entertainment' as Category },
-    ];
-    // Only 2 Entertainment transactions — less than 3
 
-    const result = detectAnomalies(transactions, allTransactions);
+    const result = detectAnomalies(
+      [
+        {
+          id: 'phone',
+          amount: 285000,
+          category: 'Shopping',
+          date: '2026-08-22',
+          description: 'Slot - replacement phone',
+        },
+      ],
+      history
+    );
 
-    expect(result).toHaveLength(0);
+    expect(result).toHaveLength(1);
+    expect(result[0].categoryAverage).toBe(15500);
+    expect(result[0].multiple).toBeCloseTo(18.4, 1);
   });
 
-  it('handles multiple anomalous transactions', () => {
-    const transactions = [
-      {
-        id: 'tx1',
-        amount: 500,
-        category: 'Groceries' as Category,
-        date: '2025-01-15',
-        description: 'Bulk buy',
-      },
-      {
-        id: 'tx2',
-        amount: 300,
-        category: 'Dining' as Category,
-        date: '2025-01-16',
-        description: 'Expensive restaurant',
-      },
-    ];
-    const allTransactions = [
-      { amount: 50, category: 'Groceries' as Category },
-      { amount: 60, category: 'Groceries' as Category },
-      { amount: 70, category: 'Groceries' as Category },
-      { amount: 30, category: 'Dining' as Category },
-      { amount: 40, category: 'Dining' as Category },
-      { amount: 50, category: 'Dining' as Category },
+  it('does not flag a category with too little history to judge', () => {
+    const result = detectAnomalies(
+      [
+        {
+          id: 'tx1',
+          amount: 200000,
+          category: 'Entertainment',
+          date: '2026-08-15',
+          description: 'Concert tickets',
+        },
+      ],
+      [
+        { amount: 6500, category: 'Entertainment', description: 'Cinema', date: '2026-06-25' },
+        { amount: 6500, category: 'Entertainment', description: 'Cinema b', date: '2026-07-25' },
+      ]
+    );
+
+    expect(result).toEqual([]);
+  });
+
+  it('compares only against the same category', () => {
+    const result = detectAnomalies(
+      [
+        {
+          id: 'tx1',
+          amount: 30000,
+          category: 'Entertainment',
+          date: '2026-08-15',
+          description: 'Concert tickets',
+        },
+      ],
+      groceryHistory
+    );
+
+    expect(result).toEqual([]);
+  });
+
+  it('does not flag a purchase at exactly twice the median', () => {
+    const result = detectAnomalies(
+      [
+        {
+          id: 'tx1',
+          amount: 25500,
+          category: 'Groceries',
+          date: '2026-08-20',
+          description: 'Double shop',
+        },
+      ],
+      groceryHistory
+    );
+
+    expect(result).toEqual([]);
+  });
+
+  it('returns the worst offender first', () => {
+    const history: HistoricTransaction[] = [
+      ...groceryHistory,
+      { amount: 4800, category: 'Dining', description: 'Lunch a', date: '2026-06-04' },
+      { amount: 4800, category: 'Dining', description: 'Lunch b', date: '2026-07-04' },
+      { amount: 6000, category: 'Dining', description: 'Lunch c', date: '2026-08-04' },
     ];
 
-    const result = detectAnomalies(transactions, allTransactions);
+    const result = detectAnomalies(
+      [
+        {
+          id: 'dining',
+          amount: 20000,
+          category: 'Dining',
+          date: '2026-08-21',
+          description: 'Birthday dinner',
+        },
+        {
+          id: 'grocery',
+          amount: 120000,
+          category: 'Groceries',
+          date: '2026-08-20',
+          description: 'Party supplies',
+        },
+      ],
+      history
+    );
 
-    expect(result).toHaveLength(2);
+    expect(result.map((a) => a.transaction.id)).toEqual(['grocery', 'dining']);
   });
 });
 
@@ -364,7 +441,7 @@ describe('generateExplanation', () => {
     const explanation = generateExplanation(anomaly);
 
     expect(explanation).toBe(
-      'This Bulk grocery purchase of 500.00 is 8.3× the average Groceries transaction of 60.00'
+      '8.3× your usual Groceries spend of ₦60.00'
     );
   });
 
@@ -384,7 +461,7 @@ describe('generateExplanation', () => {
     const explanation = generateExplanation(anomaly);
 
     expect(explanation).toBe(
-      'This Fancy restaurant of 150.00 is 3.0× the average Dining transaction of 50.00'
+      '3.0× your usual Dining spend of ₦50.00'
     );
   });
 });
@@ -401,7 +478,7 @@ describe('generateTrendExplanation', () => {
     const explanation = generateTrendExplanation(trend);
 
     expect(explanation).toBe(
-      'Groceries spending increased by 33% from 300.00 to 400.00'
+      'Groceries spending increased by 33% from ₦300.00 to ₦400.00'
     );
   });
 
@@ -416,7 +493,7 @@ describe('generateTrendExplanation', () => {
     const explanation = generateTrendExplanation(trend);
 
     expect(explanation).toBe(
-      'Transport spending increased by 25% from 100.00 to 125.00'
+      'Transport spending increased by 25% from ₦100.00 to ₦125.00'
     );
   });
 });

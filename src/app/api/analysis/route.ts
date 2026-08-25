@@ -87,10 +87,11 @@ export async function GET(request: Request) {
       );
     }
 
-    // Query all transactions for anomaly baseline (all user expenses)
+    // Query all transactions for the anomaly baseline. Description and date are
+    // needed to recognise recurring charges, which are never anomalies.
     const { data: allTransactions, error: allError } = await supabase
       .from('transactions')
-      .select('amount, category')
+      .select('amount, category, description, date')
       .eq('type', 'expense');
 
     if (allError) {
@@ -112,6 +113,8 @@ export async function GET(request: Request) {
       (allTransactions ?? []).map((t) => ({
         amount: t.amount,
         category: t.category as Category,
+        description: t.description,
+        date: t.date,
       }))
     );
 

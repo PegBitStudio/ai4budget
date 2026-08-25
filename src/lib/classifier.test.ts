@@ -139,3 +139,57 @@ describe('classifier', () => {
     });
   });
 });
+
+describe('Nigerian merchants', () => {
+  // The classifier shipped knowing Woolworths, Coles, Tesco and Kroger, and of
+  // Nigerian merchants only Shoprite. These are the names that actually appear
+  // on a Lagos bank statement.
+  const cases: [string, string][] = [
+    ['Bolt ride to work', 'Transport'],
+    ['inDrive trip Lekki', 'Transport'],
+    ['Total Energies filling station', 'Transport'],
+    ['Keke to the office', 'Transport'],
+    ['BRT bus fare', 'Transport'],
+
+    ['Shoprite Ikeja City Mall', 'Groceries'],
+    ['Mile 12 market provisions', 'Groceries'],
+    ['Prince Ebeano supermarket', 'Groceries'],
+    ['Market Square weekly shop', 'Groceries'],
+
+    ['EKEDC prepaid electricity', 'Utilities'],
+    ['IKEDC meter top-up', 'Utilities'],
+    ['MTN VTU recharge', 'Utilities'],
+    ['Airtel data bundle', 'Utilities'],
+        ['Spectranet internet', 'Utilities'],
+
+    ['Chowdeck order', 'Dining'],
+    ['Chicken Republic lunch', 'Dining'],
+    ['The Place restaurant', 'Dining'],
+    ['Kilimanjaro dinner', 'Dining'],
+    ['Suya spot', 'Dining'],
+
+    ['HealthPlus pharmacy', 'Health'],
+    ['MedPlus chemist', 'Health'],
+
+    ['Jumia household items', 'Shopping'],
+    ['Konga electronics', 'Shopping'],
+    ['Slot phone accessories', 'Shopping'],
+
+    ['Filmhouse cinema ticket', 'Entertainment'],
+    ['Silverbird Galleria', 'Entertainment'],
+
+    ['Showmax subscription', 'Subscriptions'],
+    ['DSTV monthly payment', 'Subscriptions'],
+    ['GOtv Max renewal', 'Subscriptions'],
+    ['i-Fitness gym membership', 'Subscriptions'],
+
+    ['Rent contribution to landlord', 'Housing'],
+    ['Estate service charge', 'Housing'],
+  ];
+
+  it.each(cases)('files "%s" under %s', async (description, expected) => {
+    const result = await classify(description);
+    expect(result.category).toBe(expected);
+    expect(result.source).toBe('rule');
+  });
+});

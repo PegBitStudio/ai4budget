@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, FormEvent } from 'react';
+import FormattedAnswer from '@/components/qa/FormattedAnswer';
 
 // --- Interfaces ---
 
@@ -35,6 +36,17 @@ const FINANCIAL_ADVICE_KEYWORDS = [
   'portfolio',
 ];
 
+/**
+ * Offered when the chat is still empty. Phrased the way someone would actually
+ * ask, and chosen so each one exercises a different part of the assistant.
+ */
+const STARTER_QUESTIONS = [
+  'Why am I over budget?',
+  'What should I cut first?',
+  'How much did I spend on Dining?',
+  'Can I still hit my savings goal?',
+];
+
 const DISCLAIMER_TEXT =
   '⚠️ This is general information only and does not constitute professional financial advice. Please consult a qualified financial professional before making investment, tax, or debt decisions.';
 
@@ -63,10 +75,12 @@ export default function QAPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  async function handleSubmit(e: FormEvent) {
+  function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    ask(input.trim());
+  }
 
-    const question = input.trim();
+  async function ask(question: string) {
     if (!question || isLoading) return;
 
     // Add user message
@@ -149,7 +163,13 @@ export default function QAPage() {
                   : 'bg-gray-100 text-gray-900 rounded-bl-md'
               }`}
             >
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+              {message.role === 'assistant' ? (
+                <FormattedAnswer text={message.content} />
+              ) : (
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                  {message.content}
+                </p>
+              )}
 
               {/* Financial advice disclaimer */}
               {message.role === 'assistant' &&
@@ -160,19 +180,38 @@ export default function QAPage() {
                   </div>
                 )}
 
-              <p
-                className={`text-xs mt-1 ${
-                  message.role === 'user' ? 'text-blue-200' : 'text-gray-400'
-                }`}
-              >
-                {message.timestamp.toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </p>
+              {message.id !== 'welcome' && (
+                <p
+                  className={`text-xs mt-1 ${
+                    message.role === 'user' ? 'text-blue-200' : 'text-gray-400'
+                  }`}
+                >
+                  {message.timestamp.toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+              )}
             </div>
           </div>
         ))}
+
+        {/* Starter questions — an empty box with "ask me anything" is the
+            hardest thing to face, so offer the questions worth asking. */}
+        {messages.length === 1 && !isLoading && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {STARTER_QUESTIONS.map((question) => (
+              <button
+                key={question}
+                type="button"
+                onClick={() => ask(question)}
+                className="rounded-full border border-violet-200 bg-violet-50 px-3.5 py-2 text-sm font-medium text-violet-800 transition-colors hover:border-violet-300 hover:bg-violet-100"
+              >
+                {question}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Loading indicator */}
         {isLoading && (

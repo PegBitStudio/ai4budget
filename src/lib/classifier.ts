@@ -22,15 +22,15 @@ export interface ClassificationRule {
  * Rules are evaluated in order; first match wins.
  */
 export const DEFAULT_RULES: ClassificationRule[] = [
-  { pattern: /rent|mortgage|landlord|property|housing/i, category: 'Housing', priority: 10 },
-  { pattern: /uber|lyft|bolt|bus|train|metro|fuel|petrol|gas station|parking|taxi/i, category: 'Transport', priority: 10 },
-  { pattern: /woolworths|coles|aldi|lidl|tesco|kroger|safeway|shoprite|spar|grocery|supermarket/i, category: 'Groceries', priority: 10 },
-  { pattern: /electric|water|gas bill|internet|phone bill|airtime|data bundle/i, category: 'Utilities', priority: 10 },
-  { pattern: /netflix|spotify|disney|hbo|youtube premium|apple music|amazon prime|gym membership/i, category: 'Subscriptions', priority: 10 },
-  { pattern: /restaurant|cafe|coffee|starbucks|mcdonald|kfc|pizza|takeout|delivery/i, category: 'Dining', priority: 8 },
-  { pattern: /cinema|movie|concert|theatre|game|steam|playstation|xbox|betting/i, category: 'Entertainment', priority: 8 },
-  { pattern: /pharmacy|doctor|hospital|dentist|physio|medical|clinic|prescription/i, category: 'Health', priority: 8 },
-  { pattern: /amazon|ebay|zara|h&m|target|mall|clothes|shoes|electronics/i, category: 'Shopping', priority: 6 },
+  { pattern: /rent|mortgage|landlord|property|housing|service charge|caretaker/i, category: 'Housing', priority: 10 },
+  { pattern: /uber|lyft|bolt|indrive|rida|okada|keke|danfo|brt|bus|train|metro|fuel|petrol|diesel|filling station|total energies|mobil|oando|conoil|ardova|gas station|parking|taxi|toll/i, category: 'Transport', priority: 10 },
+  { pattern: /shoprite|spar|justrite|market square|ebeano|prince ebeano|addide|mile ?12|mile 12 market|oyingbo|balogun market|foodco|grocer(y|ies)|supermarket|provisions|foodstuff|woolworths|coles|aldi|lidl|tesco|kroger|safeway/i, category: 'Groceries', priority: 10 },
+  { pattern: /ekedc|ikedc|aedc|phed|eedc|bedc|electric|prepaid meter|nepa|water board|waste|lawma|internet|spectranet|smile|starlink|phone bill|airtime|data bundle|recharge|vtu|mtn|glo\b|airtel|9mobile|etisalat/i, category: 'Utilities', priority: 10 },
+  { pattern: /netflix|spotify|showmax|disney|hbo|youtube premium|apple music|amazon prime|audiomack|boomplay|dstv|gotv|startimes|gym membership|i-?fitness|subscription/i, category: 'Subscriptions', priority: 10 },
+  { pattern: /chowdeck|glovo|jumia food|chicken republic|the place|kilimanjaro|mr ?biggs|tantalizers|sweet sensation|domino|cold stone|jollof|suya|buka|restaurant|cafe|coffee|starbucks|mcdonald|kfc|pizza|takeout|eatery|lunch|dinner|delivery/i, category: 'Dining', priority: 8 },
+  { pattern: /filmhouse|silverbird|genesis cinema|ebonylife|cinema|movie|concert|theatre|game|steam|playstation|xbox|betting|bet9ja|sportybet|nairabet|club/i, category: 'Entertainment', priority: 8 },
+  { pattern: /healthplus|medplus|alpha pharmacy|pharmacy|chemist|doctor|hospital|clinic|dentist|physio|medical|prescription|hmo|lab test|diagnostics/i, category: 'Health', priority: 8 },
+  { pattern: /jumia|konga|slot\b|pointek|jiji|temu|shein|amazon|ebay|zara|h&m|target|mall|boutique|clothes|shoes|electronics|gadget/i, category: 'Shopping', priority: 6 },
 ];
 
 /**

@@ -356,9 +356,13 @@ export default function SavingsPage() {
           </h2>
 
           <div className="bg-gradient-to-br from-blue-50 to-green-50 border border-blue-100 rounded-lg p-5 shadow-sm">
-            {/* Main recommendation text */}
+            {/* Main recommendation text. When the alternatives are listed
+                below, only the opening sentence goes here — the full
+                explanation spells them out again word for word. */}
             <p className="text-gray-800 leading-relaxed">
-              {recommendation.explanation}
+              {recommendation.isExcessive && recommendation.alternatives
+                ? recommendation.explanation.split(' Consider:')[0]
+                : recommendation.explanation}
             </p>
 
             {/* Monthly contribution highlight */}

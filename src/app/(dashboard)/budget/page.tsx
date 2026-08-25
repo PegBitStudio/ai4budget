@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import BudgetProgress from '@/components/budget/BudgetProgress';
 
 // --- Types ---
 
@@ -37,6 +38,36 @@ function formatCurrency(amount: number): string {
     .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   const sign = amount < 0 ? '-' : '';
   return `${sign}₦${formatted}`;
+}
+
+/**
+ * Renders a period as "1 – 31 August 2026", collapsing the repeated month and
+ * year rather than printing two raw ISO dates at the user.
+ */
+function formatPeriod(start: string, end: string): string {
+  const from = parseLocalDate(start);
+  const to = parseLocalDate(end);
+
+  const sameMonth =
+    from.getFullYear() === to.getFullYear() &&
+    from.getMonth() === to.getMonth();
+
+  const monthYear = (d: Date) =>
+    d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+  if (sameMonth) {
+    return `${from.getDate()} – ${to.getDate()} ${monthYear(to)}`;
+  }
+
+  const dayMonth = (d: Date) =>
+    d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+
+  return `${dayMonth(from)} – ${dayMonth(to)} ${to.getFullYear()}`;
+}
+
+function parseLocalDate(value: string): Date {
+  const [y, m, d] = value.split('-').map(Number);
+  return new Date(y, m - 1, d);
 }
 
 function getStatusColor(status: 'under' | 'on-track' | 'over'): string {
@@ -353,7 +384,7 @@ export default function BudgetPage() {
                   {budget.period_type === 'monthly' ? 'Monthly' : 'Weekly'} Budget
                 </h2>
                 <p className="text-sm text-gray-500">
-                  {budget.period_start} to {budget.period_end}
+                  {formatPeriod(budget.period_start, budget.period_end)}
                 </p>
               </div>
               <div className="text-right">
@@ -437,102 +468,16 @@ export default function BudgetPage() {
               ))}
             </div>
           </div>
-
-          {/* Planned vs Actual Comparison */}
+          {/* Planned vs Actual */}
           {comparison && comparison.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
+              <h2 className="mb-1 text-lg font-semibold text-gray-900">
                 Planned vs Actual
               </h2>
-
-              {/* Mobile card layout */}
-              <div className="block sm:hidden space-y-3">
-                {comparison.map((item) => (
-                  <div
-                    key={item.category}
-                    className={`p-3 rounded-lg border ${getStatusColor(item.status)}`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium">{item.category}</span>
-                      <span className="text-xs font-semibold px-2 py-1 rounded-full border">
-                        {getStatusLabel(item.status)}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-sm">
-                      <div>
-                        <p className="text-gray-500 text-xs">Planned</p>
-                        <p className="font-medium">
-                          {formatCurrency(item.budgeted)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500 text-xs">Actual</p>
-                        <p className="font-medium">
-                          {formatCurrency(item.actual)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500 text-xs">Variance</p>
-                        <p className="font-medium">
-                          {item.variance >= 0 ? '+' : ''}
-                          {formatCurrency(item.variance)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Desktop table layout */}
-              <div className="hidden sm:block overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="pb-3 text-sm font-medium text-gray-500">
-                        Category
-                      </th>
-                      <th className="pb-3 text-sm font-medium text-gray-500 text-right">
-                        Planned
-                      </th>
-                      <th className="pb-3 text-sm font-medium text-gray-500 text-right">
-                        Actual
-                      </th>
-                      <th className="pb-3 text-sm font-medium text-gray-500 text-right">
-                        Variance
-                      </th>
-                      <th className="pb-3 text-sm font-medium text-gray-500 text-right">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {comparison.map((item) => (
-                      <tr key={item.category}>
-                        <td className="py-3 font-medium text-gray-900">
-                          {item.category}
-                        </td>
-                        <td className="py-3 text-right text-gray-700">
-                          {formatCurrency(item.budgeted)}
-                        </td>
-                        <td className="py-3 text-right text-gray-700">
-                          {formatCurrency(item.actual)}
-                        </td>
-                        <td className="py-3 text-right text-gray-700">
-                          {item.variance >= 0 ? '+' : ''}
-                          {formatCurrency(item.variance)}
-                        </td>
-                        <td className="py-3 text-right">
-                          <span
-                            className={`inline-block text-xs font-semibold px-2 py-1 rounded-full border ${getStatusColor(item.status)}`}
-                          >
-                            {getStatusLabel(item.status)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <p className="mb-4 text-sm text-gray-500">
+                Sorted by how far each category is from its plan.
+              </p>
+              <BudgetProgress rows={comparison} />
             </div>
           )}
         </div>

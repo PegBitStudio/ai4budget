@@ -1,0 +1,122 @@
+"use client";
+
+import { formatCurrency } from "@/utils/formatters";
+
+export interface ComparisonRow {
+  category: string;
+  budgeted: number;
+  actual: number;
+  variance: number;
+  status: "under" | "on-track" | "over";
+}
+
+/**
+ * Planned versus actual, as a bar per category rather than a table of numbers.
+ *
+ * The worst overspend leads, because that is the thing the user can act on.
+ * A plain table gave every row the same visual weight, which meant the one
+ * category 1,400% over its plan looked exactly like the one 4% under.
+ */
+export default function BudgetProgress({ rows }: { rows: ComparisonRow[] }) {
+  // Worst first: furthest over the line, down to comfortably under.
+  const sorted = [...rows].sort((a, b) => share(b) - share(a));
+
+  const totalPlanned = rows.reduce((sum, r) => sum + r.budgeted, 0);
+  const totalActual = rows.reduce((sum, r) => sum + r.actual, 0);
+  const overCount = rows.filter((r) => r.status === "over").length;
+
+  return (
+    <div>
+      <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+        <p className="text-sm text-slate-600">
+          {overCount === 0
+            ? "Every category is inside its plan."
+            : `${overCount} of ${rows.length} categories are over plan.`}
+        </p>
+        <p className="text-sm text-slate-600 tabular-nums">
+          <span className="font-semibold text-slate-900">
+            {formatCurrency(totalActual)}
+          </span>{" "}
+          spent of {formatCurrency(totalPlanned)} planned
+        </p>
+      </div>
+
+      <ul className="space-y-4">
+        {sorted.map((row) => (
+          <CategoryBar key={row.category} row={row} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function CategoryBar({ row }: { row: ComparisonRow }) {
+  const pct = share(row);
+  const isOver = row.status === "over";
+
+  // Past 100% the bar fills completely and the overspill shows as a darker
+  // band, so "how far over" stays readable without the bar leaving the row.
+  const filled = Math.min(pct, 100);
+  const spill = pct > 100 ? Math.min(((pct - 100) / pct) * 100, 100) : 0;
+
+  const tone = isOver
+    ? { bar: "bg-rose-500", spill: "bg-rose-700", text: "text-rose-700" }
+    : row.status === "on-track"
+      ? { bar: "bg-amber-500", spill: "", text: "text-amber-700" }
+      : { bar: "bg-emerald-500", spill: "", text: "text-emerald-700" };
+
+  return (
+    <li>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
+        <p className="text-sm font-semibold text-slate-900">{row.category}</p>
+        <p className="text-sm tabular-nums text-slate-600">
+          <span className="font-semibold text-slate-900">
+            {formatCurrency(row.actual)}
+          </span>
+          <span className="text-slate-400"> / </span>
+          {formatCurrency(row.budgeted)}
+        </p>
+      </div>
+
+      <div className="mt-1.5 flex h-2.5 overflow-hidden rounded-full bg-slate-100">
+        <div
+          className={`h-full ${tone.bar}`}
+          style={{ width: `${filled}%` }}
+          role="progressbar"
+          aria-valuenow={Math.round(pct)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`${row.category}: ${Math.round(pct)}% of plan used`}
+        />
+        {spill > 0 && (
+          <div
+            className={`h-full ${tone.spill}`}
+            style={{ width: `${spill}%`, marginLeft: `-${spill}%` }}
+          />
+        )}
+      </div>
+
+      <p className={`mt-1 text-xs font-medium tabular-nums ${tone.text}`}>
+        {Math.round(pct)}% used
+        <span className="text-slate-500">
+          {" · "}
+          {isOver
+            ? `${formatCurrency(Math.abs(row.variance))} over`
+            : `${formatCurrency(Math.abs(row.variance))} left`}
+        </span>
+      </p>
+    </li>
+  );
+}
+
+/**
+ * Percentage of the allocation used. Spending against a category with no
+ * allocation is capped rather than infinite, so it sorts to the top and still
+ * renders a finite bar width.
+ */
+const UNBUDGETED_SHARE = 9999;
+
+function share(row: ComparisonRow): number {
+  if (row.budgeted <= 0) return row.actual > 0 ? UNBUDGETED_SHARE : 0;
+  return (row.actual / row.budgeted) * 100;
+}

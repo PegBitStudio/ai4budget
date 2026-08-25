@@ -190,7 +190,9 @@ function buildExplanation(
     return `To work toward your ${targetFormatted} goal, save ${contributionFormatted} per month (10% of your discretionary income). Automate this transfer to build the habit.`;
   }
 
-  // Excessive case
+  // Excessive case. The alternatives are returned as structured data too, so
+  // callers that render them separately can use `headline` and avoid printing
+  // the same two options twice.
   const percentage = discretionaryIncome > 0
     ? roundTo2((monthlyContribution / discretionaryIncome) * 100)
     : 0;

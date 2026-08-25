@@ -242,3 +242,62 @@ describe('qaEngine', () => {
     });
   });
 });
+
+describe('advice-shaped questions', () => {
+  // "What should I cut first?" contains no keyword from the list, and the old
+  // gate refused it outright — including the app's own suggested questions.
+  const adviceQuestions = [
+    'What should I cut first?',
+    'Where is all my money going?',
+    'Can I afford a new phone this month?',
+    'Am I on track?',
+    'How much do I have left?',
+  ];
+
+  it.each(adviceQuestions)('sends "%s" to the assistant rather than refusing', async (question) => {
+    const llmClient = {
+      answerQuestion: vi.fn().mockResolvedValue('Cut Dining first.'),
+    };
+
+    const result = await answerQuestion({
+      question,
+      transactions: sampleTransactions,
+      period: 'August 2026',
+      llmClient,
+    });
+
+    expect(result.source).not.toBe('error');
+    expect(llmClient.answerQuestion).toHaveBeenCalled();
+  });
+
+  it('still refuses an off-topic question when no assistant is available', async () => {
+    const result = await answerQuestion({
+      question: "What's the weather today?",
+      transactions: sampleTransactions,
+      period: 'August 2026',
+    });
+
+    expect(result.source).toBe('error');
+    expect(result.answer).toContain('only answer questions about your financial data');
+  });
+
+  it('leaves an off-topic question for the assistant to decline', async () => {
+    // The model's system prompt instructs it to decline; that is a better
+    // judge of topic than a keyword list.
+    const llmClient = {
+      answerQuestion: vi
+        .fn()
+        .mockResolvedValue('I can only help with questions about your finances.'),
+    };
+
+    const result = await answerQuestion({
+      question: 'Who won the game last night?',
+      transactions: sampleTransactions,
+      period: 'August 2026',
+      llmClient,
+    });
+
+    expect(llmClient.answerQuestion).toHaveBeenCalled();
+    expect(result.answer).toContain('only help with questions about your finances');
+  });
+});
