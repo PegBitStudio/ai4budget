@@ -31,7 +31,9 @@ export default function BudgetProgress({ rows }: { rows: ComparisonRow[] }) {
         <p className="text-sm text-slate-600">
           {overCount === 0
             ? "Every category is inside its plan."
-            : `${overCount} of ${rows.length} categories are over plan.`}
+            : overCount === 1
+              ? `1 of ${rows.length} categories is over plan.`
+              : `${overCount} of ${rows.length} categories are over plan.`}
         </p>
         <p className="text-sm text-slate-600 tabular-nums">
           <span className="font-semibold text-slate-900">
@@ -53,6 +55,31 @@ export default function BudgetProgress({ rows }: { rows: ComparisonRow[] }) {
 function CategoryBar({ row }: { row: ComparisonRow }) {
   const pct = share(row);
   const isOver = row.status === "over";
+  const unplanned = row.budgeted <= 0 && row.actual > 0;
+
+  // Spending with no allocation behind it has no percentage worth showing —
+  // "9999% used" is noise. Name the situation instead.
+  if (unplanned) {
+    return (
+      <li>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
+          <p className="text-sm font-semibold text-slate-900">{row.category}</p>
+          <p className="text-sm font-semibold tabular-nums text-slate-900">
+            {formatCurrency(row.actual)}
+          </p>
+        </div>
+        <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-slate-100">
+          <div className="h-full w-full bg-slate-400" />
+        </div>
+        <p className="mt-1 text-xs font-medium text-slate-600">
+          Not in your plan
+          <span className="text-slate-500">
+            {" · "}set an amount to start tracking it
+          </span>
+        </p>
+      </li>
+    );
+  }
 
   // Past 100% the bar fills completely and the overspill shows as a darker
   // band, so "how far over" stays readable without the bar leaving the row.

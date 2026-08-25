@@ -47,7 +47,7 @@ export function getComparison(
   budgetAllocations: CategoryAllocation[],
   actualSpending: { category: Category; total: number }[]
 ): BudgetComparison[] {
-  return budgetAllocations.map((allocation) => {
+  const planned: BudgetComparison[] = budgetAllocations.map((allocation) => {
     const spending = actualSpending.find(
       (s) => s.category === allocation.category
     );
@@ -72,6 +72,21 @@ export function getComparison(
       status,
     };
   });
+
+  // Spending in a category the budget never planned for. Without this it
+  // vanished from planned-versus-actual entirely — real money, invisible.
+  const plannedCategories = new Set(budgetAllocations.map((a) => a.category));
+  const unplanned: BudgetComparison[] = actualSpending
+    .filter((s) => s.total > 0 && !plannedCategories.has(s.category))
+    .map((s) => ({
+      category: s.category,
+      budgeted: 0,
+      actual: s.total,
+      variance: s.total,
+      status: 'over' as const,
+    }));
+
+  return [...planned, ...unplanned];
 }
 
 /** A transaction must exceed this multiple of the category median to be unusual. */

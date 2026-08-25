@@ -14,7 +14,16 @@ export interface SummaryInput {
 }
 
 export interface FinancialContext {
-  transactions: { category: string; amount: number; date: string }[];
+  /**
+   * `type` matters: without it the assistant read a salary credit as another
+   * line of spending and blamed the user's income for their overspending.
+   */
+  transactions: {
+    category: string;
+    amount: number;
+    date: string;
+    type: 'income' | 'expense';
+  }[];
   budget?: { category: string; budgeted: number; actual: number }[];
   period: string;
 }
@@ -244,9 +253,24 @@ export class LLMClient implements ILLMClient {
   private buildQAPrompt(question: string, context: FinancialContext): string {
     let prompt = `User's financial context for period: ${context.period}\n\n`;
 
-    if (context.transactions.length > 0) {
-      prompt += 'Recent transactions:\n';
-      for (const t of context.transactions) {
+    // Income and expenses are listed separately and labelled. Presented as one
+    // undifferentiated list, a salary credit reads as a very large expense.
+    const income = context.transactions.filter((t) => t.type === 'income');
+    const expenses = context.transactions.filter((t) => t.type !== 'income');
+
+    if (income.length > 0) {
+      const totalIncome = income.reduce((sum, t) => sum + t.amount, 0);
+      prompt += `Money received (income, NOT spending) — total ${formatCurrency(totalIncome)}:\n`;
+      for (const t of income) {
+        prompt += `  - ${t.date}: ${formatCurrency(t.amount)}\n`;
+      }
+      prompt += '\n';
+    }
+
+    if (expenses.length > 0) {
+      const totalSpent = expenses.reduce((sum, t) => sum + t.amount, 0);
+      prompt += `Money spent (expenses) — total ${formatCurrency(totalSpent)}:\n`;
+      for (const t of expenses) {
         prompt += `  - ${t.date}: ${t.category} - ${formatCurrency(t.amount)}\n`;
       }
       prompt += '\n';

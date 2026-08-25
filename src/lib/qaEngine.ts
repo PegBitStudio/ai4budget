@@ -68,13 +68,16 @@ export function isFinancialQuestion(question: string): boolean {
  * Keeps context small to minimize token usage.
  */
 export function buildContext(params: QAContextParams): FinancialContext {
-  // Limit transactions to 50 most recent for context size management
+  // Limit transactions to 50 most recent for context size management.
+  // `type` must survive: without it the assistant cannot tell a salary credit
+  // from a large purchase.
   const limitedTransactions = params.transactions
     .slice(-50)
     .map((t) => ({
       category: t.category,
       amount: t.amount,
       date: t.date,
+      type: t.type === 'income' ? ('income' as const) : ('expense' as const),
     }));
 
   return {

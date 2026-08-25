@@ -132,10 +132,11 @@ export default function TransactionsPage() {
 
       {/* Action bar */}
       <div className="flex items-center justify-between mb-4">
+        {/* The empty state below already says there is nothing here. */}
         <p className="text-sm text-gray-500">
           {transactions.length > 0
-            ? `${transactions.length} recent transactions`
-            : "No transactions yet"}
+            ? `${transactions.length} recent transaction${transactions.length === 1 ? "" : "s"}`
+            : ""}
         </p>
         <button
           onClick={() => setShowForm(!showForm)}

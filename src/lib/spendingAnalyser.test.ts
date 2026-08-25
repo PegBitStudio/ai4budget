@@ -497,3 +497,61 @@ describe('generateTrendExplanation', () => {
     );
   });
 });
+
+describe('getComparison with unplanned spending', () => {
+  it('surfaces a category that was spent in but never budgeted', () => {
+    // Proportional allocation gives no line to a category with no history, so
+    // spending there used to disappear from planned-versus-actual entirely.
+    const allocations: CategoryAllocation[] = [
+      { category: 'Housing', amount: 150000, is_fixed: false },
+    ];
+    const actual = [
+      { category: 'Housing' as Category, total: 150000 },
+      { category: 'Entertainment' as Category, total: 6500 },
+    ];
+
+    const result = getComparison(allocations, actual);
+
+    const entertainment = result.find((r) => r.category === 'Entertainment');
+    expect(entertainment).toBeDefined();
+    expect(entertainment?.budgeted).toBe(0);
+    expect(entertainment?.actual).toBe(6500);
+    expect(entertainment?.status).toBe('over');
+  });
+
+  it('keeps planned categories ahead of unplanned ones', () => {
+    const allocations: CategoryAllocation[] = [
+      { category: 'Housing', amount: 150000, is_fixed: false },
+    ];
+    const actual = [
+      { category: 'Entertainment' as Category, total: 6500 },
+      { category: 'Housing' as Category, total: 100000 },
+    ];
+
+    expect(getComparison(allocations, actual).map((r) => r.category)).toEqual([
+      'Housing',
+      'Entertainment',
+    ]);
+  });
+
+  it('ignores an unbudgeted category with no spending', () => {
+    const result = getComparison(
+      [{ category: 'Housing', amount: 150000, is_fixed: false }],
+      [
+        { category: 'Housing' as Category, total: 100000 },
+        { category: 'Shopping' as Category, total: 0 },
+      ]
+    );
+
+    expect(result.map((r) => r.category)).toEqual(['Housing']);
+  });
+
+  it('does not duplicate a category that is both planned and spent in', () => {
+    const result = getComparison(
+      [{ category: 'Housing', amount: 150000, is_fixed: false }],
+      [{ category: 'Housing' as Category, total: 100000 }]
+    );
+
+    expect(result).toHaveLength(1);
+  });
+});

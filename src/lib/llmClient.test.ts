@@ -290,8 +290,8 @@ describe('LLMClient', () => {
   describe('answerQuestion', () => {
     const sampleContext: FinancialContext = {
       transactions: [
-        { category: 'Groceries', amount: 150, date: '2024-01-15' },
-        { category: 'Transport', amount: 50, date: '2024-01-16' },
+        { category: 'Groceries', amount: 150, date: '2024-01-15', type: 'expense' as const },
+        { category: 'Transport', amount: 50, date: '2024-01-16', type: 'expense' as const },
       ],
       budget: [
         { category: 'Groceries', budgeted: 400, actual: 150 },
@@ -385,7 +385,7 @@ describe('LLMClient', () => {
       const client = new LLMClient(mockClient);
 
       const contextNoBudget: FinancialContext = {
-        transactions: [{ category: 'Groceries', amount: 100, date: '2024-01-10' }],
+        transactions: [{ category: 'Groceries', amount: 100, date: '2024-01-10', type: 'expense' as const }],
         period: 'January 2024',
       };
 
@@ -506,5 +506,85 @@ describe('LLMClient', () => {
         })
       );
     });
+  });
+});
+
+describe('QA prompt separates income from spending', () => {
+  let originalEnv: string | undefined;
+
+  beforeEach(() => {
+    originalEnv = process.env.OPENAI_API_KEY;
+    process.env.OPENAI_API_KEY = 'test-api-key';
+  });
+
+  afterEach(() => {
+    if (originalEnv === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = originalEnv;
+  });
+
+  it('labels a salary credit as income, not spending', async () => {
+    const mockClient = createMockOpenAI('Answer');
+    const client = new LLMClient(mockClient);
+
+    await client.answerQuestion('Why am I over budget?', {
+      period: 'August 2026',
+      transactions: [
+        { category: 'Other', amount: 450000, date: '2026-08-25', type: 'income' },
+        { category: 'Housing', amount: 150000, date: '2026-08-01', type: 'expense' },
+      ],
+    });
+
+    const userMessage =
+      mockClient.chat.completions.create.mock.calls[0][0].messages[1].content;
+
+    const incomeSection = userMessage.slice(
+      userMessage.indexOf('Money received'),
+      userMessage.indexOf('Money spent')
+    );
+    const spendSection = userMessage.slice(userMessage.indexOf('Money spent'));
+
+    expect(incomeSection).toContain('₦450,000.00');
+    expect(incomeSection).not.toContain('₦150,000.00');
+    expect(spendSection).toContain('₦150,000.00');
+    expect(spendSection).not.toContain('₦450,000.00');
+  });
+
+  it('states the two totals separately', async () => {
+    const mockClient = createMockOpenAI('Answer');
+    const client = new LLMClient(mockClient);
+
+    await client.answerQuestion('How am I doing?', {
+      period: 'August 2026',
+      transactions: [
+        { category: 'Other', amount: 450000, date: '2026-08-25', type: 'income' },
+        { category: 'Housing', amount: 150000, date: '2026-08-01', type: 'expense' },
+        { category: 'Dining', amount: 7800, date: '2026-08-04', type: 'expense' },
+      ],
+    });
+
+    const userMessage =
+      mockClient.chat.completions.create.mock.calls[0][0].messages[1].content;
+
+    expect(userMessage).toContain('income, NOT spending');
+    expect(userMessage).toContain('total ₦450,000.00');
+    expect(userMessage).toContain('total ₦157,800.00');
+  });
+
+  it('omits the income section entirely when there is none', async () => {
+    const mockClient = createMockOpenAI('Answer');
+    const client = new LLMClient(mockClient);
+
+    await client.answerQuestion('What did I spend?', {
+      period: 'August 2026',
+      transactions: [
+        { category: 'Dining', amount: 7800, date: '2026-08-04', type: 'expense' },
+      ],
+    });
+
+    const userMessage =
+      mockClient.chat.completions.create.mock.calls[0][0].messages[1].content;
+
+    expect(userMessage).not.toContain('Money received');
+    expect(userMessage).toContain('Money spent');
   });
 });

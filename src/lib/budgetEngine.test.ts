@@ -320,3 +320,58 @@ describe('modifyAllocation', () => {
     expect(transport?.amount).toBeCloseTo(300, 1); // Absorbed the 100
   });
 });
+
+describe('generateBudget with nothing recorded yet', () => {
+  // A brand-new user clicking "Generate budget" was told their commitments
+  // exceeded their income, with a shortfall of ₦0.00. They had neither.
+  it('reports no income rather than a phantom shortfall', () => {
+    const result = generateBudget({
+      totalIncome: 0,
+      commitments: [],
+      savingsContribution: 0,
+      periodType: 'monthly',
+    });
+
+    expect(result.success).toBe(false);
+    if (result.success) return;
+
+    expect(result.reason).toBe('no-income');
+    expect(result.shortfall).toBe(0);
+    expect(result.error).toMatch(/add your income/i);
+    expect(result.error).not.toMatch(/exceed/i);
+  });
+
+  it('still reports a real shortfall when income exists but is fully committed', () => {
+    const result = generateBudget({
+      totalIncome: 100000,
+      commitments: [
+        { amount: 150000, frequency: 'monthly' },
+      ],
+      savingsContribution: 0,
+      periodType: 'monthly',
+    });
+
+    expect(result.success).toBe(false);
+    if (result.success) return;
+
+    expect(result.reason).toBe('shortfall');
+    expect(result.shortfall).toBe(50000);
+  });
+
+  it('treats income entirely consumed by commitments as a shortfall, not no-income', () => {
+    const result = generateBudget({
+      totalIncome: 100000,
+      commitments: [
+        { amount: 100000, frequency: 'monthly' },
+      ],
+      savingsContribution: 0,
+      periodType: 'monthly',
+    });
+
+    expect(result.success).toBe(false);
+    if (result.success) return;
+
+    expect(result.reason).toBe('shortfall');
+    expect(result.shortfall).toBe(0);
+  });
+});

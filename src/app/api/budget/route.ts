@@ -105,12 +105,27 @@ export async function POST(request: NextRequest) {
     // 4. Query historical spending (group expenses by category for the most recent complete period)
     const previousPeriod = getPreviousPeriod(currentPeriod.start, periodType);
 
-    const { data: historicalTransactions } = await supabase
+    let { data: historicalTransactions } = await supabase
       .from('transactions')
       .select('category, amount')
       .eq('type', 'expense')
       .gte('date', previousPeriod.start)
       .lte('date', previousPeriod.end);
+
+    // A first-time user has no previous period, and the flat heuristic that
+    // fills the gap allocates rent the same share as pharmacy visits — so the
+    // very first budget they are shown is wrong about their largest cost.
+    // Anything already recorded this period is better signal than nothing.
+    if (!historicalTransactions || historicalTransactions.length === 0) {
+      const { data: currentTransactions } = await supabase
+        .from('transactions')
+        .select('category, amount')
+        .eq('type', 'expense')
+        .gte('date', currentPeriod.start)
+        .lte('date', currentPeriod.end);
+
+      historicalTransactions = currentTransactions;
+    }
 
     // Group historical spending by category
     let historicalSpending: { category: string; amount: number }[] | undefined;
@@ -140,10 +155,14 @@ export async function POST(request: NextRequest) {
         | undefined,
     });
 
-    // 6. If error (shortfall): return 422
+    // 6. If the budget could not be built, say which situation stopped it
     if (!budgetResult.success) {
       return NextResponse.json(
-        { error: budgetResult.error, shortfall: budgetResult.shortfall },
+        {
+          error: budgetResult.error,
+          shortfall: budgetResult.shortfall,
+          reason: budgetResult.reason,
+        },
         { status: 422 }
       );
     }

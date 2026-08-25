@@ -100,12 +100,26 @@ describe('qaEngine', () => {
       expect(context.period).toBe('January 2024');
       expect(context.budget).toEqual(sampleBudget);
       expect(context.transactions).toHaveLength(5);
-      // Transactions should only include category, amount, date (not type)
+      // `type` must reach the assistant. Dropping it made a salary credit
+      // indistinguishable from a large purchase, and the assistant duly
+      // blamed the user's income for their overspending.
       expect(context.transactions[0]).toEqual({
         category: 'Groceries',
         amount: 50,
         date: '2024-01-15',
+        type: 'expense',
       });
+    });
+
+    it('carries income through as income', () => {
+      const context = buildContext({
+        transactions: [
+          { amount: 450000, category: 'Other', date: '2024-01-25', type: 'income' },
+        ],
+        period: 'January 2024',
+      });
+
+      expect(context.transactions[0].type).toBe('income');
     });
 
     it('limits transactions to 50', () => {

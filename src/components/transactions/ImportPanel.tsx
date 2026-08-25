@@ -79,12 +79,17 @@ export default function ImportPanel({
     }
 
     setRows(
-      parsed.map((row, i) => ({
-        ...row,
-        key: `${row.date}-${row.amount}-${i}`,
-        // Anything that looks already-imported starts unticked.
-        include: !row.duplicate,
-      }))
+      parsed
+        // Newest first, matching the transaction list. Parsed rows arrive in
+        // whichever order the batches resolved, which reads as scrambled.
+        .slice()
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .map((row, i) => ({
+          ...row,
+          key: `${row.date}-${row.amount}-${i}`,
+          // Anything that looks already-imported starts unticked.
+          include: !row.duplicate,
+        }))
     );
     setStage("review");
   }

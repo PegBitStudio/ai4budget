@@ -102,6 +102,7 @@ export default function BudgetPage() {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shortfall, setShortfall] = useState<number | null>(null);
+  const [errorReason, setErrorReason] = useState<'no-income' | 'shortfall' | null>(null);
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState('');
   const [saving, setSaving] = useState(false);
@@ -111,6 +112,7 @@ export default function BudgetPage() {
     setLoading(true);
     setError(null);
     setShortfall(null);
+    setErrorReason(null);
 
     try {
       const res = await fetch(`/api/budget?period_type=${periodType}`);
@@ -200,6 +202,7 @@ export default function BudgetPage() {
     setGenerating(true);
     setError(null);
     setShortfall(null);
+    setErrorReason(null);
 
     try {
       const res = await fetch('/api/budget', {
@@ -211,6 +214,7 @@ export default function BudgetPage() {
       if (res.status === 422) {
         const data = await res.json();
         setShortfall(data.shortfall);
+        setErrorReason(data.reason ?? 'shortfall');
         setError(data.error);
         setGenerating(false);
         return;
@@ -320,18 +324,37 @@ export default function BudgetPage() {
         </button>
       </div>
 
-      {/* Error / Shortfall Display */}
-      {error && (
+      {/* Nothing to budget yet — a first-run state, not a failure */}
+      {error && errorReason === 'no-income' && (
         <div
-          className={`mb-6 p-4 rounded-lg border ${
-            shortfall !== null
-              ? 'bg-red-50 border-red-200 text-red-800'
-              : 'bg-red-50 border-red-200 text-red-700'
-          }`}
+          className="mb-6 rounded-lg border border-violet-200 bg-violet-50 p-5"
+          role="status"
+        >
+          <p className="font-semibold text-violet-900">
+            Add your income first
+          </p>
+          <p className="mt-1 text-sm leading-6 text-violet-800">
+            A budget divides up what you earn, so there is nothing to work with
+            yet. Record your salary or any money coming in, and this page will
+            build a plan around it.
+          </p>
+          <a
+            href="/transactions"
+            className="mt-4 inline-flex min-h-[44px] items-center rounded-xl bg-violet-700 px-5 text-sm font-semibold text-white transition-colors hover:bg-violet-800"
+          >
+            Add your income
+          </a>
+        </div>
+      )}
+
+      {/* A real shortfall: income exists but is already committed */}
+      {error && errorReason !== 'no-income' && (
+        <div
+          className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800"
           role="alert"
         >
           <p className="font-medium">{error}</p>
-          {shortfall !== null && (
+          {shortfall !== null && shortfall > 0 && (
             <p className="mt-1 text-sm">
               Shortfall amount: <strong>{formatCurrency(shortfall)}</strong>
             </p>
@@ -339,8 +362,8 @@ export default function BudgetPage() {
         </div>
       )}
 
-      {/* No Budget State */}
-      {!budget && !error && (
+      {/* No Budget State — stays available so a failed attempt can be retried */}
+      {!budget && errorReason !== 'no-income' && (
         <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
           <svg
             className="mx-auto h-12 w-12 text-gray-400"

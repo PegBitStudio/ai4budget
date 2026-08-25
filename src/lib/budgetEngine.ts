@@ -31,6 +31,11 @@ export interface BudgetError {
   success: false;
   error: string;
   shortfall: number;
+  /**
+   * Which situation stopped the budget being built. 'no-income' means nothing
+   * has been recorded yet — a first-run state, not a money problem.
+   */
+  reason: 'no-income' | 'shortfall';
 }
 
 // --- Normalization Functions ---
@@ -96,12 +101,25 @@ export function generateBudget(
 
   const availableIncome = totalIncome - totalCommitments - savingsContribution;
 
+  // No income recorded is a first-run state, not a shortfall. Reporting it as
+  // "commitments exceed income" told brand-new users their nonexistent
+  // commitments had overrun their nonexistent salary, with a ₦0.00 shortfall.
+  if (totalIncome <= 0) {
+    return {
+      success: false,
+      error: 'Add your income before building a budget — there is nothing to divide up yet.',
+      shortfall: 0,
+      reason: 'no-income',
+    };
+  }
+
   // Shortfall check
   if (availableIncome <= 0) {
     return {
       success: false,
       error: 'Financial commitments and savings contributions exceed total income.',
       shortfall: Math.abs(availableIncome),
+      reason: 'shortfall',
     };
   }
 
