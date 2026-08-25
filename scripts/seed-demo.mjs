@@ -15,8 +15,18 @@ for (const line of fs.readFileSync(envPath, 'utf8').split(/\r?\n/)) {
 
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const DEMO_EMAIL = process.env.DEMO_EMAIL || 'demo@kobo.app';
-const DEMO_PASSWORD = process.env.DEMO_PASSWORD || 'DemoBudget2026!';
+// Read from the environment rather than defaulted here: a password committed
+// to the repository stays in its history for good, and this one also unlocks
+// the account the judges are handed.
+const DEMO_EMAIL = process.env.DEMO_EMAIL;
+const DEMO_PASSWORD = process.env.DEMO_PASSWORD;
+
+if (!DEMO_EMAIL || !DEMO_PASSWORD) {
+  console.error(
+    'Set DEMO_EMAIL and DEMO_PASSWORD in .env.local before seeding. See .env.local.example.'
+  );
+  process.exit(1);
+}
 
 const h = { apikey: SERVICE, Authorization: `Bearer ${SERVICE}`, 'Content-Type': 'application/json' };
 
@@ -218,7 +228,7 @@ async function main() {
     ]),
   });
   console.log('Inserted savings goal + commitments');
-  console.log(`\nDemo login -> ${DEMO_EMAIL} / ${DEMO_PASSWORD}`);
+  console.log(`\nDemo account ready: ${DEMO_EMAIL}`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
