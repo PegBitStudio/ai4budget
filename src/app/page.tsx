@@ -28,7 +28,7 @@ export default function LandingPage() {
             <span className="text-sm font-bold text-white">✦</span>
           </div>
           <span className="text-base font-semibold tracking-tight text-slate-900">
-            Budget AI
+            KoboPilot
           </span>
         </div>
         <Link
@@ -51,7 +51,7 @@ export default function LandingPage() {
             <span className="text-violet-700">So where did it all go?</span>
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-600">
-            Budget AI reads your spending, sorts it, spots what is quietly
+            KoboPilot reads your spending, sorts it, spots what is quietly
             growing, and tells you in plain language what to do about it.
           </p>
 

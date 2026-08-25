@@ -13,12 +13,12 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "AI Budgeting Assistant",
-  description: "AI-powered personal budgeting assistant",
+  title: "KoboPilot — AI Budgeting Assistant",
+  description: "Your AI co-pilot for spending, budgeting and saving in Naira",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Budget AI",
+    title: "KoboPilot",
   },
   icons: {
     apple: "/apple-touch-icon.png",

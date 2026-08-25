@@ -15,7 +15,7 @@ const PAGE_TITLES: Record<string, string> = {
 
 export default function TopHeader() {
   const pathname = usePathname();
-  const title = PAGE_TITLES[pathname] ?? "AI Budget";
+  const title = PAGE_TITLES[pathname] ?? "KoboPilot";
 
   return (
     <header className="sticky top-0 z-30 border-b border-white/70 bg-[#f5f7fb]/90 backdrop-blur-xl">

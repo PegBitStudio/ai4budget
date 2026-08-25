@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "AI Budgeting Assistant",
-    short_name: "Budget AI",
-    description: "AI-powered personal budgeting assistant",
+    name: "KoboPilot — AI Budgeting Assistant",
+    short_name: "KoboPilot",
+    description: "Your AI co-pilot for spending, budgeting and saving in Naira",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",
