@@ -27,6 +27,7 @@ export interface ILLMClient {
 // --- Constants ---
 
 const MODEL = 'gpt-4o-mini';
+const CURRENCY = '₦';
 const TIMEOUT_MS = 10_000;
 const MAX_RETRIES = 3;
 const INITIAL_BACKOFF_MS = 1000;
@@ -35,10 +36,10 @@ const CLASSIFY_SYSTEM_PROMPT =
   'You are a transaction classifier. Given a transaction description, return ONLY one of these categories: Housing, Transport, Groceries, Utilities, Entertainment, Dining, Health, Shopping, Subscriptions, Other. Respond with just the category name, nothing else.';
 
 const SUMMARY_SYSTEM_PROMPT =
-  'You are a helpful financial assistant. Generate a plain-language summary of the user\'s finances. Use simple language that anyone can understand. Avoid abbreviations and financial jargon. Include a one-sentence assessment of whether the user is on track or over budget. Be concise and friendly.';
+  'All money amounts are in Nigerian Naira and must always be written with the ₦ symbol - never convert to dollars or any other currency. You are a helpful financial assistant. Generate a plain-language summary of the user\'s finances. Use simple language that anyone can understand. Avoid abbreviations and financial jargon. Include a one-sentence assessment of whether the user is on track or over budget. Be concise and friendly.';
 
 const QA_SYSTEM_PROMPT =
-  'You are a financial data assistant. You can ONLY answer questions about the user\'s financial data provided in the context. Rules: 1) If the question is unrelated to finances, politely decline and say you can only help with financial questions. 2) If the question is ambiguous, ask a clarifying follow-up question. 3) Always include specific numeric values (amounts, percentages, totals) in your answers. 4) Never make up data - only reference what is in the provided context.';
+  'All money amounts are in Nigerian Naira and must always be written with the ₦ symbol - never convert to dollars or any other currency. Keep answers under 150 words: lead with the direct answer, then at most three short bullet points. Do not list every category unless asked. You are a financial data assistant. You can ONLY answer questions about the user\'s financial data provided in the context. Rules: 1) If the question is unrelated to finances, politely decline and say you can only help with financial questions. 2) If the question is ambiguous, ask a clarifying follow-up question. 3) Always include specific numeric values (amounts, percentages, totals) in your answers. 4) Never make up data - only reference what is in the provided context.';
 
 // --- Helper: sleep for exponential backoff ---
 
@@ -148,20 +149,20 @@ export class LLMClient implements ILLMClient {
 
   private buildSummaryPrompt(data: SummaryInput): string {
     let prompt = `Please summarize the following financial data for the ${data.periodType} period:\n\n`;
-    prompt += `- Total Income: $${data.totalIncome.toFixed(2)}\n`;
-    prompt += `- Total Spending: $${data.totalSpending.toFixed(2)}\n`;
-    prompt += `- Net: $${(data.totalIncome - data.totalSpending).toFixed(2)}\n\n`;
+    prompt += `- Total Income: ${CURRENCY}${data.totalIncome.toFixed(2)}\n`;
+    prompt += `- Total Spending: ${CURRENCY}${data.totalSpending.toFixed(2)}\n`;
+    prompt += `- Net: ${CURRENCY}${(data.totalIncome - data.totalSpending).toFixed(2)}\n\n`;
 
     if (data.topCategories.length > 0) {
       prompt += 'Top spending categories:\n';
       for (const cat of data.topCategories) {
-        prompt += `  - ${cat.name}: $${cat.amount.toFixed(2)}\n`;
+        prompt += `  - ${cat.name}: ${CURRENCY}${cat.amount.toFixed(2)}\n`;
       }
       prompt += '\n';
     }
 
     if (data.savingsProgress) {
-      prompt += `Savings progress: $${data.savingsProgress.current.toFixed(2)} saved toward a $${data.savingsProgress.goal.toFixed(2)} goal.\n`;
+      prompt += `Savings progress: ${CURRENCY}${data.savingsProgress.current.toFixed(2)} saved toward a ${CURRENCY}${data.savingsProgress.goal.toFixed(2)} goal.\n`;
     }
 
     return prompt;
@@ -173,7 +174,7 @@ export class LLMClient implements ILLMClient {
     if (context.transactions.length > 0) {
       prompt += 'Recent transactions:\n';
       for (const t of context.transactions) {
-        prompt += `  - ${t.date}: ${t.category} - $${t.amount.toFixed(2)}\n`;
+        prompt += `  - ${t.date}: ${t.category} - ${CURRENCY}${t.amount.toFixed(2)}\n`;
       }
       prompt += '\n';
     }
@@ -181,7 +182,7 @@ export class LLMClient implements ILLMClient {
     if (context.budget && context.budget.length > 0) {
       prompt += 'Budget breakdown:\n';
       for (const b of context.budget) {
-        prompt += `  - ${b.category}: Budgeted $${b.budgeted.toFixed(2)}, Actual $${b.actual.toFixed(2)}\n`;
+        prompt += `  - ${b.category}: Budgeted ${CURRENCY}${b.budgeted.toFixed(2)}, Actual ${CURRENCY}${b.actual.toFixed(2)}\n`;
       }
       prompt += '\n';
     }
@@ -218,7 +219,7 @@ export class LLMClient implements ILLMClient {
               { role: 'user', content: userMessage },
             ],
             temperature: 0.3,
-            max_tokens: 500,
+            max_tokens: 900,
           },
           { signal: controller.signal }
         );

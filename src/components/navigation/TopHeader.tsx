@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const PAGE_TITLES: Record<string, string> = {
-  "/": "Money pulse",
+  "/dashboard": "Money pulse",
   "/budget": "Budget",
   "/analysis": "Analysis",
   "/qa": "AI Chat",
@@ -23,7 +23,7 @@ export default function TopHeader() {
         {/* Left: App branding / page title */}
         <div className="flex items-center gap-3">
           <Link
-            href="/"
+            href="/dashboard"
             className="flex items-center gap-2 min-h-[44px] min-w-[44px]"
             aria-label="Go to dashboard"
           >

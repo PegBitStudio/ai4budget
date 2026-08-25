@@ -1,62 +1,88 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getActiveAlerts } from '@/lib/alertEngine';
+import { deriveAlerts } from '@/lib/alertEngine';
 import { getCurrentMonthPeriod } from '@/utils/dateUtils';
-import { SpendingAlert } from '@/models/alert';
+import { Category } from '@/models/category';
 
 export const dynamic = 'force-dynamic';
-import { Category } from '@/models/category';
 
 /**
  * GET /api/alerts
- * Returns the authenticated user's active spending alerts for the current period.
+ * Returns the user's live budget alerts for the current period.
+ *
+ * Alerts are computed from current spending against the current budget on every
+ * read, rather than read back from snapshots written at transaction-insert
+ * time. That means they appear for spending logged before the budget existed,
+ * stay accurate as more is spent, and clear when an allocation is raised.
  */
 export async function GET() {
   try {
     const supabase = await createClient();
 
-    // Authenticate user
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Calculate current period start
     const period = getCurrentMonthPeriod();
 
-    // Query spending alerts for this user filtered by period_start
-    const { data: alertsData, error: queryError } = await supabase
-      .from('spending_alerts')
-      .select('*')
-      .eq('period_start', period.start);
+    // The budget covering the current period, most recent first.
+    const { data: budgets, error: budgetError } = await supabase
+      .from('budgets')
+      .select('allocations')
+      .lte('period_start', period.end)
+      .gte('period_end', period.start)
+      .order('created_at', { ascending: false })
+      .limit(1);
 
-    if (queryError) {
+    if (budgetError) {
       return NextResponse.json(
-        { error: 'Failed to fetch alerts', details: queryError.message },
+        { error: 'Failed to fetch budget', details: budgetError.message },
         { status: 500 }
       );
     }
 
-    // Cast and sort using the alert engine
-    const typedAlerts: SpendingAlert[] = (alertsData ?? []).map((a) => ({
-      id: a.id,
-      user_id: a.user_id,
-      category: a.category as Category,
-      type: a.type as 'warning' | 'exceeded',
-      amount_spent: a.amount_spent,
-      budgeted_amount: a.budgeted_amount,
-      period_start: a.period_start,
-      created_at: a.created_at,
-    }));
+    // No budget for this period means there is nothing to be over.
+    if (!budgets || budgets.length === 0) {
+      return NextResponse.json({ alerts: [] }, { status: 200 });
+    }
 
-    const alerts = getActiveAlerts(typedAlerts, period.start);
+    const allocations = (
+      budgets[0].allocations as Array<{ category: string; amount: number }>
+    ).map((a) => ({ category: a.category as Category, amount: a.amount }));
+
+    const { data: expenses, error: expenseError } = await supabase
+      .from('transactions')
+      .select('amount, category')
+      .eq('type', 'expense')
+      .gte('date', period.start)
+      .lte('date', period.end);
+
+    if (expenseError) {
+      return NextResponse.json(
+        { error: 'Failed to fetch spending', details: expenseError.message },
+        { status: 500 }
+      );
+    }
+
+    // Total this period's spending per category.
+    const totals = new Map<string, number>();
+    for (const expense of expenses ?? []) {
+      totals.set(
+        expense.category,
+        (totals.get(expense.category) ?? 0) + expense.amount
+      );
+    }
+
+    const actualSpending = Array.from(totals.entries()).map(
+      ([category, total]) => ({ category: category as Category, total })
+    );
+
+    const alerts = deriveAlerts(allocations, actualSpending, period.start);
 
     return NextResponse.json({ alerts }, { status: 200 });
   } catch (error) {

@@ -300,7 +300,7 @@ describe('formatAlertMessage', () => {
     });
 
     expect(message).toBe(
-      "⚠️ Groceries: You've spent $400.00 of your $500.00 budget (80% reached). $100.00 left."
+      "⚠️ Groceries: You've spent ₦400.00 of your ₦500.00 budget (80% reached). ₦100.00 left."
     );
   });
 
@@ -313,7 +313,7 @@ describe('formatAlertMessage', () => {
     });
 
     expect(message).toBe(
-      "🚫 Dining: You've exceeded your $300.00 budget by $50.00. Spent $350.00 total."
+      "🚫 Dining: You've exceeded your ₦300.00 budget by ₦50.00. Spent ₦350.00 total."
     );
   });
 
@@ -325,9 +325,9 @@ describe('formatAlertMessage', () => {
       budgeted_amount: 100,
     });
 
-    expect(message).toContain('$83.50');
-    expect(message).toContain('$100.00');
-    expect(message).toContain('$16.50');
+    expect(message).toContain('₦83.50');
+    expect(message).toContain('₦100.00');
+    expect(message).toContain('₦16.50');
   });
 
   it('formats exceeded overage correctly with decimals', () => {
@@ -338,8 +338,8 @@ describe('formatAlertMessage', () => {
       budgeted_amount: 150,
     });
 
-    expect(message).toContain('$5.75'); // overage
-    expect(message).toContain('$155.75'); // total spent
-    expect(message).toContain('$150.00'); // budgeted
+    expect(message).toContain('₦5.75'); // overage
+    expect(message).toContain('₦155.75'); // total spent
+    expect(message).toContain('₦150.00'); // budgeted
   });
 });

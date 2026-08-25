@@ -17,16 +17,11 @@ interface SpendingAlert {
   amount_spent: number;
   budgeted_amount: number;
   period_start: string;
+  percentage: number;
 }
 
 interface SummaryResponse {
   summary: string;
-  data?: {
-    totalIncome: number;
-    totalExpenses: number;
-    net: number;
-    topCategories: { category: string; amount: number; percentage: number }[];
-  };
 }
 
 interface TransactionsResponse {
@@ -39,6 +34,9 @@ interface TransactionsResponse {
   }[];
   total: number;
 }
+
+/** How many alerts the dashboard shows before deferring the rest to the budget page. */
+const MAX_VISIBLE_ALERTS = 3;
 
 // --- Main Dashboard Component ---
 
@@ -55,69 +53,35 @@ export default function DashboardClient() {
   const [trendData, setTrendData] = useState<SpendingTrendData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch dashboard data
+  // The fast data — figures, charts and alerts — paints as soon as it lands.
+  // The AI summary is a separate, much slower request and must never gate it.
   useEffect(() => {
-    async function fetchDashboardData() {
-      setLoading(true);
+    async function loadFigures() {
+      // Build the date locally — toISOString() shifts by timezone and would
+      // pull in the last day of the previous month for users ahead of UTC.
+      const now = new Date();
+      const from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
 
-      // Fetch alerts
-      try {
-        const alertsRes = await fetch("/api/alerts");
-        if (alertsRes.ok) {
-          const alertsJson = await alertsRes.json();
+      const [alertsRes, monthRes, historyRes] = await Promise.allSettled([
+        fetch("/api/alerts"),
+        fetch(`/api/transactions?from=${from}&limit=10000`),
+        fetch("/api/transactions?type=expense&limit=10000"),
+      ]);
+
+      if (alertsRes.status === "fulfilled" && alertsRes.value.ok) {
+        try {
+          const alertsJson = await alertsRes.value.json();
           setAlerts(alertsJson.alerts ?? []);
+        } catch {
+          // Alerts are non-critical.
         }
-      } catch {
-        // Alerts are non-critical, continue
       }
 
-      // Fetch summary
-      setSummaryLoading(true);
-      try {
-        const summaryRes = await fetch("/api/summary");
-        if (summaryRes.ok) {
-          const summaryJson: SummaryResponse = await summaryRes.json();
-          setSummary(summaryJson.summary);
-          if (summaryJson.data) {
-            setQuickStats({
-              income: summaryJson.data.totalIncome,
-              spending: summaryJson.data.totalExpenses,
-              net: summaryJson.data.net,
-            });
-            // Build category breakdown from summary data
-            if (summaryJson.data.topCategories) {
-              setCategoryData(
-                summaryJson.data.topCategories.map((tc) => ({
-                  category: tc.category,
-                  amount: tc.amount,
-                  percentage: tc.percentage,
-                }))
-              );
-            }
-          }
-        } else {
-          setSummary(null);
-        }
-      } catch {
-        setSummary(null);
-      } finally {
-        setSummaryLoading(false);
-      }
+      if (monthRes.status === "fulfilled" && monthRes.value.ok) {
+        try {
+          const { transactions }: TransactionsResponse =
+            await monthRes.value.json();
 
-      // Fetch transactions for quick stats fallback and trend
-      try {
-        const now = new Date();
-        const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const from = firstOfMonth.toISOString().split("T")[0];
-
-        const txRes = await fetch(
-          `/api/transactions?from=${from}&limit=10000`
-        );
-        if (txRes.ok) {
-          const txJson: TransactionsResponse = await txRes.json();
-          const transactions = txJson.transactions;
-
-          // Calculate quick stats if not already set from summary
           const income = transactions
             .filter((t) => t.type === "income")
             .reduce((sum, t) => sum + t.amount, 0);
@@ -125,76 +89,89 @@ export default function DashboardClient() {
             .filter((t) => t.type === "expense")
             .reduce((sum, t) => sum + t.amount, 0);
 
-          setQuickStats((prev) =>
-            prev ?? { income, spending, net: income - spending }
-          );
+          setQuickStats({ income, spending, net: income - spending });
 
-          // Build category breakdown if not already set from summary
-          setCategoryData((prev) => {
-            if (prev.length > 0) return prev;
-            const categoryMap = new Map<string, number>();
-            transactions
-              .filter((t) => t.type === "expense")
-              .forEach((t) => {
-                categoryMap.set(
-                  t.category,
-                  (categoryMap.get(t.category) ?? 0) + t.amount
-                );
-              });
-            const totalSpending = Array.from(categoryMap.values()).reduce(
-              (a, b) => a + b,
-              0
+          // Full category breakdown from this month's expenses.
+          const categoryMap = new Map<string, number>();
+          for (const t of transactions) {
+            if (t.type !== "expense") continue;
+            categoryMap.set(
+              t.category,
+              (categoryMap.get(t.category) ?? 0) + t.amount
             );
-            return Array.from(categoryMap.entries())
+          }
+          const totalSpending = Array.from(categoryMap.values()).reduce(
+            (a, b) => a + b,
+            0
+          );
+          setCategoryData(
+            Array.from(categoryMap.entries())
               .map(([category, amount]) => ({
                 category,
                 amount,
                 percentage:
                   totalSpending > 0 ? (amount / totalSpending) * 100 : 0,
               }))
-              .sort((a, b) => b.amount - a.amount);
-          });
+              .sort((a, b) => b.amount - a.amount)
+          );
+        } catch {
+          // Leave the figures empty rather than breaking the page.
         }
-      } catch {
-        // Non-critical
       }
 
-      // Fetch spending trend (aggregate by month from transactions)
-      try {
-        const txAllRes = await fetch(`/api/transactions?type=expense&limit=10000`);
-        if (txAllRes.ok) {
-          const txAllJson: TransactionsResponse = await txAllRes.json();
-          const transactions = txAllJson.transactions;
+      if (historyRes.status === "fulfilled" && historyRes.value.ok) {
+        try {
+          const { transactions }: TransactionsResponse =
+            await historyRes.value.json();
 
-          // Group by month
           const monthMap = new Map<string, number>();
-          transactions.forEach((t) => {
+          for (const t of transactions) {
             const month = t.date.substring(0, 7); // YYYY-MM
             monthMap.set(month, (monthMap.get(month) ?? 0) + t.amount);
-          });
-
-          const sortedMonths = Array.from(monthMap.entries())
-            .sort(([a], [b]) => a.localeCompare(b))
-            .slice(-12); // Last 12 months
+          }
 
           setTrendData(
-            sortedMonths.map(([period, amount]) => ({
-              period: formatMonthLabel(period),
-              amount,
-            }))
+            Array.from(monthMap.entries())
+              .sort(([a], [b]) => a.localeCompare(b))
+              .slice(-12)
+              .map(([period, amount]) => ({
+                period: formatMonthLabel(period),
+                amount,
+              }))
           );
+        } catch {
+          // Trend is non-critical.
         }
-      } catch {
-        // Non-critical
       }
 
       setLoading(false);
     }
 
-    fetchDashboardData();
+    loadFigures();
   }, []);
 
-  if (loading && summaryLoading) {
+  // The AI narrative arrives on its own schedule and fills only its own card.
+  useEffect(() => {
+    async function loadSummary() {
+      try {
+        const res = await fetch("/api/summary");
+        if (!res.ok) {
+          setSummary(null);
+          return;
+        }
+        const json: SummaryResponse = await res.json();
+        setSummary(json.summary);
+      } catch {
+        setSummary(null);
+      } finally {
+        setSummaryLoading(false);
+      }
+    }
+
+    loadSummary();
+  }, []);
+
+  if (loading) {
     return <LoadingState />;
   }
 
@@ -219,9 +196,11 @@ export default function DashboardClient() {
               {net >= 0 ? "You’re in control." : "Let’s steady the month."}
             </h2>
             <p className="mt-2 max-w-xl text-sm leading-6 text-violet-100 sm:text-base">
-              {income > 0
-                ? `${formatCurrency(Math.max(net, 0))} is available after the spending you have logged.`
-                : "Add your income and first expenses to see a personal money plan."}
+              {income === 0
+                ? "Add your income and first expenses to see a personal money plan."
+                : net >= 0
+                  ? `${formatCurrency(net)} is still available after the spending you have logged.`
+                  : `You have spent ${formatCurrency(Math.abs(net))} more than you earned this month.`}
             </p>
           </div>
           <div className="rounded-2xl border border-white/15 bg-white/10 px-5 py-4 backdrop-blur-sm lg:min-w-64">
@@ -235,12 +214,27 @@ export default function DashboardClient() {
         </div>
       </section>
 
-      {/* Active Alerts */}
+      {/* Active alerts — worst first, capped so the page stays scannable */}
       {alerts.length > 0 && (
-        <section className="mt-6" aria-labelledby="alerts-heading">
-          <h2 id="alerts-heading" className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">Needs attention</h2>
-          <div className="space-y-2">
-            {alerts.map((alert) => (
+        <section className="mt-7" aria-labelledby="alerts-heading">
+          <div className="mb-3 flex items-end justify-between gap-4">
+            <h2
+              id="alerts-heading"
+              className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500"
+            >
+              Needs attention
+            </h2>
+            {alerts.length > MAX_VISIBLE_ALERTS && (
+              <Link
+                href="/budget"
+                className="text-sm font-semibold text-violet-700 hover:text-violet-900"
+              >
+                {alerts.length - MAX_VISIBLE_ALERTS} more in your budget
+              </Link>
+            )}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {alerts.slice(0, MAX_VISIBLE_ALERTS).map((alert) => (
               <AlertCard key={alert.id} alert={alert} />
             ))}
           </div>
@@ -258,7 +252,7 @@ export default function DashboardClient() {
           </div>
           <div className="mt-5 rounded-2xl bg-gradient-to-br from-violet-50 to-indigo-50 p-4">
           {summaryLoading ? (
-            <div className="h-16 animate-pulse rounded bg-gray-100" />
+            <SummaryPending />
           ) : summary ? (
             <p className="text-sm leading-6 text-slate-700">{summary}</p>
           ) : (
@@ -267,12 +261,7 @@ export default function DashboardClient() {
           </div>
         </div>
 
-        <div className="rounded-[1.5rem] bg-emerald-400 p-5 text-emerald-950 shadow-sm sm:p-6">
-          <p className="text-sm font-semibold">This month’s focus</p>
-          <p className="mt-3 text-xl font-semibold tracking-tight">Build your spending plan before the next expense.</p>
-          <p className="mt-2 text-sm leading-6 text-emerald-950/75">A budget turns today’s transactions into an intentional plan.</p>
-          <Link href="/budget" className="mt-5 inline-flex rounded-xl bg-emerald-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-900">Create a budget</Link>
-        </div>
+        <FocusCard alerts={alerts} hasSpending={spending > 0} />
       </section>
 
       {/* Quick Stats */}
@@ -406,37 +395,138 @@ export default function DashboardClient() {
 function AlertCard({ alert }: { alert: SpendingAlert }) {
   const isExceeded = alert.type === "exceeded";
   const remaining = alert.budgeted_amount - alert.amount_spent;
+  const fill = Math.min(alert.percentage, 100);
 
   return (
     <div
-      className={`rounded-lg border p-3 ${
+      className={`rounded-2xl border p-4 ${
         isExceeded
-          ? "border-red-200 bg-red-50"
+          ? "border-rose-200 bg-rose-50"
           : "border-amber-200 bg-amber-50"
       }`}
       role="alert"
     >
-      <div className="flex items-center gap-2">
-        <span
-          className={`text-sm font-medium ${
-            isExceeded ? "text-red-800" : "text-amber-800"
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <p
+          className={`text-sm font-semibold ${
+            isExceeded ? "text-rose-900" : "text-amber-900"
           }`}
         >
-          {isExceeded ? "⚠️ Budget Exceeded" : "⚡ Approaching Limit"}
-        </span>
-        <span className="text-xs text-gray-600">— {alert.category}</span>
+          {alert.category}{" · "}
+          <span className="font-normal">
+            {isExceeded
+              ? `over by ${formatCurrency(Math.abs(remaining))}`
+              : `${formatCurrency(remaining)} left`}
+          </span>
+        </p>
+        <p
+          className={`text-sm font-semibold tabular-nums ${
+            isExceeded ? "text-rose-700" : "text-amber-700"
+          }`}
+        >
+          {alert.percentage.toFixed(0)}%
+        </p>
       </div>
-      <p
-        className={`mt-1 text-xs ${
-          isExceeded ? "text-red-700" : "text-amber-700"
+
+      <div
+        className={`mt-2.5 h-1.5 overflow-hidden rounded-full ${
+          isExceeded ? "bg-rose-200" : "bg-amber-200"
         }`}
       >
-        Spent {formatCurrency(alert.amount_spent)} of{" "}
-        {formatCurrency(alert.budgeted_amount)} budget
-        {isExceeded
-          ? ` (over by ${formatCurrency(Math.abs(remaining))})`
-          : ` (${formatCurrency(remaining)} remaining)`}
+        <div
+          className={`h-full rounded-full ${
+            isExceeded ? "bg-rose-600" : "bg-amber-500"
+          }`}
+          style={{ width: `${fill}%` }}
+        />
+      </div>
+
+      <p
+        className={`mt-2 text-xs ${
+          isExceeded ? "text-rose-700" : "text-amber-700"
+        }`}
+      >
+        {formatCurrency(alert.amount_spent)} spent of{" "}
+        {formatCurrency(alert.budgeted_amount)} planned
       </p>
+    </div>
+  );
+}
+
+/**
+ * The one thing worth doing next, chosen from the user's actual state rather
+ * than telling everyone to build a budget they may already have.
+ */
+function FocusCard({
+  alerts,
+  hasSpending,
+}: {
+  alerts: SpendingAlert[];
+  hasSpending: boolean;
+}) {
+  const worst = alerts.find((a) => a.type === "exceeded") ?? alerts[0];
+
+  if (worst) {
+    const over = worst.amount_spent - worst.budgeted_amount;
+    return (
+      <div className="rounded-[1.5rem] bg-rose-500 p-5 text-white shadow-sm sm:p-6">
+        <p className="text-sm font-semibold text-rose-50">This month’s focus</p>
+        <p className="mt-3 text-xl font-semibold tracking-tight">
+          {worst.type === "exceeded"
+            ? `${worst.category} is ${formatCurrency(over)} past its plan.`
+            : `${worst.category} is close to its limit.`}
+        </p>
+        <p className="mt-2 text-sm leading-6 text-rose-50/85">
+          It is your largest gap this month. See what drove it, then adjust the
+          plan or the habit.
+        </p>
+        <Link
+          href="/analysis"
+          className="mt-5 inline-flex rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
+        >
+          See what happened
+        </Link>
+      </div>
+    );
+  }
+
+  if (!hasSpending) {
+    return (
+      <div className="rounded-[1.5rem] bg-violet-600 p-5 text-white shadow-sm sm:p-6">
+        <p className="text-sm font-semibold text-violet-100">Start here</p>
+        <p className="mt-3 text-xl font-semibold tracking-tight">
+          Log your first few expenses.
+        </p>
+        <p className="mt-2 text-sm leading-6 text-violet-100/85">
+          A handful of transactions is enough for the assistant to start finding
+          patterns.
+        </p>
+        <Link
+          href="/transactions"
+          className="mt-5 inline-flex rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-50"
+        >
+          Add a transaction
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-[1.5rem] bg-emerald-400 p-5 text-emerald-950 shadow-sm sm:p-6">
+      <p className="text-sm font-semibold">This month’s focus</p>
+      <p className="mt-3 text-xl font-semibold tracking-tight">
+        Every category is inside its plan.
+      </p>
+      <p className="mt-2 text-sm leading-6 text-emerald-950/75">
+        Good month. Put the difference toward a savings goal while it is still
+        there.
+      </p>
+      <Link
+        href="/savings"
+        className="mt-5 inline-flex rounded-xl bg-emerald-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-900"
+      >
+        Review your savings
+      </Link>
     </div>
   );
 }
@@ -483,6 +573,40 @@ function QuickActionLink({
       <span className="rounded-xl bg-violet-100 p-2 text-violet-700">{icon}</span>
       <span className="text-sm font-semibold text-slate-900">{label}</span>
     </Link>
+  );
+}
+
+/**
+ * Shown while the AI narrative is still being written. The rest of the
+ * dashboard is already on screen by this point, so this reads as one card
+ * catching up rather than the page being stuck.
+ */
+function SummaryPending() {
+  return (
+    <div aria-live="polite" aria-busy="true">
+      <p className="flex items-center gap-2 text-sm font-medium text-violet-800">
+        <span className="flex gap-1" aria-hidden="true">
+          <Dot delay="0ms" />
+          <Dot delay="150ms" />
+          <Dot delay="300ms" />
+        </span>
+        Reading your month…
+      </p>
+      <div className="mt-3 space-y-2" aria-hidden="true">
+        <div className="h-2.5 w-full animate-pulse rounded-full bg-violet-200/70" />
+        <div className="h-2.5 w-[92%] animate-pulse rounded-full bg-violet-200/70" />
+        <div className="h-2.5 w-[64%] animate-pulse rounded-full bg-violet-200/70" />
+      </div>
+    </div>
+  );
+}
+
+function Dot({ delay }: { delay: string }) {
+  return (
+    <span
+      className="h-1.5 w-1.5 animate-bounce rounded-full bg-violet-500"
+      style={{ animationDelay: delay }}
+    />
   );
 }
 

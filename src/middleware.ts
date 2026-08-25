@@ -16,6 +16,12 @@ const PUBLIC_ROUTES = [
 ];
 
 /**
+ * Prefixes that are public but must stay reachable to unauthenticated visitors,
+ * so they are exempt from the "send signed-in users to the dashboard" redirect.
+ */
+const PUBLIC_API_PREFIXES = ['/api/demo'];
+
+/**
  * Path prefixes that are always public.
  */
 const PUBLIC_PREFIXES = ['/icons/', '/_next/', '/api/auth/'];
@@ -24,7 +30,11 @@ const PUBLIC_PREFIXES = ['/icons/', '/_next/', '/api/auth/'];
  * Routes that authenticated users should be redirected away from.
  * If a logged-in user visits these, they get sent to the dashboard.
  */
-const AUTH_ROUTES = ['/login', '/signup'];
+/**
+ * Routes a signed-in user has no reason to see. Visiting these while
+ * authenticated sends them straight to their dashboard.
+ */
+const REDIRECT_WHEN_SIGNED_IN = ['/', '/login', '/signup'];
 
 function isPublicRoute(pathname: string): boolean {
   // Check exact matches
@@ -37,6 +47,10 @@ function isPublicRoute(pathname: string): boolean {
     return true;
   }
 
+  if (PUBLIC_API_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+    return true;
+  }
+
   return false;
 }
 
@@ -46,12 +60,12 @@ export async function middleware(request: NextRequest) {
   // Always refresh the session (keeps tokens alive)
   const { supabaseResponse, user } = await updateSession(request);
 
-  // Public routes: allow access regardless of auth state,
-  // but redirect authenticated users away from login/signup
+  // Public routes: allow access regardless of auth state, but send signed-in
+  // users from the marketing page and auth screens to their dashboard.
   if (isPublicRoute(pathname)) {
-    if (user && AUTH_ROUTES.includes(pathname)) {
+    if (user && REDIRECT_WHEN_SIGNED_IN.includes(pathname)) {
       const url = request.nextUrl.clone();
-      url.pathname = '/';
+      url.pathname = '/dashboard';
       return NextResponse.redirect(url);
     }
     return supabaseResponse;

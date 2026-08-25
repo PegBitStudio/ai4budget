@@ -18,7 +18,15 @@ interface CategoryBreakdownProps {
   data: CategoryBreakdownData[];
 }
 
-export function CategoryBreakdown({ data }: CategoryBreakdownProps) {
+export function CategoryBreakdown({ data: rawData }: CategoryBreakdownProps) {
+  // Guard against malformed rows so a bad payload can never blank the dashboard.
+  const data = (rawData ?? []).filter(
+    (item) => item && Number.isFinite(item.amount)
+  ).map((item) => ({
+    category: item.category ?? "Other",
+    amount: item.amount,
+    percentage: Number.isFinite(item.percentage) ? item.percentage : 0,
+  }));
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {

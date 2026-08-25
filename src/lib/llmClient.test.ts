@@ -330,8 +330,27 @@ describe('LLMClient', () => {
       expect(userMessage).toContain('150.00');
       expect(userMessage).toContain('Transport');
       expect(userMessage).toContain('January 2024');
-      expect(userMessage).toContain('Budgeted $400.00');
+      expect(userMessage).toContain('Budgeted ₦400.00');
       expect(userMessage).toContain('test question');
+    });
+
+    it('states every amount in Naira, never dollars', () => {
+      // The app displays ₦ everywhere; prompts that said $ made the assistant
+      // answer in the wrong currency.
+      const mockClient = createMockOpenAI('Answer');
+      const client = new LLMClient(mockClient);
+
+      return client
+        .answerQuestion('test question', sampleContext)
+        .then(() => {
+          const callArgs = mockClient.chat.completions.create.mock.calls[0][0];
+          const systemPrompt = callArgs.messages[0].content;
+          const userMessage = callArgs.messages[1].content;
+
+          expect(userMessage).toContain('₦');
+          expect(userMessage).not.toContain('$');
+          expect(systemPrompt).toContain('Naira');
+        });
     });
 
     it('returns LLM response on success', async () => {

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { formatCurrency } from '@/utils/formatters';
 import { CATEGORIES } from '@/models/category';
+import AccountSection from '@/components/settings/AccountSection';
 
 // --- Types ---
 
@@ -216,6 +217,8 @@ export default function SettingsPage() {
 
   return (
     <div className="px-4 py-4 sm:px-6 md:px-8 lg:px-12 max-w-3xl mx-auto space-y-8 pb-24">
+
+      <AccountSection />
 
       {/* --- CSV Export Section --- */}
       <section className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
