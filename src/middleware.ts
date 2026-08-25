@@ -13,6 +13,12 @@ const PUBLIC_ROUTES = [
   '/manifest.webmanifest',
   '/sw.js',
   '/apple-touch-icon.png',
+  // Next's file-convention OG image. Without this, WhatsApp, Instagram and
+  // every other link-preview crawler hit the auth redirect and fetched the
+  // login page HTML instead of an image — the shared link would have shown
+  // no preview at all.
+  '/opengraph-image',
+  '/twitter-image',
 ];
 
 /**

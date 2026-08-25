@@ -12,9 +12,30 @@ export const viewport: Viewport = {
   themeColor: "#1e40af",
 };
 
+const title = "KoboPilot — AI Budgeting Assistant";
+const description = "Your AI co-pilot for spending, budgeting and saving in Naira";
+
 export const metadata: Metadata = {
-  title: "KoboPilot — AI Budgeting Assistant",
-  description: "Your AI co-pilot for spending, budgeting and saving in Naira",
+  // Required for the file-convention OG image (opengraph-image.tsx) to resolve
+  // to an absolute URL — without it, link previews on WhatsApp and Instagram
+  // silently fail to load an image at all. Override with NEXT_PUBLIC_SITE_URL
+  // if this ever moves off the current Vercel URL.
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://ai4budget.vercel.app"
+  ),
+  title,
+  description,
+  openGraph: {
+    title,
+    description,
+    siteName: "KoboPilot",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
