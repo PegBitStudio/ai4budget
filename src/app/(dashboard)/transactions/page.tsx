@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { formatCurrency } from "@/utils/formatters";
-import AlertImporter from "@/components/transactions/AlertImporter";
+import ImportPanel from "@/components/transactions/ImportPanel";
+import TransactionCard from "@/components/transactions/TransactionCard";
 
 // --- Types ---
 
@@ -127,7 +128,7 @@ export default function TransactionsPage() {
 
   return (
     <div className="px-4 py-4 sm:px-6 md:px-8 max-w-3xl mx-auto">
-      <AlertImporter onImported={fetchTransactions} />
+      <ImportPanel onImported={fetchTransactions} />
 
       {/* Action bar */}
       <div className="flex items-center justify-between mb-4">
@@ -315,7 +316,11 @@ export default function TransactionsPage() {
       ) : (
         <div className="space-y-2">
           {transactions.map((tx) => (
-            <TransactionCard key={tx.id} transaction={tx} />
+            <TransactionCard
+              key={tx.id}
+              transaction={tx}
+              onChanged={fetchTransactions}
+            />
           ))}
         </div>
       )}
@@ -323,42 +328,3 @@ export default function TransactionsPage() {
   );
 }
 
-// --- Sub-Components ---
-
-function TransactionCard({ transaction }: { transaction: Transaction }) {
-  const isIncome = transaction.type === "income";
-
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white p-3.5 shadow-sm">
-      {/* Category indicator */}
-      <div
-        className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-          isIncome ? "bg-green-50" : "bg-red-50"
-        }`}
-      >
-        <span className="text-lg">
-          {isIncome ? "↗" : "↘"}
-        </span>
-      </div>
-
-      {/* Details */}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 truncate">
-          {transaction.description}
-        </p>
-        <p className="text-xs text-gray-500">
-          {transaction.category} · {new Date(transaction.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-        </p>
-      </div>
-
-      {/* Amount */}
-      <p
-        className={`text-sm font-semibold shrink-0 ${
-          isIncome ? "text-green-600" : "text-red-600"
-        }`}
-      >
-        {isIncome ? "+" : "-"}{formatCurrency(transaction.amount)}
-      </p>
-    </div>
-  );
-}

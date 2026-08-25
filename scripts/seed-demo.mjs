@@ -49,32 +49,60 @@ async function ensureUser() {
 const iso = (y, m, d) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 const r = (n) => Math.round(n / 50) * 50;
 
+// Everything is dated relative to the day the script runs, so the demo account
+// always shows a current month — and never holds a future-dated transaction,
+// which the app itself refuses to accept.
+const TODAY = new Date();
+const THIS_YEAR = TODAY.getFullYear();
+const THIS_MONTH = TODAY.getMonth() + 1;
+const TODAY_DAY = TODAY.getDate();
+
+/** The three months to seed: two complete ones, then the current one. */
+function recentMonths() {
+  return [2, 1, 0].map((back) => {
+    const d = new Date(THIS_YEAR, THIS_MONTH - 1 - back, 1);
+    return { y: d.getFullYear(), m: d.getMonth() + 1, isCurrent: back === 0 };
+  });
+}
+
+const isFuture = (y, m, d) =>
+  y === THIS_YEAR && m === THIS_MONTH && d > TODAY_DAY;
+
 function buildTransactions(userId) {
   const rows = [];
-  const add = (date, description, amount, category, type = 'expense') =>
-    rows.push({ user_id: userId, date, description, amount, category, type, source: 'demo-seed' });
 
-  // Jun = baseline, Jul = mid, Aug = current (creeping costs + one anomaly)
-  const months = [
-    { y: 2026, m: 6, salary: 450000, dining: 1.0, transport: 1.0, subs: 1.0 },
-    { y: 2026, m: 7, salary: 450000, dining: 1.28, transport: 1.15, subs: 1.0 },
-    { y: 2026, m: 8, salary: 450000, dining: 1.62, transport: 1.42, subs: 1.35 },
+  // Silently skips anything dated after today, so a run early in the month
+  // simply produces a partial current month rather than impossible data.
+  let add = () => {};
+
+  // Oldest month is the baseline; the current one carries the creeping costs
+  // and the one-off anomaly the analyser should find.
+  const drifts = [
+    { salary: 450000, dining: 1.0, transport: 1.0, subs: 1.0, freelance: 0 },
+    { salary: 450000, dining: 1.28, transport: 1.15, subs: 1.0, freelance: 60000 },
+    { salary: 450000, dining: 1.62, transport: 1.42, subs: 1.35, freelance: 85000 },
   ];
 
-  for (const { y, m, salary, dining, transport, subs } of months) {
-    // Income
-    // Payday on the 25th: the app rejects future-dated transactions, so a
-    // later payday would leave the current month's salary unenterable.
+  recentMonths().forEach(({ y, m, isCurrent }, index) => {
+    const { salary, dining, transport, subs, freelance } = drifts[index];
+
+    add = (date, description, amount, category, type = 'expense') => {
+      const day = Number(date.slice(-2));
+      if (isFuture(y, m, day)) return;
+      rows.push({ user_id: userId, date, description, amount, category, type, source: 'demo-seed' });
+    };
+
+    // Income — payday on the 25th.
     add(iso(y, m, 25), 'Salary - Zenith Bank credit', salary, 'Other', 'income');
-    if (m !== 6) add(iso(y, m, 14), 'Freelance design payout', m === 8 ? 85000 : 60000, 'Other', 'income');
+    if (freelance) add(iso(y, m, 14), 'Freelance design payout', freelance, 'Other', 'income');
 
     // Housing
     add(iso(y, m, 1), 'Rent contribution - landlord', 150000, 'Housing');
 
     // Utilities
-    add(iso(y, m, 3), 'EKEDC prepaid electricity', r(18500 * (m === 8 ? 1.3 : 1)), 'Utilities');
+    add(iso(y, m, 3), 'EKEDC prepaid electricity', r(18500 * (isCurrent ? 1.3 : 1)), 'Utilities');
     add(iso(y, m, 5), 'MTN data bundle', 12000, 'Utilities');
-    add(iso(y, m, 20), 'EKEDC prepaid top-up', r(9000 * (m === 8 ? 1.3 : 1)), 'Utilities');
+    add(iso(y, m, 20), 'EKEDC prepaid top-up', r(9000 * (isCurrent ? 1.3 : 1)), 'Utilities');
 
     // Groceries
     add(iso(y, m, 2), 'Shoprite monthly stock-up', 38000, 'Groceries');
@@ -92,13 +120,13 @@ function buildTransactions(userId) {
     for (const d of [4, 10, 13, 18, 22, 26]) {
       add(iso(y, m, d), 'Chicken Republic lunch', r(4800 * dining), 'Dining');
     }
-    if (m >= 7) add(iso(y, m, 21), 'Jollof and Co. dinner delivery', r(12500 * dining), 'Dining');
+    if (index >= 1) add(iso(y, m, 21), 'Jollof and Co. dinner delivery', r(12500 * dining), 'Dining');
 
     // Subscriptions - quiet creep in August
     add(iso(y, m, 7), 'Netflix subscription', r(7500 * subs), 'Subscriptions');
     add(iso(y, m, 7), 'Spotify Premium', 2500, 'Subscriptions');
     add(iso(y, m, 12), 'Gym membership - i-Fitness', 25000, 'Subscriptions');
-    if (m === 8) add(iso(y, m, 15), 'Showmax subscription', 4400, 'Subscriptions');
+    if (isCurrent) add(iso(y, m, 15), 'Showmax subscription', 4400, 'Subscriptions');
 
     // Health
     add(iso(y, m, 17), 'HealthPlus pharmacy', 7800, 'Health');
@@ -106,15 +134,31 @@ function buildTransactions(userId) {
     // Entertainment / Shopping
     add(iso(y, m, 25), 'Filmhouse cinema', 6500, 'Entertainment');
     add(iso(y, m, 19), 'Jumia - household items', 15500, 'Shopping');
-  }
+  });
 
-  // The anomaly the analyser should catch: a one-off Shopping spike in August
+  // The anomaly the analyser should catch: one big out-of-pattern purchase,
+  // placed a few days back so it is always in the past.
+  const anomalyDay = Math.max(1, Math.min(22, TODAY_DAY - 3));
   rows.push({
-    user_id: userId, date: iso(2026, 8, 22), description: 'Slot - replacement phone',
-    amount: 285000, category: 'Shopping', type: 'expense', source: 'demo-seed',
+    user_id: userId,
+    date: iso(THIS_YEAR, THIS_MONTH, anomalyDay),
+    description: 'Slot - replacement phone',
+    amount: 285000,
+    category: 'Shopping',
+    type: 'expense',
+    source: 'demo-seed',
   });
 
   return rows;
+}
+
+/** First and last day of the current month, as YYYY-MM-DD. */
+function currentMonthPeriod() {
+  const lastDay = new Date(THIS_YEAR, THIS_MONTH, 0).getDate();
+  return {
+    start: iso(THIS_YEAR, THIS_MONTH, 1),
+    end: iso(THIS_YEAR, THIS_MONTH, lastDay),
+  };
 }
 
 async function main() {
@@ -134,8 +178,8 @@ async function main() {
     body: JSON.stringify([{
       user_id: userId,
       period_type: 'monthly',
-      period_start: '2026-08-01',
-      period_end: '2026-08-31',
+      period_start: currentMonthPeriod().start,
+      period_end: currentMonthPeriod().end,
       total_income: 535000,
       allocations: [
         { category: 'Housing', amount: 150000 },
@@ -156,7 +200,10 @@ async function main() {
   await api('/rest/v1/savings_goals', {
     method: 'POST',
     body: JSON.stringify([{
-      user_id: userId, target_amount: 1200000, deadline: '2027-06-30',
+      user_id: userId,
+      target_amount: 1200000,
+      // Ten months out from whenever the script runs.
+      deadline: iso(THIS_YEAR + (THIS_MONTH + 10 > 12 ? 1 : 0), ((THIS_MONTH + 9) % 12) + 1, 28),
       current_amount: 185000, monthly_contribution: 90000,
     }]),
   });

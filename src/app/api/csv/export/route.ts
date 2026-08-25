@@ -35,7 +35,7 @@ export async function GET() {
     // Query all user's transactions ordered by date ascending
     const { data: transactions, error: queryError } = await supabase
       .from('transactions')
-      .select('date, description, amount, category')
+      .select('date, description, amount, category, type')
       .eq('user_id', user.id)
       .order('date', { ascending: true });
 
@@ -60,6 +60,7 @@ export async function GET() {
       description: t.description,
       amount: t.amount,
       category: t.category,
+      type: t.type as 'income' | 'expense',
     }));
 
     // Generate CSV content

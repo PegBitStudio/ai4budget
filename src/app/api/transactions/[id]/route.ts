@@ -6,15 +6,45 @@ import { CategorySchema } from '@/models/category';
 export const dynamic = 'force-dynamic';
 
 /**
- * Schema for PATCH request body — update transaction category.
+ * Schema for PATCH request body. Every field is optional so a caller can send
+ * just the category, or a full edit, but at least one must be present.
  */
-const UpdateCategorySchema = z.object({
-  category: CategorySchema,
-});
+const UpdateTransactionSchema = z
+  .object({
+    category: CategorySchema.optional(),
+    amount: z
+      .number()
+      .min(0.01, 'Amount must be at least 0.01')
+      .max(999999999.99, 'Amount must not exceed 999,999,999.99')
+      .optional(),
+    date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in ISO 8601 format (YYYY-MM-DD)')
+      .refine((value) => !isNaN(new Date(value).getTime()), {
+        message: 'Date must be a valid calendar date',
+      })
+      .refine(
+        (value) => {
+          const today = new Date();
+          today.setHours(23, 59, 59, 999);
+          return new Date(`${value}T00:00:00`) <= today;
+        },
+        { message: 'Date must not be in the future' }
+      )
+      .optional(),
+    description: z.string().min(1).max(255).optional(),
+    type: z.enum(['income', 'expense']).optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'Nothing to update',
+  });
 
 /**
  * PATCH /api/transactions/[id]
- * Update a transaction's category and store the user correction.
+ *
+ * Updates a transaction. When the category changes, the new one is also stored
+ * as a classification rule so future transactions with the same description
+ * are filed the same way without asking again.
  */
 export async function PATCH(
   request: NextRequest,
@@ -39,7 +69,7 @@ export async function PATCH(
 
     // Parse and validate body
     const body = await request.json();
-    const validation = UpdateCategorySchema.safeParse(body);
+    const validation = UpdateTransactionSchema.safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json(
@@ -48,16 +78,31 @@ export async function PATCH(
       );
     }
 
-    const { category } = validation.data;
+    const { category, amount, date, description, type } = validation.data;
 
-    // Update the transaction's category and set is_manual_category = true
+    // Only send the fields the caller actually supplied.
+    const patch: {
+      amount?: number;
+      date?: string;
+      description?: string;
+      type?: 'income' | 'expense';
+      category?: string;
+      is_manual_category?: boolean;
+    } = {};
+    if (amount !== undefined) patch.amount = amount;
+    if (date !== undefined) patch.date = date;
+    if (description !== undefined) patch.description = description;
+    if (type !== undefined) patch.type = type;
+    if (category !== undefined) {
+      patch.category = category;
+      // The user picked this category, so stop the classifier overriding it.
+      patch.is_manual_category = true;
+    }
+
     // RLS ensures the user can only update their own transactions
     const { data: transaction, error: updateError } = await supabase
       .from('transactions')
-      .update({
-        category,
-        is_manual_category: true,
-      })
+      .update(patch)
       .eq('id', id)
       .select()
       .single();
@@ -76,11 +121,11 @@ export async function PATCH(
       );
     }
 
-    // Upsert into classification_rules so future transactions with
-    // the same description automatically get this category
-    await supabase
-      .from('classification_rules')
-      .upsert(
+    // Teach the classifier: the next transaction with this description gets
+    // filed the same way without asking. This is the loop that makes the
+    // assistant improve with use, so only a real category change writes to it.
+    if (category !== undefined) {
+      await supabase.from('classification_rules').upsert(
         {
           user_id: user.id,
           description: transaction.description,
@@ -88,6 +133,7 @@ export async function PATCH(
         },
         { onConflict: 'user_id,description' }
       );
+    }
 
     return NextResponse.json({ transaction }, { status: 200 });
   } catch (error) {

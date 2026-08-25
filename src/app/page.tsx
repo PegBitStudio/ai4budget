@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 const FEATURES = [
   {
     title: "It sorts your spending for you",
-    body: "Type “Bolt ride to work” and it files itself under Transport. No dropdown, no category admin — just write what you spent it on.",
+    body: "Type “Bolt ride to work” and it files itself under Transport. Correct it once and every future one is filed your way.",
   },
   {
     title: "It tells you what changed",

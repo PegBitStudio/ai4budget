@@ -9,6 +9,10 @@ export interface ParsedTransaction {
   date: string;
   description: string;
   amount: number;
+  /** Present only when the file carried a category column. */
+  category?: string;
+  /** Defaults to 'expense' when the file carries no type column. */
+  type: 'income' | 'expense';
 }
 
 export interface CSVError {
@@ -22,6 +26,7 @@ export interface ExportTransaction {
   description: string;
   amount: number;
   category: string;
+  type: 'income' | 'expense';
 }
 
 const MAX_ROWS = 10000;
@@ -55,8 +60,27 @@ function isValidAmount(value: string): boolean {
 }
 
 /**
+ * Detects a header row so files exported from this app — or from a bank,
+ * or a spreadsheet — can be imported without hand-editing them first.
+ *
+ * A header is a first row whose date column is not a date and whose first
+ * cell reads like a column name.
+ */
+function looksLikeHeader(row: string[]): boolean {
+  const first = row[0]?.trim().toLowerCase() ?? '';
+  if (!first || isValidDate(first)) {
+    return false;
+  }
+  return ['date', 'transaction date', 'txn date', 'value date'].includes(first);
+}
+
+/**
  * Parse a CSV string into validated transactions with error reporting.
- * Columns expected in order: date, description, amount.
+ *
+ * Columns in order: date, description, amount, then optionally category and
+ * type. A header row is detected and skipped. Rows with no type column are
+ * treated as expenses, which is the safer default for a budgeting tool.
+ *
  * Skips invalid rows and accumulates errors with row numbers.
  */
 export function parseCSV(csvContent: string): {
@@ -71,7 +95,14 @@ export function parseCSV(csvContent: string): {
     skipEmptyLines: true,
   });
 
-  const rows = result.data;
+  let rows = result.data;
+  let rowOffset = 0;
+
+  if (rows.length > 0 && looksLikeHeader(rows[0])) {
+    rows = rows.slice(1);
+    // Keep reported row numbers matching the file the user is looking at.
+    rowOffset = 1;
+  }
 
   if (rows.length > MAX_ROWS) {
     errors.push({
@@ -84,13 +115,15 @@ export function parseCSV(csvContent: string): {
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    const rowNumber = i + 1;
+    const rowNumber = i + 1 + rowOffset;
     let rowValid = true;
 
     // Extract fields: date, description, amount
     const dateStr = row[0]?.trim() ?? '';
     const description = row[1]?.trim() ?? '';
     const amountStr = row[2]?.trim() ?? '';
+    const categoryStr = row[3]?.trim() ?? '';
+    const typeStr = row[4]?.trim().toLowerCase() ?? '';
 
     // Validate date
     if (!dateStr) {
@@ -144,6 +177,8 @@ export function parseCSV(csvContent: string): {
         date: dateStr,
         description,
         amount: Number(amountStr),
+        ...(categoryStr ? { category: categoryStr } : {}),
+        type: typeStr === 'income' ? 'income' : 'expense',
       });
     }
   }
@@ -153,9 +188,12 @@ export function parseCSV(csvContent: string): {
 
 /**
  * Export transactions to a CSV string with proper formatting.
- * Header row: date,description,amount,category
+ * Header row: date,description,amount,category,type
  * Dates in ISO 8601, amounts with 2 decimal places, RFC 4180 escaping.
  * Transactions ordered by date ascending.
+ *
+ * The type column matters: without it a re-imported export would turn every
+ * income row into an expense.
  */
 export function exportCSV(transactions: ExportTransaction[]): string {
   // Sort by date ascending
@@ -166,10 +204,11 @@ export function exportCSV(transactions: ExportTransaction[]): string {
     t.description,
     t.amount.toFixed(2),
     t.category,
+    t.type,
   ]);
 
   const csv = Papa.unparse({
-    fields: ['date', 'description', 'amount', 'category'],
+    fields: ['date', 'description', 'amount', 'category', 'type'],
     data: rows,
   });
 

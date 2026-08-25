@@ -23,16 +23,19 @@ describe('csvService', () => {
         date: '2024-01-15',
         description: 'Groceries at Woolworths',
         amount: 45.99,
+        type: 'expense',
       });
       expect(transactions[1]).toEqual({
         date: '2024-02-01',
         description: 'Monthly rent',
         amount: 1200.0,
+        type: 'expense',
       });
       expect(transactions[2]).toEqual({
         date: '2024-03-10',
         description: 'Coffee shop',
         amount: 5.5,
+        type: 'expense',
       });
     });
 
@@ -151,18 +154,18 @@ describe('csvService', () => {
   describe('exportCSV', () => {
     it('should export transactions with proper formatting', () => {
       const transactions: ExportTransaction[] = [
-        { date: '2024-03-10', description: 'Coffee', amount: 5.5, category: 'Dining' },
-        { date: '2024-01-15', description: 'Rent', amount: 1200, category: 'Housing' },
+        { date: '2024-03-10', description: 'Coffee', amount: 5.5, category: 'Dining', type: 'expense' },
+        { date: '2024-01-15', description: 'Rent', amount: 1200, category: 'Housing', type: 'expense' },
       ];
 
       const csv = exportCSV(transactions);
       const lines = csv.split('\r\n');
 
       // Header row
-      expect(lines[0]).toBe('date,description,amount,category');
+      expect(lines[0]).toBe('date,description,amount,category,type');
       // Sorted by date ascending, amounts with 2 decimal places
-      expect(lines[1]).toBe('2024-01-15,Rent,1200.00,Housing');
-      expect(lines[2]).toBe('2024-03-10,Coffee,5.50,Dining');
+      expect(lines[1]).toBe('2024-01-15,Rent,1200.00,Housing,expense');
+      expect(lines[2]).toBe('2024-03-10,Coffee,5.50,Dining,expense');
     });
 
     it('should handle descriptions with commas (RFC 4180 escaping)', () => {
@@ -172,6 +175,7 @@ describe('csvService', () => {
           description: 'Groceries, snacks, and drinks',
           amount: 45.99,
           category: 'Groceries',
+          type: 'expense',
         },
       ];
 
@@ -179,7 +183,7 @@ describe('csvService', () => {
       const lines = csv.split('\r\n');
 
       // Field with commas should be quoted
-      expect(lines[1]).toBe('2024-01-15,"Groceries, snacks, and drinks",45.99,Groceries');
+      expect(lines[1]).toBe('2024-01-15,"Groceries, snacks, and drinks",45.99,Groceries,expense');
     });
 
     it('should handle descriptions with double quotes (RFC 4180 escaping)', () => {
@@ -189,6 +193,7 @@ describe('csvService', () => {
           description: 'The "best" coffee',
           amount: 6.0,
           category: 'Dining',
+          type: 'expense',
         },
       ];
 
@@ -196,14 +201,14 @@ describe('csvService', () => {
       const lines = csv.split('\r\n');
 
       // Quotes inside field are escaped by doubling and the field is quoted
-      expect(lines[1]).toBe('2024-01-15,"The ""best"" coffee",6.00,Dining');
+      expect(lines[1]).toBe('2024-01-15,"The ""best"" coffee",6.00,Dining,expense');
     });
 
     it('should return empty CSV with just headers for empty transactions', () => {
       const csv = exportCSV([]);
       const lines = csv.split('\r\n');
 
-      expect(lines[0]).toBe('date,description,amount,category');
+      expect(lines[0]).toBe('date,description,amount,category,type');
       // No data rows (PapaParse may return just the header)
       expect(lines.length).toBeLessThanOrEqual(2);
       if (lines.length === 2) {
@@ -213,9 +218,9 @@ describe('csvService', () => {
 
     it('should order transactions by date ascending', () => {
       const transactions: ExportTransaction[] = [
-        { date: '2024-03-01', description: 'Third', amount: 30, category: 'Other' },
-        { date: '2024-01-01', description: 'First', amount: 10, category: 'Other' },
-        { date: '2024-02-01', description: 'Second', amount: 20, category: 'Other' },
+        { date: '2024-03-01', description: 'Third', amount: 30, category: 'Other', type: 'expense' },
+        { date: '2024-01-01', description: 'First', amount: 10, category: 'Other', type: 'expense' },
+        { date: '2024-02-01', description: 'Second', amount: 20, category: 'Other', type: 'expense' },
       ];
 
       const csv = exportCSV(transactions);
@@ -244,44 +249,101 @@ describe('csvService', () => {
     });
   });
 
+  describe('header handling', () => {
+    it('skips a header row', () => {
+      const csv = [
+        'date,description,amount',
+        '2024-01-15,Rent,1200.00',
+      ].join('\n');
+
+      const { transactions, errors } = parseCSV(csv);
+
+      expect(errors).toHaveLength(0);
+      expect(transactions).toHaveLength(1);
+      expect(transactions[0].description).toBe('Rent');
+    });
+
+    it('reports row numbers against the file the user is looking at', () => {
+      const csv = [
+        'date,description,amount',
+        '2024-01-15,Rent,1200.00',
+        'not-a-date,Broken,50.00',
+      ].join('\n');
+
+      const { errors } = parseCSV(csv);
+
+      // The bad row is the third line of the file, not the second data row.
+      expect(errors[0].row).toBe(3);
+    });
+
+    it('does not mistake a data row for a header', () => {
+      const csv = '2024-01-15,Rent,1200.00';
+      expect(parseCSV(csv).transactions).toHaveLength(1);
+    });
+  });
+
+  describe('optional category and type columns', () => {
+    it('reads a category when the file provides one', () => {
+      const { transactions } = parseCSV('2024-01-15,Rent,1200.00,Housing');
+      expect(transactions[0].category).toBe('Housing');
+    });
+
+    it('leaves category unset when the file has only three columns', () => {
+      const { transactions } = parseCSV('2024-01-15,Rent,1200.00');
+      expect(transactions[0].category).toBeUndefined();
+    });
+
+    it('reads income from the type column', () => {
+      const { transactions } = parseCSV('2024-01-25,Salary,450000.00,Other,income');
+      expect(transactions[0].type).toBe('income');
+    });
+
+    it('treats a row with no type column as an expense', () => {
+      const { transactions } = parseCSV('2024-01-15,Rent,1200.00');
+      expect(transactions[0].type).toBe('expense');
+    });
+
+    it('treats an unrecognised type as an expense', () => {
+      const { transactions } = parseCSV('2024-01-15,Rent,1200.00,Housing,DR');
+      expect(transactions[0].type).toBe('expense');
+    });
+  });
+
   describe('round trip: export then parse', () => {
-    it('should produce equivalent data when exported and re-imported', () => {
+    it('preserves date, description, amount, category and type', () => {
+      // Before the type column existed, re-importing an export silently turned
+      // every income row into an expense.
       const original: ExportTransaction[] = [
-        { date: '2024-01-15', description: 'Rent payment', amount: 1200, category: 'Housing' },
-        { date: '2024-01-20', description: 'Groceries', amount: 85.5, category: 'Groceries' },
-        { date: '2024-02-01', description: 'Electric bill', amount: 120.75, category: 'Utilities' },
+        { date: '2024-01-15', description: 'Rent payment', amount: 1200, category: 'Housing', type: 'expense' },
+        { date: '2024-01-20', description: 'Groceries', amount: 85.5, category: 'Groceries', type: 'expense' },
+        { date: '2024-02-01', description: 'Salary', amount: 450000, category: 'Other', type: 'income' },
       ];
 
-      // Export to CSV
-      const csv = exportCSV(original);
+      // The export is fed straight back in, header and all.
+      const { transactions, errors } = parseCSV(exportCSV(original));
 
-      // Remove header row before parsing (parseCSV expects no header)
-      const lines = csv.split('\r\n');
-      const dataOnly = lines.slice(1).join('\n');
-
-      // Parse back (note: parseCSV expects 3 columns: date, description, amount)
-      // The exported CSV has 4 columns, so we need to test the round-trip differently
-      // We'll manually validate the structure
-      const { transactions, errors } = parseCSV(dataOnly);
-
-      // The parser reads columns 0,1,2 as date,description,amount
-      // Since export has date,description,amount,category (4 cols),
-      // columns 0,1,2 still map correctly
       expect(errors).toHaveLength(0);
-      expect(transactions).toHaveLength(3);
+      expect(transactions).toEqual([
+        { date: '2024-01-15', description: 'Rent payment', amount: 1200, category: 'Housing', type: 'expense' },
+        { date: '2024-01-20', description: 'Groceries', amount: 85.5, category: 'Groceries', type: 'expense' },
+        { date: '2024-02-01', description: 'Salary', amount: 450000, category: 'Other', type: 'income' },
+      ]);
+    });
 
-      // Sorted by date ascending (already sorted in export)
-      expect(transactions[0].date).toBe('2024-01-15');
-      expect(transactions[0].description).toBe('Rent payment');
-      expect(transactions[0].amount).toBe(1200.0);
+    it('survives descriptions containing commas and quotes', () => {
+      const original: ExportTransaction[] = [
+        {
+          date: '2024-01-15',
+          description: 'The "best" coffee, twice',
+          amount: 6,
+          category: 'Dining',
+          type: 'expense',
+        },
+      ];
 
-      expect(transactions[1].date).toBe('2024-01-20');
-      expect(transactions[1].description).toBe('Groceries');
-      expect(transactions[1].amount).toBe(85.5);
+      const { transactions } = parseCSV(exportCSV(original));
 
-      expect(transactions[2].date).toBe('2024-02-01');
-      expect(transactions[2].description).toBe('Electric bill');
-      expect(transactions[2].amount).toBe(120.75);
+      expect(transactions[0].description).toBe('The "best" coffee, twice');
     });
   });
 });
