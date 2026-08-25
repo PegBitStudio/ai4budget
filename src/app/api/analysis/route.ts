@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import {
   detectAnomalies,
   detectIncreasingCategories,
+  detectRecurringCharges,
   getComparison,
   generateExplanation,
   generateTrendExplanation,
@@ -166,23 +167,32 @@ export async function GET(request: Request) {
       explanation: generateTrendExplanation(trend),
     }));
 
-    const hasPatterns = anomaliesWithExplanation.length > 0 || trendsWithExplanation.length > 0;
+    // Money leaving on autopilot, drawn from the same history as the anomaly
+    // baseline. This is the "unnecessary" half of the brief: charges that
+    // repeat every month are invisible in a list sorted by date.
+    const recurring = detectRecurringCharges(
+      (allTransactions ?? []).map((t) => ({
+        amount: t.amount,
+        category: t.category as Category,
+        description: t.description,
+        date: t.date,
+      }))
+    );
 
-    if (!hasPatterns) {
-      return NextResponse.json({
-        anomalies: [],
-        trends: [],
-        comparison,
-        hasPatterns: false,
-        message: 'No unusual spending patterns found',
-      });
-    }
+    const hasPatterns =
+      anomaliesWithExplanation.length > 0 ||
+      trendsWithExplanation.length > 0 ||
+      recurring.charges.length > 0;
 
     return NextResponse.json({
       anomalies: anomaliesWithExplanation,
       trends: trendsWithExplanation,
+      recurring,
       comparison,
-      hasPatterns: true,
+      hasPatterns,
+      ...(hasPatterns
+        ? {}
+        : { message: 'No unusual spending patterns found' }),
     });
   } catch (error) {
     console.error('[GET /api/analysis] Unexpected error:', error);

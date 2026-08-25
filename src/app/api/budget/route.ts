@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { generateBudget, modifyAllocation, Frequency } from '@/lib/budgetEngine';
+import {
+  generateBudget,
+  modifyAllocation,
+  normalizeToWeekly,
+  Frequency,
+} from '@/lib/budgetEngine';
 import { CategorySchema } from '@/models/category';
 import { PeriodTypeSchema } from '@/models/budget';
 import {
@@ -53,13 +58,20 @@ export async function POST(request: NextRequest) {
         ? getCurrentMonthPeriod()
         : getCurrentWeekPeriod();
 
-    // 1. Query total income for the period (sum of income transactions in current period)
+    // 1. Work out the income to divide up.
+    //
+    // Income is measured over the calendar month and then scaled to the target
+    // period. Counting only what landed inside a given week gave payday week
+    // an entire month's salary to spend and left the other three weeks with no
+    // income at all, unable to budget.
+    const incomeMonth = getCurrentMonthPeriod();
+
     const { data: incomeTransactions, error: incomeError } = await supabase
       .from('transactions')
       .select('amount')
       .eq('type', 'income')
-      .gte('date', currentPeriod.start)
-      .lte('date', currentPeriod.end);
+      .gte('date', incomeMonth.start)
+      .lte('date', incomeMonth.end);
 
     if (incomeError) {
       return NextResponse.json(
@@ -68,10 +80,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const totalIncome = (incomeTransactions ?? []).reduce(
+    let monthlyIncome = (incomeTransactions ?? []).reduce(
       (sum, t) => sum + Number(t.amount),
       0
     );
+
+    // Early in a month, before payday, fall back to what last month brought in
+    // rather than telling the user they have nothing to budget.
+    if (monthlyIncome === 0) {
+      const previousMonth = getPreviousPeriod(incomeMonth.start, 'monthly');
+      const { data: lastMonthIncome } = await supabase
+        .from('transactions')
+        .select('amount')
+        .eq('type', 'income')
+        .gte('date', previousMonth.start)
+        .lte('date', previousMonth.end);
+
+      monthlyIncome = (lastMonthIncome ?? []).reduce(
+        (sum, t) => sum + Number(t.amount),
+        0
+      );
+    }
+
+    const totalIncome =
+      periodType === 'weekly'
+        ? normalizeToWeekly(monthlyIncome, 'monthly')
+        : monthlyIncome;
 
     // 2. Query user's financial commitments
     const { data: commitments, error: commitmentsError } = await supabase
@@ -97,13 +131,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const totalSavingsContribution = (savingsGoals ?? []).reduce(
+    // Savings goals store a monthly contribution, so a weekly budget must take
+    // a week's worth — not a whole month out of a single week's income.
+    const monthlySavings = (savingsGoals ?? []).reduce(
       (sum, g) => sum + Number(g.monthly_contribution),
       0
     );
+    const totalSavingsContribution =
+      periodType === 'weekly'
+        ? normalizeToWeekly(monthlySavings, 'monthly')
+        : monthlySavings;
 
-    // 4. Query historical spending (group expenses by category for the most recent complete period)
-    const previousPeriod = getPreviousPeriod(currentPeriod.start, periodType);
+    // 4. Query historical spending to derive allocation proportions.
+    //
+    // Always a month of history, whatever the budget period. Only the
+    // proportions are used, and they do not depend on the window length — but
+    // a single previous week is far too thin a sample. One cinema ticket in a
+    // quiet week produced a weekly budget that put 100% of income into
+    // Entertainment.
+    const previousPeriod = getPreviousPeriod(getCurrentMonthPeriod().start, 'monthly');
 
     let { data: historicalTransactions } = await supabase
       .from('transactions')
@@ -117,12 +163,13 @@ export async function POST(request: NextRequest) {
     // very first budget they are shown is wrong about their largest cost.
     // Anything already recorded this period is better signal than nothing.
     if (!historicalTransactions || historicalTransactions.length === 0) {
+      const thisMonth = getCurrentMonthPeriod();
       const { data: currentTransactions } = await supabase
         .from('transactions')
         .select('category, amount')
         .eq('type', 'expense')
-        .gte('date', currentPeriod.start)
-        .lte('date', currentPeriod.end);
+        .gte('date', thisMonth.start)
+        .lte('date', thisMonth.end);
 
       historicalTransactions = currentTransactions;
     }

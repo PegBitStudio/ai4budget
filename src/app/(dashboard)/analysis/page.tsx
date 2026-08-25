@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { formatCurrency, formatPercentage } from "@/utils/formatters";
+import RecurringCharges from "@/components/analysis/RecurringCharges";
+import type { RecurringSummary } from "@/components/analysis/RecurringCharges";
 
 interface AnomalyData {
   transaction: {
@@ -27,6 +29,7 @@ interface TrendData {
 interface AnalysisResponse {
   anomalies: AnomalyData[];
   trends: TrendData[];
+  recurring?: RecurringSummary;
   hasPatterns: boolean;
   message?: string;
 }
@@ -111,6 +114,8 @@ export default function AnalysisPage() {
           </div>
         </section>
       )}
+
+      {data?.recurring && <RecurringCharges summary={data.recurring} />}
     </div>
   );
 }

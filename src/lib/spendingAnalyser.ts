@@ -203,6 +203,118 @@ export function detectAnomalies(
 }
 
 /**
+ * A charge that repeats month after month — a subscription, a bill, or a habit
+ * regular enough to behave like one.
+ */
+export interface RecurringCharge {
+  description: string;
+  category: Category;
+  /** Distinct months this merchant appeared in. */
+  monthsSeen: number;
+  /** What it typically costs per month, across all its charges that month. */
+  monthlyCost: number;
+  /** The most recent month's total for this merchant. */
+  latestMonthCost: number;
+  /** Percentage change from the earlier average to the latest month. */
+  changePercent: number;
+  /** True when the latest month is meaningfully more expensive than before. */
+  increased: boolean;
+}
+
+export interface RecurringSummary {
+  charges: RecurringCharge[];
+  /** Combined typical monthly cost of everything recurring. */
+  totalMonthlyCost: number;
+  /** How much more the latest month costs than the earlier average. */
+  increaseAmount: number;
+}
+
+/** A charge must have grown by more than this to count as creeping upward. */
+const RECURRING_INCREASE_THRESHOLD = 5;
+
+/**
+ * Finds money leaving on autopilot.
+ *
+ * The brief asks for unusual, unnecessary *or increasing* expenses. Unusual and
+ * increasing were covered; this is the third. Recurring charges are the ones
+ * people forget they signed up for — the quiet ₦4,400 that appeared one month
+ * and never left — and they are invisible in a list sorted by date.
+ *
+ * A merchant counts as recurring once it appears in two or more distinct
+ * months. Costs are summed per month first, so a daily commute is reported as
+ * its monthly total rather than its per-ride price.
+ *
+ * Pure business logic — no database calls.
+ */
+export function detectRecurringCharges(
+  transactions: HistoricTransaction[]
+): RecurringSummary {
+  // merchant key -> month -> total spent that month
+  const byMerchant = new Map<
+    string,
+    { label: string; category: Category; months: Map<string, number> }
+  >();
+
+  for (const t of transactions) {
+    const key = merchantKey(t.description);
+    if (!key) continue;
+
+    const entry = byMerchant.get(key) ?? {
+      label: t.description,
+      category: t.category,
+      months: new Map<string, number>(),
+    };
+
+    const month = t.date.slice(0, 7); // YYYY-MM
+    entry.months.set(month, (entry.months.get(month) ?? 0) + t.amount);
+    byMerchant.set(key, entry);
+  }
+
+  const charges: RecurringCharge[] = [];
+
+  for (const entry of Array.from(byMerchant.values())) {
+    if (entry.months.size < RECURRING_MONTHS) {
+      continue;
+    }
+
+    const months = Array.from(entry.months.entries()).sort(([a], [b]) =>
+      a.localeCompare(b)
+    );
+    const totals = months.map(([, total]) => total);
+    const latestMonthCost = totals[totals.length - 1];
+    const earlier = totals.slice(0, -1);
+    const earlierAverage =
+      earlier.reduce((sum, n) => sum + n, 0) / earlier.length;
+
+    const changePercent =
+      earlierAverage > 0
+        ? ((latestMonthCost - earlierAverage) / earlierAverage) * 100
+        : 0;
+
+    charges.push({
+      description: entry.label,
+      category: entry.category,
+      monthsSeen: entry.months.size,
+      monthlyCost: totals.reduce((sum, n) => sum + n, 0) / totals.length,
+      latestMonthCost,
+      changePercent,
+      increased: changePercent > RECURRING_INCREASE_THRESHOLD,
+    });
+  }
+
+  // Most expensive first — that is where the money is.
+  charges.sort((a, b) => b.latestMonthCost - a.latestMonthCost);
+
+  const totalMonthlyCost = charges.reduce((sum, c) => sum + c.latestMonthCost, 0);
+  const increaseAmount = charges.reduce(
+    (sum, c) => sum + Math.max(c.latestMonthCost - c.monthlyCost, 0),
+    0
+  );
+
+  return { charges, totalMonthlyCost, increaseAmount };
+}
+
+/**
  * Detects categories where spending increased by more than 20%
  * compared to the previous period.
  */

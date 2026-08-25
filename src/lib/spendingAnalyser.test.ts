@@ -3,6 +3,7 @@ import {
   getComparison,
   detectAnomalies,
   detectIncreasingCategories,
+  detectRecurringCharges,
   generateExplanation,
   generateTrendExplanation,
   SpendingAnomaly,
@@ -553,5 +554,104 @@ describe('getComparison with unplanned spending', () => {
     );
 
     expect(result).toHaveLength(1);
+  });
+});
+
+describe('detectRecurringCharges', () => {
+  const threeMonths: HistoricTransaction[] = [
+    // A subscription that quietly went up in the latest month.
+    { amount: 7500, category: 'Subscriptions', description: 'Netflix', date: '2026-06-07' },
+    { amount: 7500, category: 'Subscriptions', description: 'Netflix', date: '2026-07-07' },
+    { amount: 10150, category: 'Subscriptions', description: 'Netflix', date: '2026-08-07' },
+    // Flat every month.
+    { amount: 25000, category: 'Subscriptions', description: 'Gym membership', date: '2026-06-12' },
+    { amount: 25000, category: 'Subscriptions', description: 'Gym membership', date: '2026-07-12' },
+    { amount: 25000, category: 'Subscriptions', description: 'Gym membership', date: '2026-08-12' },
+    // A one-off, which is not recurring.
+    { amount: 285000, category: 'Shopping', description: 'Slot - replacement phone', date: '2026-08-22' },
+  ];
+
+  it('finds charges that repeat across months', () => {
+    const { charges } = detectRecurringCharges(threeMonths);
+    expect(charges.map((c) => c.description).sort()).toEqual([
+      'Gym membership',
+      'Netflix',
+    ]);
+  });
+
+  it('ignores a one-off purchase however large', () => {
+    const { charges } = detectRecurringCharges(threeMonths);
+    expect(charges.some((c) => c.description.includes('phone'))).toBe(false);
+  });
+
+  it('flags a subscription that crept up', () => {
+    const netflix = detectRecurringCharges(threeMonths).charges.find(
+      (c) => c.description === 'Netflix'
+    );
+
+    expect(netflix?.increased).toBe(true);
+    expect(netflix?.latestMonthCost).toBe(10150);
+    expect(netflix?.changePercent).toBeCloseTo(35.3, 1);
+  });
+
+  it('does not flag a charge that has stayed the same', () => {
+    const gym = detectRecurringCharges(threeMonths).charges.find(
+      (c) => c.description === 'Gym membership'
+    );
+
+    expect(gym?.increased).toBe(false);
+    expect(gym?.changePercent).toBe(0);
+  });
+
+  it('totals what leaves the account every month', () => {
+    const { totalMonthlyCost } = detectRecurringCharges(threeMonths);
+    expect(totalMonthlyCost).toBe(35150); // 10,150 + 25,000
+  });
+
+  it('sums several charges from the same merchant within a month', () => {
+    // A daily commute should read as its monthly cost, not its per-ride price.
+    const commute: HistoricTransaction[] = [
+      { amount: 3200, category: 'Transport', description: 'Bolt ride', date: '2026-07-02' },
+      { amount: 3200, category: 'Transport', description: 'Bolt ride', date: '2026-07-09' },
+      { amount: 4550, category: 'Transport', description: 'Bolt ride', date: '2026-08-02' },
+      { amount: 4550, category: 'Transport', description: 'Bolt ride', date: '2026-08-09' },
+    ];
+
+    const bolt = detectRecurringCharges(commute).charges[0];
+
+    expect(bolt.latestMonthCost).toBe(9100);
+    expect(bolt.monthlyCost).toBe(7750); // (6,400 + 9,100) / 2
+    expect(bolt.increased).toBe(true);
+  });
+
+  it('matches a merchant despite formatting differences', () => {
+    const messy: HistoricTransaction[] = [
+      { amount: 2500, category: 'Subscriptions', description: 'Spotify Premium', date: '2026-07-07' },
+      { amount: 2500, category: 'Subscriptions', description: 'SPOTIFY-PREMIUM', date: '2026-08-07' },
+    ];
+
+    expect(detectRecurringCharges(messy).charges).toHaveLength(1);
+  });
+
+  it('lists the most expensive charge first', () => {
+    const { charges } = detectRecurringCharges(threeMonths);
+    expect(charges[0].description).toBe('Gym membership');
+  });
+
+  it('returns nothing for an empty history', () => {
+    expect(detectRecurringCharges([])).toEqual({
+      charges: [],
+      totalMonthlyCost: 0,
+      increaseAmount: 0,
+    });
+  });
+
+  it('returns nothing when no merchant repeats', () => {
+    const oneOffs: HistoricTransaction[] = [
+      { amount: 1000, category: 'Dining', description: 'A', date: '2026-07-01' },
+      { amount: 2000, category: 'Dining', description: 'B', date: '2026-08-01' },
+    ];
+
+    expect(detectRecurringCharges(oneOffs).charges).toEqual([]);
   });
 });
