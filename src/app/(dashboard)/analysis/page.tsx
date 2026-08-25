@@ -16,6 +16,13 @@ interface AnomalyData {
   categoryAverage: number;
   multiple: number;
   explanation: string;
+  goalImpact: GoalImpact | null;
+}
+
+interface GoalImpact {
+  monthsDelayed: number;
+  monthlyRate: number;
+  label: string;
 }
 
 interface TrendData {
@@ -146,6 +153,31 @@ function AnomalyCard({ anomaly }: { anomaly: AnomalyData }) {
         </span>
       </div>
       <p className="mt-2 text-sm text-amber-700">{explanation}</p>
+
+      {/* What it cost in progress, not just in Naira. A figure is an
+          abstraction; a delay to something you are saving for is a decision. */}
+      {anomaly.goalImpact && (
+        <p className="mt-2 flex items-start gap-1.5 border-t border-amber-200 pt-2 text-sm font-medium text-amber-900">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="mt-0.5 h-4 w-4 shrink-0"
+            aria-hidden="true"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <span>
+            That is {anomaly.goalImpact.label} further from your savings goal,
+            at the {formatCurrency(anomaly.goalImpact.monthlyRate)} a month you
+            are putting aside.
+          </span>
+        </p>
+      )}
     </article>
   );
 }

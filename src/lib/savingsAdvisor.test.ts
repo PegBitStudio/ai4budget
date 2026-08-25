@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   getRecommendation,
+  getGoalImpact,
   calculateMonthsToGoal,
   formatRecommendation,
   SavingsRecommendationParams,
@@ -288,5 +289,86 @@ describe('savingsAdvisor', () => {
       expect(result.monthlyContribution).toBe(0);
       expect(result.isExcessive).toBe(false);
     });
+  });
+});
+
+describe('getGoalImpact', () => {
+  const goal = {
+    targetAmount: 1200000,
+    currentAmount: 185000,
+    monthlyContribution: 90000,
+  };
+
+  it('translates a purchase into months of lost progress', () => {
+    // ₦285,000 at ₦90,000 saved per month is a little over three months.
+    const impact = getGoalImpact(285000, goal);
+
+    expect(impact).not.toBeNull();
+    expect(impact?.monthsDelayed).toBeCloseTo(3.17, 2);
+    expect(impact?.label).toBe('about 3 months');
+    expect(impact?.monthlyRate).toBe(90000);
+  });
+
+  it('phrases a sub-month delay in weeks', () => {
+    expect(getGoalImpact(45000, goal)?.label).toBe('about 2 weeks');
+  });
+
+  it('says "about a month" rather than "about 1 months"', () => {
+    expect(getGoalImpact(90000, goal)?.label).toBe('about a month');
+  });
+
+  it('rounds to the nearest half month', () => {
+    expect(getGoalImpact(135000, goal)?.label).toBe('about 1.5 months');
+  });
+
+  it('stays silent when the amount is trivial', () => {
+    // Better to say nothing than to dress up a rounding error as insight.
+    expect(getGoalImpact(500, goal)).toBeNull();
+  });
+
+  it('falls back to the rate the deadline demands', () => {
+    const today = new Date();
+    const sixMonthsOut = new Date(today.getFullYear(), today.getMonth() + 6, 15);
+    const deadline = `${sixMonthsOut.getFullYear()}-${String(sixMonthsOut.getMonth() + 1).padStart(2, '0')}-15`;
+
+    const impact = getGoalImpact(100000, {
+      targetAmount: 700000,
+      currentAmount: 100000,
+      monthlyContribution: 0,
+      deadline,
+    });
+
+    // ₦600,000 remaining over ~6 months is ₦100,000/month, so ₦100,000 spent
+    // costs about a month.
+    expect(impact?.label).toBe('about a month');
+  });
+
+  it('returns null when there is no goal', () => {
+    expect(getGoalImpact(285000, undefined)).toBeNull();
+  });
+
+  it('returns null when there is no rate to measure against', () => {
+    expect(
+      getGoalImpact(285000, {
+        targetAmount: 1200000,
+        currentAmount: 185000,
+        monthlyContribution: 0,
+      })
+    ).toBeNull();
+  });
+
+  it('returns null once the goal is already met', () => {
+    expect(
+      getGoalImpact(285000, {
+        targetAmount: 1200000,
+        currentAmount: 1200000,
+        monthlyContribution: 90000,
+      })
+    ).toBeNull();
+  });
+
+  it('returns null for a zero or negative amount', () => {
+    expect(getGoalImpact(0, goal)).toBeNull();
+    expect(getGoalImpact(-5000, goal)).toBeNull();
   });
 });

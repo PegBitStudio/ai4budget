@@ -211,3 +211,106 @@ function buildExplanation(
 
   return explanation;
 }
+
+// --- Goal impact ---
+
+/**
+ * What a piece of spending costs in progress toward a savings goal.
+ *
+ * Figures alone do not change behaviour — the brief's own complaint is that
+ * budgeting apps "present figures without explaining what actions should be
+ * taken". ₦285,000 is an abstraction. "Three months further from your goal" is
+ * a decision.
+ */
+export interface GoalImpact {
+  /** How much longer the goal takes because this money was spent. */
+  monthsDelayed: number;
+  /** The saving rate the delay was calculated against. */
+  monthlyRate: number;
+  /** Plain-language phrasing, e.g. "about 3 months". */
+  label: string;
+}
+
+export interface GoalImpactGoal {
+  targetAmount: number;
+  currentAmount: number;
+  monthlyContribution: number;
+  deadline?: string;
+}
+
+/** Below this, a delay is not worth mentioning. */
+const MIN_REPORTABLE_MONTHS = 0.15; // roughly half a week
+
+/**
+ * Works out how far a given amount sets a savings goal back.
+ *
+ * The maths is simply amount ÷ monthly saving rate: money spent is money not
+ * saved, so at a rate of R per month, spending X costs X/R months of progress.
+ *
+ * Prefers the rate the user has actually committed to. Falls back to the rate
+ * their deadline demands, so a goal with a date but no stated contribution
+ * still produces an honest answer. Returns null when there is no rate to
+ * measure against — better to say nothing than to invent a number.
+ */
+export function getGoalImpact(
+  amount: number,
+  goal: GoalImpactGoal | undefined
+): GoalImpact | null {
+  if (!goal || amount <= 0) {
+    return null;
+  }
+
+  const remaining = goal.targetAmount - goal.currentAmount;
+  if (remaining <= 0) {
+    // The goal is already met; nothing to set back.
+    return null;
+  }
+
+  let monthlyRate = goal.monthlyContribution;
+
+  if (monthlyRate <= 0 && goal.deadline) {
+    const months = calculateMonthsToGoal(
+      goal.targetAmount,
+      goal.currentAmount,
+      goal.deadline
+    );
+    if (months !== null && months > 0) {
+      monthlyRate = remaining / months;
+    }
+  }
+
+  if (monthlyRate <= 0) {
+    return null;
+  }
+
+  const monthsDelayed = amount / monthlyRate;
+  if (monthsDelayed < MIN_REPORTABLE_MONTHS) {
+    return null;
+  }
+
+  return {
+    monthsDelayed,
+    monthlyRate,
+    label: describeDelay(monthsDelayed),
+  };
+}
+
+/**
+ * Turns a fractional month count into something a person would say.
+ */
+function describeDelay(months: number): string {
+  if (months < 1) {
+    const weeks = Math.round(months * 4.33);
+    return weeks <= 1 ? 'about a week' : `about ${weeks} weeks`;
+  }
+
+  const rounded = Math.round(months * 2) / 2; // nearest half month
+
+  if (rounded === 1) {
+    return 'about a month';
+  }
+  if (rounded % 1 !== 0) {
+    return `about ${rounded} months`;
+  }
+  return `about ${rounded} months`;
+}

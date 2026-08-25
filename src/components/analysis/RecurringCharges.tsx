@@ -16,6 +16,11 @@ export interface RecurringSummary {
   charges: RecurringCharge[];
   totalMonthlyCost: number;
   increaseAmount: number;
+  goalImpact?: {
+    monthsDelayed: number;
+    monthlyRate: number;
+    label: string;
+  } | null;
 }
 
 /** How many charges the list shows before deferring to the headline total. */
@@ -75,6 +80,19 @@ export default function RecurringCharges({
           )}
           .
         </p>
+
+        {/* The creep, priced in goal progress. It is small each month, which
+            is exactly why it is worth naming. */}
+        {summary.goalImpact && (
+          <p className="mt-3 border-t border-white/15 pt-3 text-sm leading-6 text-violet-100">
+            Left alone for a year, that increase alone sets your savings goal
+            back{" "}
+            <span className="font-semibold text-white">
+              {summary.goalImpact.label}
+            </span>
+            .
+          </p>
+        )}
       </div>
 
       <ul className="mt-4 divide-y divide-slate-100 rounded-[1.5rem] border border-white bg-white shadow-sm">

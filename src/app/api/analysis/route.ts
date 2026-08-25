@@ -8,6 +8,7 @@ import {
   generateExplanation,
   generateTrendExplanation,
 } from '@/lib/spendingAnalyser';
+import { getGoalImpact } from '@/lib/savingsAdvisor';
 import {
   getCurrentMonthPeriod,
   getCurrentWeekPeriod,
@@ -156,10 +157,28 @@ export async function GET(request: Request) {
       previousCategorySpending
     );
 
+    // The user's savings goal, so spending can be reported as what it costs in
+    // progress rather than only as a figure.
+    const { data: savingsGoals } = await supabase
+      .from('savings_goals')
+      .select('target_amount, current_amount, monthly_contribution, deadline')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    const goal = savingsGoals?.[0]
+      ? {
+          targetAmount: Number(savingsGoals[0].target_amount),
+          currentAmount: Number(savingsGoals[0].current_amount),
+          monthlyContribution: Number(savingsGoals[0].monthly_contribution),
+          deadline: savingsGoals[0].deadline ?? undefined,
+        }
+      : undefined;
+
     // Generate explanations
     const anomaliesWithExplanation = anomalies.map((anomaly) => ({
       ...anomaly,
       explanation: generateExplanation(anomaly),
+      goalImpact: getGoalImpact(anomaly.transaction.amount, goal),
     }));
 
     const trendsWithExplanation = trends.map((trend) => ({
@@ -179,6 +198,11 @@ export async function GET(request: Request) {
       }))
     );
 
+    // What the creep in recurring charges costs over a year. increaseAmount is
+    // a monthly figure, and a monthly increase left alone is paid twelve times
+    // — so the annual total is what the delay must be measured against.
+    const recurringGoalImpact = getGoalImpact(recurring.increaseAmount * 12, goal);
+
     const hasPatterns =
       anomaliesWithExplanation.length > 0 ||
       trendsWithExplanation.length > 0 ||
@@ -187,7 +211,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       anomalies: anomaliesWithExplanation,
       trends: trendsWithExplanation,
-      recurring,
+      recurring: { ...recurring, goalImpact: recurringGoalImpact },
       comparison,
       hasPatterns,
       ...(hasPatterns
