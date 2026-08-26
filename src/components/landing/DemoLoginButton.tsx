@@ -36,7 +36,7 @@ export default function DemoLoginButton() {
         type="button"
         onClick={openDemo}
         disabled={loading}
-        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-ink-900 px-5 text-body font-medium text-paper transition-colors duration-[--duration-fast] hover:bg-ink-800 disabled:cursor-not-allowed disabled:bg-ink-300"
+        className="group inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-ink-900 px-5 text-body font-medium text-paper shadow-raised transition-[background-color,transform,box-shadow] duration-[--duration-base] ease-[--ease-out-quart] hover:-translate-y-0.5 hover:bg-ink-800 hover:shadow-overlay disabled:cursor-not-allowed disabled:bg-ink-300 disabled:shadow-none motion-reduce:hover:translate-y-0"
       >
         {loading ? (
           <>
@@ -63,7 +63,23 @@ export default function DemoLoginButton() {
             Opening the demo…
           </>
         ) : (
-          "Explore the demo account"
+          <>
+            Explore the demo account
+            {/* The arrow leans forward under the cursor — a small promise that
+                the button goes somewhere. */}
+            <svg
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.75}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              className="size-4 transition-transform duration-[--duration-base] ease-[--ease-out-quart] group-hover:translate-x-0.5"
+            >
+              <path d="M3 8h10M9 4l4 4-4 4" />
+            </svg>
+          </>
         )}
       </button>
       {error && (
