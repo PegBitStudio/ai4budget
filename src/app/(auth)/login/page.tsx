@@ -107,13 +107,12 @@ export default function LoginPage() {
               Create one
             </Link>
           </p>
-          <button
-            type="button"
-            onClick={() => alert("Please contact support to reset your password.")}
+          <Link
+            href="/forgot-password"
             className="rounded-xs font-medium text-ink-500 underline-offset-2 hover:text-ink-800 hover:underline"
           >
             Forgot password?
-          </button>
+          </Link>
         </div>
       </form>
     </div>

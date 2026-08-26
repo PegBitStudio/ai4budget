@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 import { useState, useEffect, useCallback } from 'react';
 import { formatCurrency } from '@/utils/formatters';
 import { CATEGORIES } from '@/models/category';
@@ -32,6 +34,16 @@ export default function SettingsPage() {
 
   // Data deletion state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // The shared demo account cannot wipe itself; the server refuses, and the
+  // panel should not be sitting there inviting the attempt.
+  const [isDemo, setIsDemo] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch('/api/demo/status')
+      .then((r) => (r.ok ? r.json() : { isDemo: false }))
+      .then((d) => setIsDemo(Boolean(d.isDemo)))
+      .catch(() => setIsDemo(false));
+  }, []);
   const [deleting, setDeleting] = useState(false);
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
 
@@ -529,6 +541,7 @@ export default function SettingsPage() {
       </section>
 
       {/* --- Danger Zone: Delete All Data --- */}
+      {isDemo === false && (
       <section className="bg-paper border border-negative-100 rounded-lg p-5 shadow-card">
         <h2 className="text-lg font-semibold text-negative-700 mb-2">Danger Zone</h2>
         <p className="text-sm text-ink-600 mb-4">
@@ -580,6 +593,21 @@ export default function SettingsPage() {
           </p>
         )}
       </section>
+      )}
+
+      {isDemo === true && (
+        <section className="rounded-lg border border-ink-200 bg-paper p-5 shadow-card">
+          <h2 className="mb-2 text-lg font-semibold text-ink-900">Shared demo account</h2>
+          <p className="text-body leading-relaxed text-ink-600">
+            You are exploring the demo, which everyone shares. Deleting all data
+            is turned off here — the next visitor would find an empty app.{' '}
+            <Link href="/signup" className="font-medium text-ink-900 underline underline-offset-2">
+              Create your own account
+            </Link>{' '}
+            to try it with your own figures.
+          </p>
+        </section>
+      )}
     </div>
   );
 }

@@ -9,6 +9,11 @@ const PUBLIC_ROUTES = [
   '/',
   '/login',
   '/signup',
+  '/forgot-password',
+  // Reachable while signed in on purpose: the emailed link puts the visitor
+  // into a short-lived recovery session, so they arrive here authenticated and
+  // must not be bounced to the dashboard before setting the new password.
+  '/reset-password',
   '/offline',
   '/manifest.webmanifest',
   '/sw.js',

@@ -7,6 +7,7 @@ import { getLLMClient } from '@/lib/llmClient';
 import { checkAlerts } from '@/lib/alertEngine';
 import { getCurrentMonthPeriod, getCurrentWeekPeriod } from '@/utils/dateUtils';
 import { parseListQuery } from '@/lib/transactionQuery';
+import { isDemoAccount, DEMO_BLOCKED_MESSAGE } from '@/lib/demoAccount';
 
 export const dynamic = 'force-dynamic';
 
@@ -130,6 +131,12 @@ export async function DELETE(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const all = searchParams.get('all');
+
+    // Enforced on the server, not merely hidden in the interface: the panel
+    // can be hidden, but the endpoint is one fetch away for anyone who looks.
+    if (await isDemoAccount()) {
+      return NextResponse.json({ error: DEMO_BLOCKED_MESSAGE }, { status: 403 });
+    }
 
     if (all !== 'true') {
       return NextResponse.json(
