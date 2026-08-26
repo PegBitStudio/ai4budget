@@ -89,11 +89,97 @@ export function buildContext(params: QAContextParams): FinancialContext {
 }
 
 /**
+ * Questions asking the product to recommend an investment, a product, or what
+ * to do with money beyond budgeting it.
+ *
+ * Matched on the ask, not on the noun: "how much did I spend on my pension" is
+ * a spending question and must still be answered, while "should I buy shares"
+ * must not be. So a hit needs both a subject we will not advise on and a phrasing
+ * that is seeking a recommendation.
+ */
+const INVESTMENT_SUBJECTS = [
+  'invest', 'investing', 'investment', 'stock', 'stocks', 'share', 'shares',
+  'crypto', 'bitcoin', 'forex', 'bond', 'bonds', 'mutual fund', 'etf',
+  'portfolio', 'treasury bill', 't-bill', 'real estate', 'property',
+];
+
+const ADVICE_PHRASINGS = [
+  'should i', 'should we', 'is it safe', 'is it wise', 'is it a good',
+  'recommend', 'advise', 'advice', 'worth it', 'how much should',
+  'where should', 'what should i put', 'good idea', 'better to',
+];
+
+/**
+ * True when the user is asking to be told what to do with their money rather
+ * than what they have done with it.
+ */
+/**
+ * Asking where to place money names no investment at all — "what should I put
+ * my savings into" is the same question as "should I buy shares", and has to
+ * be caught on its own shape.
+ */
+const PLACEMENT_PATTERNS = [
+  /(put|move|place)\s+(my\s+)?(savings|money|cash|salary|income)\s+(in|into|somewhere)/,
+  /where\s+(should|do|can)\s+(i|we)\s+(put|keep|save|invest)/,
+  /what\s+(should|can)\s+(i|we)\s+do\s+with\s+(my\s+)?(savings|money|cash)/,
+];
+
+export function isInvestmentAdviceRequest(question: string): boolean {
+  const lower = question.toLowerCase();
+
+  if (PLACEMENT_PATTERNS.some((pattern) => pattern.test(lower))) {
+    return true;
+  }
+
+  const subject = INVESTMENT_SUBJECTS.some((word) => lower.includes(word));
+  const asking = ADVICE_PHRASINGS.some((phrase) => lower.includes(phrase));
+  return subject && asking;
+}
+
+/**
+ * The decline.
+ *
+ * Written here rather than left to the model, because the one answer in this
+ * product that must never vary with sampling temperature is the one about the
+ * limits of the product. It says three things in order: what it will not do,
+ * why, and what it can do instead — a refusal that hands you nothing is just a
+ * dead end, and the honest alternative is genuinely useful.
+ */
+export function investmentAdviceDecline(data: QAData): string {
+  const income = data.transactions
+    .filter((t) => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+  const spending = data.transactions
+    .filter((t) => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
+  const left = income - spending;
+
+  const opening =
+    'I can’t advise on investments — whether something is a safe place for your money, or how much to put into it. That is regulated financial advice and it needs a licensed adviser who knows your full circumstances. KoboPilot only does budgeting.';
+
+  if (income === 0 && spending === 0) {
+    return `${opening}\n\nWhat I can do is work out what you have spare once your spending is recorded. Add some transactions and ask me again.`;
+  }
+
+  if (left > 0) {
+    return `${opening}\n\nWhat I can tell you is what is actually spare. This period you brought in ${formatCurrency(income)} and spent ${formatCurrency(spending)}, leaving ${formatCurrency(left)}. Whatever you decide to do with money, that figure is the honest ceiling — and it is worth checking against your savings goal before committing any of it.`;
+  }
+
+  return `${opening}\n\nWhat I can tell you is that there is nothing spare to commit right now. This period you brought in ${formatCurrency(income)} and spent ${formatCurrency(spending)} — ${formatCurrency(Math.abs(left))} more than you earned. Closing that gap comes before putting money anywhere else.`;
+}
+
+/**
  * Try to answer simple questions without the LLM.
  * Returns null if the question is too complex for local parsing.
  */
 export function getLocalAnswer(question: string, data: QAData): string | null {
   const lower = question.toLowerCase();
+
+  // Handled before anything else, so no phrasing can route around it into the
+  // model. This is the product's own boundary, not a judgement call.
+  if (isInvestmentAdviceRequest(question)) {
+    return investmentAdviceDecline(data);
+  }
 
   // "how much did I spend on [category]?"
   const categorySpendMatch = lower.match(
@@ -156,6 +242,17 @@ export async function answerQuestion(params: QAParams): Promise<QAResult> {
     return {
       answer: 'Please ask a question about your finances.',
       source: 'error',
+    };
+  }
+
+  // Answered before the keyword gate and before the "enough data" check: what
+  // this product will not do does not depend on how much it knows about you,
+  // and an empty account asking about shares deserves the boundary, not
+  // "there is not enough financial data".
+  if (isInvestmentAdviceRequest(question)) {
+    return {
+      answer: investmentAdviceDecline({ transactions, budget }),
+      source: 'local',
     };
   }
 

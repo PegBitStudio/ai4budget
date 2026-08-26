@@ -335,3 +335,83 @@ describe('advice-shaped questions', () => {
     expect(result.answer).toContain('only help with questions about your finances');
   });
 });
+
+describe('the investment boundary', () => {
+  const data: QAData = {
+    transactions: sampleTransactions,
+    budget: sampleBudget,
+  };
+
+  it.each([
+    'Is it safe to invest in stocks and how much should I invest?',
+    'Should I buy bitcoin?',
+    'How much should I put into treasury bills?',
+    'Would you recommend real estate?',
+    'Is it a good idea to invest in shares right now?',
+    'What should I put my savings into?',
+  ])('declines: %s', (question) => {
+    const answer = getLocalAnswer(question, data);
+    expect(answer).not.toBeNull();
+    expect(answer).toMatch(/can.t advise on investments/i);
+    expect(answer).toMatch(/licensed adviser/i);
+  });
+
+  // The boundary is about the ask, not the noun. Someone reviewing what they
+  // already spent on a pension is asking a spending question.
+  it.each([
+    'How much did I spend on groceries?',
+    'What is my total spending?',
+    'What is my income?',
+  ])('does not decline an ordinary question: %s', (question) => {
+    const answer = getLocalAnswer(question, data);
+    expect(answer).not.toMatch(/can.t advise on investments/i);
+  });
+
+  it('offers the honest ceiling when there is money spare', () => {
+    const answer = getLocalAnswer('Should I invest in stocks?', data);
+    // 3,500 in, 180 out.
+    expect(answer).toContain('₦3,320.00');
+    expect(answer).toMatch(/honest ceiling/i);
+  });
+
+  it('says there is nothing spare when spending overran income', () => {
+    const answer = getLocalAnswer('Should I invest in stocks?', {
+      transactions: [
+        { amount: 100, category: 'Other', date: '2024-01-01', type: 'income' },
+        { amount: 300, category: 'Dining', date: '2024-01-02', type: 'expense' },
+      ],
+    });
+    expect(answer).toMatch(/nothing spare/i);
+    expect(answer).toContain('₦200.00');
+  });
+
+  it('still holds the line on an empty account', () => {
+    const answer = getLocalAnswer('Should I invest in stocks?', { transactions: [] });
+    expect(answer).toMatch(/can.t advise on investments/i);
+    expect(answer).toMatch(/add some transactions/i);
+  });
+
+  it('answers the boundary before complaining about missing data', async () => {
+    const result = await answerQuestion({
+      question: 'Should I invest in stocks?',
+      transactions: [],
+      period: 'January 2024',
+    });
+    expect(result.source).toBe('local');
+    expect(result.answer).toMatch(/can.t advise on investments/i);
+  });
+
+  it('never routes an advice question to the model', async () => {
+    const llmClient = { answerQuestion: vi.fn().mockResolvedValue('Buy index funds.') };
+    const result = await answerQuestion({
+      question: 'Is it safe to invest in stocks and how much should I invest?',
+      transactions: sampleTransactions,
+      budget: sampleBudget,
+      period: 'January 2024',
+      llmClient,
+    });
+
+    expect(llmClient.answerQuestion).not.toHaveBeenCalled();
+    expect(result.answer).toMatch(/not financial advice|can.t advise on investments/i);
+  });
+});
