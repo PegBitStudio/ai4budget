@@ -1,4 +1,5 @@
 import { FinancialContext } from './llmClient';
+import { formatCurrency } from '@/utils/formatters';
 
 // --- Interfaces ---
 
@@ -109,7 +110,7 @@ export function getLocalAnswer(question: string, data: QAData): string | null {
       return `You haven't spent anything on ${queriedCategory} in this period.`;
     }
     const total = expenses.reduce((sum, t) => sum + t.amount, 0);
-    return `You spent $${total.toFixed(2)} on ${expenses[0].category} (${expenses.length} transaction${expenses.length > 1 ? 's' : ''}).`;
+    return `You spent ${formatCurrency(total)} on ${expenses[0].category} (${expenses.length} transaction${expenses.length > 1 ? 's' : ''}).`;
   }
 
   // "what is my total spending?" / "how much have I spent in total?"
@@ -122,7 +123,7 @@ export function getLocalAnswer(question: string, data: QAData): string | null {
       return 'You have no expense transactions recorded for this period.';
     }
     const total = expenses.reduce((sum, t) => sum + t.amount, 0);
-    return `Your total spending is $${total.toFixed(2)} across ${expenses.length} transaction${expenses.length > 1 ? 's' : ''}.`;
+    return `Your total spending is ${formatCurrency(total)} across ${expenses.length} transaction${expenses.length > 1 ? 's' : ''}.`;
   }
 
   // "what is my income?" / "how much did I earn?"
@@ -136,7 +137,7 @@ export function getLocalAnswer(question: string, data: QAData): string | null {
       return 'You have no income transactions recorded for this period.';
     }
     const total = incomes.reduce((sum, t) => sum + t.amount, 0);
-    return `Your total income is $${total.toFixed(2)} from ${incomes.length} source${incomes.length > 1 ? 's' : ''}.`;
+    return `Your total income is ${formatCurrency(total)} from ${incomes.length} source${incomes.length > 1 ? 's' : ''}.`;
   }
 
   // Can't answer locally — return null to fall through to LLM

@@ -58,20 +58,40 @@ describe('qaEngine', () => {
     it('answers "how much did I spend on groceries"', () => {
       const answer = getLocalAnswer('how much did I spend on groceries?', data);
       expect(answer).not.toBeNull();
-      expect(answer).toContain('$80.00');
+      expect(answer).toContain('₦80.00');
       expect(answer).toContain('Groceries');
     });
 
     it('answers "what is my total spending"', () => {
       const answer = getLocalAnswer('what is my total spending?', data);
       expect(answer).not.toBeNull();
-      expect(answer).toContain('$180.00');
+      expect(answer).toContain('₦180.00');
     });
 
     it('answers "what is my income"', () => {
       const answer = getLocalAnswer('what is my income?', data);
       expect(answer).not.toBeNull();
-      expect(answer).toContain('$3500.00');
+      expect(answer).toContain('₦3,500.00');
+    });
+
+    // This path answers without the model, so the model's currency
+    // instruction cannot save it. It shipped in dollars once, with these very
+    // tests green because they asserted the dollars — hence a check on the
+    // symbol itself rather than on any one sentence.
+    it.each([
+      'how much did I spend on groceries?',
+      'what is my total spending?',
+      'what is my income?',
+    ])('answers %s in Naira and never in dollars', (question) => {
+      const answer = getLocalAnswer(question, data);
+      expect(answer).not.toBeNull();
+      expect(answer).toContain('₦');
+      expect(answer).not.toContain('$');
+    });
+
+    it('groups thousands, so a six-figure total stays readable', () => {
+      const answer = getLocalAnswer('what is my income?', data);
+      expect(answer).toMatch(/₦[\d,]*\d{3}\.\d{2}/);
     });
 
     it('returns null for complex questions that need LLM', () => {
@@ -149,7 +169,7 @@ describe('qaEngine', () => {
       });
 
       expect(result.source).toBe('local');
-      expect(result.answer).toContain('$80.00');
+      expect(result.answer).toContain('₦80.00');
     });
 
     it('returns local answer for total spending question', async () => {
@@ -160,7 +180,7 @@ describe('qaEngine', () => {
       });
 
       expect(result.source).toBe('local');
-      expect(result.answer).toContain('$180.00');
+      expect(result.answer).toContain('₦180.00');
     });
 
     it('returns local answer for income question', async () => {
@@ -171,7 +191,7 @@ describe('qaEngine', () => {
       });
 
       expect(result.source).toBe('local');
-      expect(result.answer).toContain('$3500.00');
+      expect(result.answer).toContain('₦3,500.00');
     });
 
     it('falls through to LLM for complex questions', async () => {
