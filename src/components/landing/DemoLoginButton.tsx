@@ -3,7 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function DemoLoginButton() {
+/**
+ * `tone` picks which surface the button expects to sit on. Ink-on-ink is
+ * invisible, so on the dark hero the primary action inverts to paper rather
+ * than dropping to a secondary style — it is still the primary action there.
+ */
+export default function DemoLoginButton({
+  tone = "ink",
+}: {
+  tone?: "ink" | "paper";
+} = {}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +45,11 @@ export default function DemoLoginButton() {
         type="button"
         onClick={openDemo}
         disabled={loading}
-        className="group inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-ink-900 px-5 text-body font-medium text-paper shadow-raised transition-[background-color,transform,box-shadow] duration-[--duration-base] ease-[--ease-out-quart] hover:-translate-y-0.5 hover:bg-ink-800 hover:shadow-overlay disabled:cursor-not-allowed disabled:bg-ink-300 disabled:shadow-none motion-reduce:hover:translate-y-0"
+        className={`group inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-5 text-body font-medium shadow-raised transition-[background-color,transform,box-shadow] duration-[--duration-base] ease-[--ease-out-quart] hover:-translate-y-0.5 hover:shadow-overlay disabled:cursor-not-allowed disabled:shadow-none motion-reduce:hover:translate-y-0 ${
+          tone === "paper"
+            ? "bg-paper text-ink-950 hover:bg-ink-50 disabled:bg-ink-300 disabled:text-ink-500"
+            : "bg-ink-900 text-paper hover:bg-ink-800 disabled:bg-ink-300"
+        }`}
       >
         {loading ? (
           <>
@@ -83,7 +96,12 @@ export default function DemoLoginButton() {
         )}
       </button>
       {error && (
-        <p role="alert" className="text-label text-negative-600">
+        <p
+          role="alert"
+          // On the dark hero the standard red is too dark to read against the
+          // surface, so the message takes the light step instead.
+          className={`text-label ${tone === "paper" ? "text-negative-100" : "text-negative-600"}`}
+        >
           {error}
         </p>
       )}

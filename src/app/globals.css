@@ -223,18 +223,23 @@
   --color-jade-700: #0b5c4c;
   --color-jade-600: #0e7c66;
   --color-jade-500: #14957b;
+  --color-jade-100: #d8ebe5;
+  --color-jade-50: #eff7f4;
 
   --color-positive-700: #04674a;
   --color-positive-600: #047857;
   --color-positive-100: #d6efe5;
+  --color-positive-50: #eff8f4;
 
   --color-negative-700: #912018;
   --color-negative-600: #b42318;
   --color-negative-100: #fbdedb;
+  --color-negative-50: #fef4f3;
 
   --color-warning-700: #93370d;
   --color-warning-600: #b54708;
   --color-warning-100: #fbe7cf;
+  --color-warning-50: #fef8f0;
 }
 
 body {

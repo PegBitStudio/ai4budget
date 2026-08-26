@@ -3,14 +3,18 @@ import { categoryColor } from "@/config/categories";
 /**
  * The product, on the landing page.
  *
- * Every figure here is real output from the demo account, and the surface is
- * built from the same tokens as the app rather than pasted in as a screenshot —
- * so it stays sharp at any resolution and cannot drift out of date with the
- * design system.
+ * A bright card on the dark hero, rather than the dark card on a light page it
+ * used to be — the block behind it is now the dark surface, and two dark
+ * surfaces stacked read as mud. Built from the design tokens rather than pasted
+ * in as a screenshot, so it stays sharp at any resolution and cannot drift out
+ * of date with the system it is advertising.
  *
  * It shows the three things KoboPilot does, in the order it does them: the
  * money position, the transactions sorted into categories, and the sentence the
- * assistant writes about them.
+ * assistant writes about them. Every figure is real demo-account output.
+ *
+ * It renders inside `.surface-deep`, so the ink scale here is the light one in
+ * both themes — `bg-paper` is white on the hero whichever theme you are in.
  */
 
 const ROWS = [
@@ -23,29 +27,29 @@ const ROWS = [
 export default function HeroVisual() {
   return (
     <div className="relative w-full max-w-[24rem] xl:max-w-[26rem]">
-      {/* The lit ground behind the card. Without it the dark panel sits on the
-          page like a rectangle rather than an object. */}
+      {/* The glow the card sits in. Without it the card is pasted onto the hero
+          rather than lit by the same room. */}
       <div
         aria-hidden="true"
-        className="animate-drift pointer-events-none absolute -inset-8 rounded-[2rem] bg-[radial-gradient(60%_50%_at_50%_35%,rgba(14,124,102,0.22),transparent_75%)] blur-2xl"
+        className="animate-drift pointer-events-none absolute -inset-10 rounded-[2.5rem] bg-[radial-gradient(55%_50%_at_50%_40%,rgba(20,149,123,0.38),transparent_72%)] blur-3xl"
       />
 
-      <div className="surface-deep animate-rise relative overflow-hidden rounded-xl border border-ink-800 bg-ink-950 shadow-overlay">
+      <div className="animate-rise relative overflow-hidden rounded-xl border border-ink-200 bg-paper shadow-overlay">
         {/* Statement head */}
-        <div className="flex items-center justify-between border-b border-ink-800/80 px-5 py-3.5">
-          <p className="text-eyebrow uppercase text-ink-400">August</p>
-          <span className="inline-flex items-center gap-1.5 text-eyebrow uppercase text-jade-500">
-            <span aria-hidden="true" className="size-1.5 rounded-full bg-jade-500" />
+        <div className="flex items-center justify-between border-b border-ink-100 px-5 py-3.5">
+          <p className="text-eyebrow uppercase text-ink-500">August</p>
+          <span className="inline-flex items-center gap-1.5 text-eyebrow uppercase text-jade-700">
+            <span aria-hidden="true" className="size-1.5 rounded-full bg-jade-600" />
             Live
           </span>
         </div>
 
         {/* The position */}
         <div className="px-5 pt-5">
-          <p className="text-eyebrow uppercase text-ink-400">
+          <p className="text-eyebrow uppercase text-ink-500">
             Left after spending
           </p>
-          <p className="mt-1.5 text-[2.75rem] font-semibold leading-none tracking-[-0.03em] tnum text-negative-100">
+          <p className="mt-1.5 text-[2.75rem] font-semibold leading-none tracking-[-0.03em] tnum text-negative-600">
             −₦218,200
           </p>
 
@@ -59,34 +63,34 @@ export default function HeroVisual() {
             />
           </div>
           <div className="mt-2.5 flex justify-between text-label tnum">
-            <span className="text-ink-400">
-              In <span className="text-ink-200">₦535,000</span>
+            <span className="text-ink-500">
+              In <span className="font-medium text-ink-900">₦535,000</span>
             </span>
-            <span className="text-ink-400">
-              Out <span className="text-ink-200">₦753,200</span>
+            <span className="text-ink-500">
+              Out <span className="font-medium text-ink-900">₦753,200</span>
             </span>
           </div>
         </div>
 
         {/* Sorted, with the classifier's own colours */}
-        <ul className="stagger mt-5 border-t border-ink-800/80">
+        <ul className="stagger mt-5 border-t border-ink-100">
           {ROWS.map((row) => (
             <li
               key={row.description}
-              className="flex items-center gap-3 border-b border-ink-800/50 px-5 py-2.5 last:border-b-0"
+              className="flex items-center gap-3 border-b border-ink-100 px-5 py-2.5 last:border-b-0"
             >
               <span
                 aria-hidden="true"
                 className="size-2 shrink-0 rounded-full"
                 style={{ backgroundColor: categoryColor(row.category) }}
               />
-              <span className="min-w-0 flex-1 truncate text-label text-ink-200">
+              <span className="min-w-0 flex-1 truncate text-label text-ink-900">
                 {row.description}
               </span>
               <span className="shrink-0 text-label text-ink-500">
                 {row.category}
               </span>
-              <span className="w-20 shrink-0 text-right text-label tnum text-ink-300">
+              <span className="w-20 shrink-0 text-right text-label tnum text-ink-800">
                 −₦{row.amount}
               </span>
             </li>
@@ -94,10 +98,10 @@ export default function HeroVisual() {
         </ul>
       </div>
 
-      {/* The assistant's read, lifted off the statement so the two surfaces are
-          clearly the product speaking about its own figures. */}
+      {/* The assistant's read, on its own surface so the two are clearly the
+          product speaking about its own figures. */}
       <div
-        className="animate-rise relative z-10 -mt-5 ml-6 rounded-lg border border-ink-200 bg-paper p-4 shadow-overlay lg:mr-[-2rem]"
+        className="animate-rise relative z-10 -mt-5 ml-6 rounded-lg border border-jade-100 bg-jade-50 p-4 shadow-overlay lg:mr-[-2rem]"
         style={{ animationDelay: "220ms" }}
       >
         <p className="flex items-center gap-1.5 text-eyebrow uppercase text-jade-700">
