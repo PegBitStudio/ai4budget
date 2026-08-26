@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PAGE_META } from "./navItems";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 /**
  * The mobile title bar.
@@ -30,6 +31,8 @@ export default function TopHeader() {
           </h1>
         </div>
 
+        <div className="flex shrink-0 items-center gap-1">
+        <NotificationBell />
         <Link
           href="/settings"
           aria-label="Settings"
@@ -49,6 +52,7 @@ export default function TopHeader() {
             <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 4.6 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 11.5 4a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9 2 2 0 1 1 0 4 1.7 1.7 0 0 0-1.5 1.1z" />
           </svg>
         </Link>
+        </div>
       </div>
     </header>
   );

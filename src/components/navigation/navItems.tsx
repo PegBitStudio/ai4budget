@@ -86,6 +86,19 @@ export const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    href: "/reports",
+    label: "Reports",
+    // Desktop only: a printable month is not something anyone assembles on a
+    // phone, and the bottom bar is already at the number of items it can hold.
+    desktopOnly: true,
+    icon: (
+      <svg {...iconProps}>
+        <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+        <path d="M14 3v5h5M9 13h6M9 17h4" />
+      </svg>
+    ),
+  },
+  {
     href: "/settings",
     label: "Settings",
     desktopOnly: true,
@@ -126,6 +139,10 @@ export const PAGE_META: Record<
   "/qa": {
     title: "Assistant",
     description: "Ask about your money in plain English.",
+  },
+  "/reports": {
+    title: "Reports",
+    description: "A month, written out.",
   },
   "/settings": {
     title: "Settings",

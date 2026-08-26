@@ -1,3 +1,5 @@
+import { quoteForDay } from "@/lib/quotes";
+
 /**
  * The panel beside the sign-in form.
  *
@@ -66,6 +68,8 @@ const GAP_PATH = `${IN_PATH} L ${x(MONTHS.length - 1)} ${y(MONTHS[MONTHS.length 
   .trim()} Z`;
 
 export default function AuthAside() {
+  const quote = quoteForDay();
+
   return (
     <aside className="surface-deep relative hidden overflow-hidden rounded-xl bg-ink-950 lg:flex lg:flex-col lg:justify-between">
       {/* Ambient light. Two washes on different periods, so the panel is never
@@ -151,13 +155,16 @@ export default function AuthAside() {
         </div>
       </div>
 
+      {/* The same rotation the app uses, so the two never contradict each
+          other on the same day. Resolved on the server, which is safe here —
+          this is a server component, so there is no client render to disagree
+          with it. */}
       <figure className="relative px-10 pb-10">
         <blockquote className="max-w-sm border-l-2 border-jade-500 pl-5 text-xl leading-snug tracking-[-0.015em] text-paper [text-wrap:balance]">
-          “Do not save what is left after spending; spend what is left after
-          saving.”
+          “{quote.text}”
         </blockquote>
         <figcaption className="mt-3 pl-5 text-eyebrow uppercase text-ink-400">
-          Warren Buffett
+          {quote.attribution}
         </figcaption>
       </figure>
     </aside>

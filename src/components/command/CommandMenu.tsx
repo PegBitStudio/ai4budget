@@ -157,6 +157,7 @@ export default function CommandMenu() {
       ["/analysis", "Insights", "What changed and why", "analysis trends anomalies"],
       ["/savings", "Goals", "What you are saving towards", "savings target"],
       ["/qa", "Assistant", "Ask about your money", "chat ai question"],
+      ["/reports", "Reports", "A month, written out", "report print pdf export statement"],
       ["/settings", "Settings", "Account and data", "preferences account"],
     ].map(([href, label, hint, keywords]) => ({
       id: `nav:${href}`,

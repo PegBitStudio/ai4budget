@@ -114,8 +114,12 @@ function median(values: number[]): number {
 }
 
 /** Normalises a description for comparison: lowercase, alphanumeric only. */
-function merchantKey(description: string): string {
-  return description.toLowerCase().replace(/[^a-z0-9]/g, '');
+function merchantKey(description: string | null | undefined): string {
+  // Guarded rather than assumed. A caller that selects the wrong columns hands
+  // this an undefined description, and the whole anomaly pass — and the route
+  // around it — used to die on that. A row with no description simply cannot
+  // be matched to a merchant; that is not a reason to take the page down.
+  return (description ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
 /**

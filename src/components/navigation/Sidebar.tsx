@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { NAV_ITEMS, isActive } from "./navItems";
 import { cx } from "@/components/ui/primitives";
 import CommandTrigger from "@/components/command/CommandTrigger";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 const COLLAPSE_KEY = "kobopilot:sidebar-collapsed";
 
@@ -64,8 +65,16 @@ export default function Sidebar() {
         </Link>
       </div>
 
-      <div className="px-3 pb-1 pt-2">
-        <CommandTrigger collapsed={collapsed} />
+      <div
+        className={cx(
+          "flex gap-2 px-3 pb-1 pt-2",
+          collapsed ? "flex-col items-center" : "items-center"
+        )}
+      >
+        <div className="min-w-0 flex-1">
+          <CommandTrigger collapsed={collapsed} />
+        </div>
+        <NotificationBell />
       </div>
 
       {/* Primary navigation */}

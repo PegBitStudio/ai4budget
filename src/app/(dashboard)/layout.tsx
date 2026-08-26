@@ -3,6 +3,7 @@ import TopHeader from "@/components/navigation/TopHeader";
 import BottomNav from "@/components/navigation/BottomNav";
 import Sidebar from "@/components/navigation/Sidebar";
 import CommandMenu from "@/components/command/CommandMenu";
+import DailyQuote from "@/components/ui/DailyQuote";
 
 /**
  * The application shell: a persistent rail on desktop, a title bar and bottom
@@ -26,6 +27,12 @@ export default function DashboardLayout({
         <main className="flex-1 pb-24 lg:pb-12">
           <div className="animate-enter mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
             {children}
+            {/* Sits below every page rather than on one, so it reads as part of
+                the frame — something the product says, not a card competing
+                with the figures above it. */}
+            <div className="mt-12">
+              <DailyQuote />
+            </div>
           </div>
         </main>
       </div>

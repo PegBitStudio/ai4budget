@@ -8,6 +8,7 @@ import type {
   SpendingTrendData,
 } from "@/components/charts";
 import { formatCurrency } from "@/utils/formatters";
+import { createClient } from "@/lib/supabase/client";
 import {
   Card,
   CardHeader,
@@ -62,6 +63,7 @@ const MAX_VISIBLE_ALERTS = 3;
 // --- Component -------------------------------------------------------------
 
 export default function DashboardClient() {
+  const [name, setName] = useState<string | null>(null);
   const [alerts, setAlerts] = useState<SpendingAlert[]>([]);
   const [summary, setSummary] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
@@ -76,6 +78,17 @@ export default function DashboardClient() {
   const [trendData, setTrendData] = useState<SpendingTrendData[]>([]);
   const [monthlyTotals, setMonthlyTotals] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Only the greeting needs this, so it loads on its own and never gates a
+  // figure behind an auth round trip.
+  useEffect(() => {
+    createClient()
+      .auth.getUser()
+      .then(({ data }) => {
+        const full = (data.user?.user_metadata?.full_name as string) ?? "";
+        setName(full.trim() ? full.trim().split(" ")[0] : null);
+      });
+  }, []);
 
   // The figures, charts and alerts paint as soon as they land. The AI summary
   // is a separate, much slower request and must never gate them.
@@ -202,7 +215,7 @@ export default function DashboardClient() {
     <>
       <PageHeader
         eyebrow={monthLabel}
-        title={greeting()}
+        title={greeting(name)}
         description={
           loading
             ? "Reading your accounts…"
@@ -415,11 +428,15 @@ function buildCategoryBreakdown(transactions: Txn[]): CategoryBreakdownData[] {
     .sort((a, b) => b.amount - a.amount);
 }
 
-function greeting(): string {
+function greeting(name?: string | null): string {
   const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
-  return "Good evening";
+  const part =
+    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
+  // The name is optional everywhere. An account that has not set one is
+  // greeted without it, rather than with a placeholder or a guess pulled out
+  // of the email address.
+  return name ? `${part}, ${name}` : part;
 }
 
 function headline(income: number, net: number, spending: number): string {

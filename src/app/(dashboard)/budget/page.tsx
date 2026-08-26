@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import BudgetProgress from '@/components/budget/BudgetProgress';
+import BudgetForecast from '@/components/budget/BudgetForecast';
 import { PageHeader } from "@/components/ui/primitives";
 
 // --- Types ---
@@ -506,6 +507,9 @@ export default function BudgetPage() {
                 Sorted by how far each category is from its plan.
               </p>
               <BudgetProgress rows={comparison} />
+              <div className="mt-6">
+                <BudgetForecast />
+              </div>
             </div>
           )}
         </div>
