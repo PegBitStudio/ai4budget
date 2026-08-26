@@ -10,7 +10,7 @@ doing something, do not describe the product.**
 
 ## Before you record
 
-- [ ] Open **ai4budget.vercel.app** in a **private window** — no stale service
+- [ ] Open **kobopilot.vercel.app** in a **private window** — no stale service
       worker, no logged-in session, and it proves the demo path works cold
 - [ ] Run `node scripts/seed-demo.mjs` so the demo account is clean and current
 - [ ] Have the alert text below **already copied to your clipboard**
@@ -123,9 +123,9 @@ the judges, it is watching unstructured mess become a categorised month.
 
 > *[Scroll to Money on autopilot]*
 >
-> "And this — ₦456,000 a month leaving on autopilot across 18 recurring charges.
-> ₦20,000 a month more than it used to be. Nobody notices ₦20,000 a month. Over
-> a year it costs the same as the phone I'd agonise over."
+> "And this — ₦463,800 a month leaving on autopilot across 18 recurring charges.
+> Almost ₦26,000 a month more than it used to be. Nobody notices ₦26,000 a month.
+> Over a year it costs more than the phone I'd agonise over."
 
 ---
 

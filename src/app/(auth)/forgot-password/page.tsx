@@ -36,12 +36,18 @@ export default function ForgotPasswordPage() {
         { redirectTo: `${window.location.origin}/reset-password` }
       );
 
-      // Only a transport or configuration failure is worth reporting. A missing
-      // account is not an error the sender is entitled to hear about.
+      // Supabase never reports "no such account" here — that ambiguity is by
+      // design, so it stays out of the UI regardless of status code. But a 400
+      // can also mean a real configuration problem (an unlisted redirect URL,
+      // for instance), which is worth a trace even though the visitor still
+      // just sees "check your email" either way.
       if (resetError && resetError.status !== 400) {
         setError("Could not send the reset link. Please try again shortly.");
         setLoading(false);
         return;
+      }
+      if (resetError) {
+        console.error("[forgot-password] resetPasswordForEmail:", resetError.message);
       }
 
       setSent(true);

@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   // silently fail to load an image at all. Override with NEXT_PUBLIC_SITE_URL
   // if this ever moves off the current Vercel URL.
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://ai4budget.vercel.app"
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://kobopilot.vercel.app"
   ),
   title,
   description,

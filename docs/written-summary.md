@@ -2,7 +2,7 @@
 
 **AI BuildFest 2026** · Track 3, *AI for Everyday Life* · Case Study 1, *AI Budgeting Assistant*
 
-**Live:** [ai4budget.vercel.app](https://ai4budget.vercel.app) — click *"Explore the demo account"* (no signup)
+**Live:** [kobopilot.vercel.app](https://kobopilot.vercel.app) — click *"Explore the demo account"* (no signup)
 **Code:** [github.com/PegBitStudio/ai4budget](https://github.com/PegBitStudio/ai4budget)
 
 ---

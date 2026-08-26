@@ -2,7 +2,7 @@
 
 **Your AI co-pilot for spending, budgeting and saving in Naira.**
 
-🔗 **[ai4budget.vercel.app](https://ai4budget.vercel.app)** — click **"Explore the demo account"**. No signup, no setup: it opens an account preloaded with three months of real-shaped Lagos household spending.
+🔗 **[kobopilot.vercel.app](https://kobopilot.vercel.app)** — click **"Explore the demo account"**. No signup, no setup: it opens an account preloaded with three months of real-shaped Lagos household spending.
 
 Built for **10Alytics AI BuildFest 2026** · Track 3, *AI for Everyday Life* · Case Study 1, *AI Budgeting Assistant*.
 
@@ -38,7 +38,7 @@ outranks both the built-in patterns and the model.
 
 **It finds what you would not.**
 Not just what you spent — what *changed*. Which charges quietly crept up. What
-₦456,000 a month of recurring payments actually consists of.
+₦463,800 a month of recurring payments actually consists of.
 
 **It prices spending in what it costs you.**
 Not "you spent ₦285,000." *"That is about 3 months further from your savings
@@ -70,7 +70,7 @@ functions in `src/lib/`. The model narrates and extracts. It never computes a
 figure you are shown.
 
 That line matters for a money product. It is also why the arithmetic is testable
-— 600 tests, most of them against those engines.
+— 612 tests, most of them against those engines.
 
 ### The model is never trusted
 
@@ -87,7 +87,7 @@ without you seeing it first**.
 - **Next.js 14** (App Router) · **TypeScript** · **Tailwind CSS v4**
 - **Supabase** — Postgres, Auth, and row-level security on all six tables
 - **OpenAI `gpt-4o-mini`** — extraction, classification, summary, Q&A
-- **Chart.js** · **Zod** · **Vitest** (600 tests)
+- **Chart.js** · **Zod** · **Vitest** (612 tests)
 - Deployed on **Vercel**
 
 ---
@@ -124,7 +124,7 @@ The script is idempotent and dates everything relative to the day it runs, so th
 demo always shows a current month.
 
 ```bash
-npm test          # 600 tests
+npm test          # 612 tests
 npm run build     # production build
 ```
 
@@ -142,7 +142,7 @@ src/
 │   ├── alertEngine       Budget alerts, derived on read
 │   ├── savingsAdvisor    Targets, alternatives, goal impact
 │   └── llmClient         The only file that talks to OpenAI
-├── app/api/              14 route handlers
+├── app/api/              17 route handlers
 ├── components/           UI, grouped by domain
 └── app/(dashboard)/      The authenticated application
 ```
@@ -169,8 +169,6 @@ exactly one — the phone.
    more than one person, and every personal finance tool ignores this.
 3. **Cancel-this actions on recurring charges**, turning the autopilot list from
    a report into a tool.
-4. **Forecasting** — "at this rate you will be ₦32,000 over by month end" — the
-   data is already there.
 
 ---
 
