@@ -22,8 +22,8 @@ const CAPABILITIES = [
 /** Real output from the demo account, not illustrative copy. */
 const DEMO_FIGURES = [
   { label: "Earned in August", value: "₦535,000", tone: "positive" as const },
-  { label: "Actually spent", value: "₦745,400", tone: "negative" as const },
-  { label: "Over budget in", value: "7 of 10", tone: "warning" as const },
+  { label: "Actually spent", value: "₦753,200", tone: "negative" as const },
+  { label: "Over budget in", value: "6 of 10", tone: "warning" as const },
 ];
 
 const FIGURE_TONES = {
@@ -40,7 +40,11 @@ export default function LandingPage() {
           would compete with the figures. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-[42rem] bg-[radial-gradient(60%_60%_at_70%_0%,rgba(14,124,102,0.10),transparent_70%),radial-gradient(45%_50%_at_15%_5%,rgba(20,24,26,0.06),transparent_70%)]"
+        className="animate-wash-a pointer-events-none absolute inset-x-[-10%] top-[-10%] h-[46rem] bg-[radial-gradient(45%_45%_at_70%_20%,rgba(14,124,102,0.14),transparent_70%)]"
+      />
+      <div
+        aria-hidden="true"
+        className="animate-wash-b pointer-events-none absolute inset-x-[-10%] top-[-10%] h-[46rem] bg-[radial-gradient(40%_45%_at_18%_12%,rgba(20,24,26,0.08),transparent_70%)]"
       />
       <div
         aria-hidden="true"
@@ -134,8 +138,8 @@ export default function LandingPage() {
 
           <figure className="border-t border-ink-800 px-6 py-7 sm:px-8">
             <blockquote className="max-w-2xl border-l-2 border-jade-500 pl-4 text-base leading-relaxed text-ink-200">
-              “This month you earned ₦535,000 but spent ₦745,400, leaving you
-              ₦210,400 short. Your biggest areas were Shopping, Housing and
+              “This month you earned ₦535,000 but spent ₦753,200, leaving you
+              ₦218,200 short. Your biggest areas were Shopping, Housing and
               Groceries — and Shopping alone is ₦280,500 past its plan.”
             </blockquote>
             <figcaption className="mt-3 pl-4 text-eyebrow uppercase text-ink-500">

@@ -46,7 +46,7 @@ export default function HeroVisual() {
             Left after spending
           </p>
           <p className="mt-1.5 text-[2.75rem] font-semibold leading-none tracking-[-0.03em] tnum text-negative-100">
-            −₦210,400
+            −₦218,200
           </p>
 
           {/* Earned against spent, to scale: the bar is why the figure above is
@@ -54,7 +54,7 @@ export default function HeroVisual() {
           <div className="mt-5 flex gap-1" aria-hidden="true">
             <div className="animate-grow h-1.5 flex-[535] rounded-full bg-positive-600" />
             <div
-              className="animate-grow h-1.5 flex-[745] rounded-full bg-negative-600"
+              className="animate-grow h-1.5 flex-[753] rounded-full bg-negative-600"
               style={{ animationDelay: "120ms" }}
             />
           </div>
@@ -63,7 +63,7 @@ export default function HeroVisual() {
               In <span className="text-ink-200">₦535,000</span>
             </span>
             <span className="text-ink-400">
-              Out <span className="text-ink-200">₦745,400</span>
+              Out <span className="text-ink-200">₦753,200</span>
             </span>
           </div>
         </div>

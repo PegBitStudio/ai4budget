@@ -38,84 +38,87 @@ export default function LoginPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-4">
-      {error && (
-        <div
-          role="alert"
-          className="rounded-md bg-negative-50 p-3 text-sm text-negative-700"
-        >
-          {error}
+    <div>
+      <h1 className="text-3xl font-semibold tracking-[-0.025em] text-ink-950">
+        Welcome back
+      </h1>
+      <p className="mt-2 text-body text-ink-600">
+        Sign in to pick up where your money left off.
+      </p>
+
+      <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-4">
+        {error && (
+          <p role="alert" className="rounded-md bg-negative-50 p-3 text-body text-negative-700">
+            {error}
+          </p>
+        )}
+
+        <div>
+          <label htmlFor="email" className="mb-1.5 block text-label font-medium text-ink-700">
+            Email
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={FIELD}
+            placeholder="you@example.com"
+            aria-required="true"
+          />
         </div>
-      )}
 
-      <div>
-        <label
-          htmlFor="email"
-          className="block text-sm font-medium text-ink-700"
-        >
-          Email
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          required
-          autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-ink-300 px-3 py-2 text-base shadow-card placeholder:text-ink-400 focus:border-ink-700 focus:outline-none focus:ring-1 focus:ring-ink-700 min-h-[44px]"
-          placeholder="you@example.com"
-          aria-required="true"
-        />
-      </div>
+        <div>
+          <label htmlFor="password" className="mb-1.5 block text-label font-medium text-ink-700">
+            Password
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            required
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={FIELD}
+            placeholder="Enter your password"
+            aria-required="true"
+          />
+        </div>
 
-      <div>
-        <label
-          htmlFor="password"
-          className="block text-sm font-medium text-ink-700"
-        >
-          Password
-        </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          required
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-ink-300 px-3 py-2 text-base shadow-card placeholder:text-ink-400 focus:border-ink-700 focus:outline-none focus:ring-1 focus:ring-ink-700 min-h-[44px]"
-          placeholder="Enter your password"
-          aria-required="true"
-        />
-      </div>
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-md bg-ink-900 px-4 py-2 text-base font-medium text-paper shadow-card hover:bg-ink-900 focus:outline-none focus:ring-2 focus:ring-ink-700 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
-      >
-        {loading ? "Signing in..." : "Sign In"}
-      </button>
-
-      <div className="flex items-center justify-between text-sm">
-        <p className="text-ink-600">
-          Don&apos;t have an account?{" "}
-          <Link
-            href="/signup"
-            className="font-medium text-ink-900 hover:text-ink-900"
-          >
-            Create one
-          </Link>
-        </p>
         <button
-          type="button"
-          onClick={() => alert("Please contact support to reset your password.")}
-          className="font-medium text-ink-500 hover:text-ink-700"
+          type="submit"
+          disabled={loading}
+          className="min-h-11 w-full rounded-md bg-ink-900 px-4 text-body font-medium text-paper shadow-raised transition-[background-color,transform,box-shadow] duration-[--duration-base] ease-[--ease-out-quart] hover:-translate-y-0.5 hover:bg-ink-800 hover:shadow-overlay disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-ink-300 disabled:shadow-none motion-reduce:hover:translate-y-0"
         >
-          Forgot password?
+          {loading ? "Signing in…" : "Sign in"}
         </button>
-      </div>
-    </form>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 text-body">
+          <p className="text-ink-600">
+            Don&apos;t have an account?{" "}
+            <Link
+              href="/signup"
+              className="rounded-xs font-medium text-ink-900 underline-offset-2 hover:underline"
+            >
+              Create one
+            </Link>
+          </p>
+          <button
+            type="button"
+            onClick={() => alert("Please contact support to reset your password.")}
+            className="rounded-xs font-medium text-ink-500 underline-offset-2 hover:text-ink-800 hover:underline"
+          >
+            Forgot password?
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
+
+const FIELD =
+  "min-h-11 w-full rounded-md border border-ink-200 bg-paper px-3 text-body text-ink-900 placeholder:text-ink-400 transition-colors duration-[--duration-fast] focus:border-ink-900 focus:outline-none";

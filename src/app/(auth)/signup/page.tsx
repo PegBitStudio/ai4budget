@@ -60,20 +60,25 @@ export default function SignupPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-4">
+    <div>
+      <h1 className="text-3xl font-semibold tracking-[-0.025em] text-ink-950">
+        Create your account
+      </h1>
+      <p className="mt-2 text-body text-ink-600">
+        Start with your own figures. It takes about a minute.
+      </p>
+
+      <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-4">
       {error && (
-        <div
-          role="alert"
-          className="rounded-md bg-negative-50 p-3 text-sm text-negative-700"
-        >
+        <p role="alert" className="rounded-md bg-negative-50 p-3 text-body text-negative-700">
           {error}
-        </div>
+        </p>
       )}
 
       <div>
         <label
           htmlFor="email"
-          className="block text-sm font-medium text-ink-700"
+          className="mb-1.5 block text-label font-medium text-ink-700"
         >
           Email
         </label>
@@ -85,7 +90,7 @@ export default function SignupPage() {
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-ink-300 px-3 py-2 text-base shadow-card placeholder:text-ink-400 focus:border-ink-700 focus:outline-none focus:ring-1 focus:ring-ink-700 min-h-[44px]"
+          className={FIELD}
           placeholder="you@example.com"
           aria-required="true"
         />
@@ -94,7 +99,7 @@ export default function SignupPage() {
       <div>
         <label
           htmlFor="password"
-          className="block text-sm font-medium text-ink-700"
+          className="mb-1.5 block text-label font-medium text-ink-700"
         >
           Password
         </label>
@@ -107,7 +112,7 @@ export default function SignupPage() {
           autoComplete="new-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-ink-300 px-3 py-2 text-base shadow-card placeholder:text-ink-400 focus:border-ink-700 focus:outline-none focus:ring-1 focus:ring-ink-700 min-h-[44px]"
+          className={FIELD}
           placeholder="Min. 6 characters"
           aria-required="true"
           aria-describedby="password-hint"
@@ -120,7 +125,7 @@ export default function SignupPage() {
       <div>
         <label
           htmlFor="confirm-password"
-          className="block text-sm font-medium text-ink-700"
+          className="mb-1.5 block text-label font-medium text-ink-700"
         >
           Confirm Password
         </label>
@@ -132,7 +137,7 @@ export default function SignupPage() {
           autoComplete="new-password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-ink-300 px-3 py-2 text-base shadow-card placeholder:text-ink-400 focus:border-ink-700 focus:outline-none focus:ring-1 focus:ring-ink-700 min-h-[44px]"
+          className={FIELD}
           placeholder="Re-enter your password"
           aria-required="true"
         />
@@ -157,20 +162,24 @@ export default function SignupPage() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-md bg-ink-900 px-4 py-2 text-base font-medium text-paper shadow-card hover:bg-ink-900 focus:outline-none focus:ring-2 focus:ring-ink-700 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
+        className="min-h-11 w-full rounded-md bg-ink-900 px-4 text-body font-medium text-paper shadow-raised transition-[background-color,transform,box-shadow] duration-[--duration-base] ease-[--ease-out-quart] hover:-translate-y-0.5 hover:bg-ink-800 hover:shadow-overlay disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-ink-300 disabled:shadow-none motion-reduce:hover:translate-y-0"
       >
         {loading ? "Creating account..." : "Create Account"}
       </button>
 
-      <p className="text-center text-sm text-ink-600">
+      <p className="text-body text-ink-600">
         Already have an account?{" "}
         <Link
           href="/login"
-          className="font-medium text-ink-900 hover:text-ink-900"
+          className="rounded-xs font-medium text-ink-900 underline-offset-2 hover:underline"
         >
           Sign in
         </Link>
       </p>
-    </form>
+      </form>
+    </div>
   );
 }
+
+const FIELD =
+  "min-h-11 w-full rounded-md border border-ink-200 bg-paper px-3 text-body text-ink-900 placeholder:text-ink-400 transition-colors duration-[--duration-fast] focus:border-ink-900 focus:outline-none";

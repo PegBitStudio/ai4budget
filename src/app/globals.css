@@ -215,6 +215,57 @@ body {
   animation: drift 18s ease-in-out infinite;
 }
 
+/* Ambient washes behind a hero. Two of them, on deliberately different paths
+   and periods, so they never fall into step and never resolve into a pattern
+   you can predict — which is the difference between a room that feels lit and
+   a background that feels animated. Slow enough that you notice the page is
+   alive without ever catching it moving. */
+@keyframes wash-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-5%, 4%, 0) scale(1.18);
+  }
+}
+
+@keyframes wash-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.12);
+  }
+  50% {
+    transform: translate3d(6%, -3%, 0) scale(1);
+  }
+}
+
+.animate-wash-a {
+  animation: wash-a 26s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-wash-b {
+  animation: wash-b 34s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* A line that draws itself. Used for the chart on the sign-in panel, where the
+   point is to watch the two paths separate rather than find them apart. */
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Pair with `pathLength="1"` on the path, so the dash maths is exact whatever
+   the geometry is and nobody has to keep a magic length in sync with a curve. */
+.animate-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 1.6s var(--ease-out-quart) both;
+}
+
 /* A panel arriving from the right edge. Short and eased-out: the point is to
    show where it came from, not to make you wait for it. */
 @keyframes slide-in {
@@ -306,8 +357,15 @@ body {
   .animate-grow,
   .animate-drift,
   .animate-slide-in,
+  .animate-wash-a,
+  .animate-wash-b,
   .stagger > * {
     animation: none;
+  }
+  /* The line still has to be visible, so it lands drawn rather than unstarted. */
+  .animate-draw {
+    animation: none;
+    stroke-dashoffset: 0;
   }
   .lift:hover {
     transform: none;
