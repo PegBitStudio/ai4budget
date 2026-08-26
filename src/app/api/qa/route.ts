@@ -60,8 +60,9 @@ export async function POST(request: NextRequest) {
       .limit(50);
 
     if (txError) {
+      console.error('[POST /api/qa] Failed to fetch transactions:', txError.message);
       return NextResponse.json(
-        { error: 'Failed to fetch transactions', details: txError.message },
+        { error: 'Failed to fetch transactions' },
         { status: 500 }
       );
     }

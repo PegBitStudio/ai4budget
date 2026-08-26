@@ -115,8 +115,9 @@ export async function PATCH(
           { status: 404 }
         );
       }
+      console.error('[PATCH /api/transactions/[id]] Failed to update transaction:', updateError.message);
       return NextResponse.json(
-        { error: 'Failed to update transaction', details: updateError.message },
+        { error: 'Failed to update transaction' },
         { status: 500 }
       );
     }
@@ -177,8 +178,9 @@ export async function DELETE(
       .eq('id', id);
 
     if (deleteError) {
+      console.error('[DELETE /api/transactions/[id]] Failed to delete transaction:', deleteError.message);
       return NextResponse.json(
-        { error: 'Failed to delete transaction', details: deleteError.message },
+        { error: 'Failed to delete transaction' },
         { status: 500 }
       );
     }

@@ -34,8 +34,9 @@ export async function GET() {
       .order('created_at', { ascending: false });
 
     if (goalsError) {
+      console.error('[GET /api/savings] Failed to fetch savings goals:', goalsError.message);
       return NextResponse.json(
-        { error: 'Failed to fetch savings goals', details: goalsError.message },
+        { error: 'Failed to fetch savings goals' },
         { status: 500 }
       );
     }
@@ -141,8 +142,9 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError) {
+      console.error('[POST /api/savings] Failed to create savings goal:', insertError.message);
       return NextResponse.json(
-        { error: 'Failed to create savings goal', details: insertError.message },
+        { error: 'Failed to create savings goal' },
         { status: 500 }
       );
     }

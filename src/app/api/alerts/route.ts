@@ -40,8 +40,9 @@ export async function GET() {
       .limit(1);
 
     if (budgetError) {
+      console.error('[GET /api/alerts] Failed to fetch budget:', budgetError.message);
       return NextResponse.json(
-        { error: 'Failed to fetch budget', details: budgetError.message },
+        { error: 'Failed to fetch budget' },
         { status: 500 }
       );
     }
@@ -63,8 +64,9 @@ export async function GET() {
       .lte('date', period.end);
 
     if (expenseError) {
+      console.error('[GET /api/alerts] Failed to fetch spending:', expenseError.message);
       return NextResponse.json(
-        { error: 'Failed to fetch spending', details: expenseError.message },
+        { error: 'Failed to fetch spending' },
         { status: 500 }
       );
     }

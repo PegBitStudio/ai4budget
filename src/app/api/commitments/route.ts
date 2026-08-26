@@ -32,8 +32,9 @@ export async function GET() {
       .order('created_at', { ascending: false });
 
     if (queryError) {
+      console.error('[GET /api/commitments] Failed to fetch commitments:', queryError.message);
       return NextResponse.json(
-        { error: 'Failed to fetch commitments', details: queryError.message },
+        { error: 'Failed to fetch commitments' },
         { status: 500 }
       );
     }
@@ -107,8 +108,9 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError) {
+      console.error('[POST /api/commitments] Failed to create commitment:', insertError.message);
       return NextResponse.json(
-        { error: 'Failed to create commitment', details: insertError.message },
+        { error: 'Failed to create commitment' },
         { status: 500 }
       );
     }

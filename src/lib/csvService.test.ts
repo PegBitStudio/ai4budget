@@ -230,6 +230,50 @@ describe('csvService', () => {
       expect(lines[2]).toContain('Second');
       expect(lines[3]).toContain('Third');
     });
+
+    // A description is free text — typed by a user, or extracted by the model
+    // from a bank alert — so nothing stops it starting with a character Excel
+    // and Sheets read as the start of a formula. Left alone, opening the
+    // exported file would execute it.
+    it.each(['=SUM(A1:A9)', '+1+1', '-2+3', '@SUM(1,2)'])(
+      'neutralises a description starting with %s',
+      (formula) => {
+        const transactions: ExportTransaction[] = [
+          { date: '2024-01-15', description: formula, amount: 10, category: 'Other', type: 'expense' },
+        ];
+
+        // Read back through the real parser rather than splitting on commas by
+        // hand — the formula itself may contain a comma, which RFC 4180
+        // quotes, and a naive split would cut the field in the wrong place.
+        const { transactions: parsed } = parseCSV(exportCSV(transactions));
+        const raw = exportCSV(transactions);
+
+        expect(raw).not.toContain(`,${formula[0]}`);
+        // The escape is a leading tab, invisible once opened and trimmed away
+        // on re-import — not a visible change to the description itself.
+        expect(parsed[0].description).toBe(formula);
+      }
+    );
+
+    it('leaves an ordinary description untouched', () => {
+      const transactions: ExportTransaction[] = [
+        { date: '2024-01-15', description: 'Shoprite', amount: 10, category: 'Groceries', type: 'expense' },
+      ];
+
+      const csv = exportCSV(transactions);
+      expect(csv.split('\r\n')[1]).toBe('2024-01-15,Shoprite,10.00,Groceries,expense');
+    });
+
+    it('round-trips a formula-shaped description back to its original text', () => {
+      const original: ExportTransaction[] = [
+        { date: '2024-01-15', description: '=SUM(A1:A9)', amount: 10, category: 'Other', type: 'expense' },
+      ];
+
+      // parseCSV trims each field, which is what removes the tab the export
+      // added — the value that comes back in is exactly what went out.
+      const { transactions } = parseCSV(exportCSV(original));
+      expect(transactions[0].description).toBe('=SUM(A1:A9)');
+    });
   });
 
   describe('generateExportFilename', () => {

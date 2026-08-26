@@ -83,8 +83,9 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError) {
+      console.error('[POST /api/transactions] Failed to create transaction:', insertError.message);
       return NextResponse.json(
-        { error: 'Failed to create transaction', details: insertError.message },
+        { error: 'Failed to create transaction' },
         { status: 500 }
       );
     }
@@ -253,8 +254,9 @@ export async function GET(request: NextRequest) {
     const { data: transactions, count, error: queryError } = await query;
 
     if (queryError) {
+      console.error('[GET /api/transactions] Failed to fetch transactions:', queryError.message);
       return NextResponse.json(
-        { error: 'Failed to fetch transactions', details: queryError.message },
+        { error: 'Failed to fetch transactions' },
         { status: 500 }
       );
     }

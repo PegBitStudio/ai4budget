@@ -201,7 +201,7 @@ export function exportCSV(transactions: ExportTransaction[]): string {
 
   const rows: string[][] = sorted.map((t) => [
     t.date,
-    t.description,
+    escapeCSVFormula(t.description),
     t.amount.toFixed(2),
     t.category,
     t.type,
@@ -213,6 +213,21 @@ export function exportCSV(transactions: ExportTransaction[]): string {
   });
 
   return csv;
+}
+
+/**
+ * Neutralises CSV formula injection.
+ *
+ * A description is free text — typed by the user or extracted by the model
+ * from a bank alert — so nothing stops it from starting with `=`, `+`, `-` or
+ * `@`. Excel and Sheets both treat a cell starting with one of those as a
+ * formula, so "=cmd|'/c calc'!A1" as a transaction description would execute
+ * the moment the exported file is opened, not when it was typed. Prefixing
+ * such a value with a tab (invisible in the opened sheet) stops it being read
+ * as a formula while leaving RFC 4180 quoting to PapaParse as normal.
+ */
+function escapeCSVFormula(value: string): string {
+  return /^[=+\-@]/.test(value) ? `\t${value}` : value;
 }
 
 /**

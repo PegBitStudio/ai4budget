@@ -74,8 +74,9 @@ export async function POST(request: NextRequest) {
       .lte('date', incomeMonth.end);
 
     if (incomeError) {
+      console.error('[POST /api/budget] Failed to query income data:', incomeError.message);
       return NextResponse.json(
-        { error: 'Failed to query income data', details: incomeError.message },
+        { error: 'Failed to query income data' },
         { status: 500 }
       );
     }
@@ -113,8 +114,9 @@ export async function POST(request: NextRequest) {
       .select('amount, frequency');
 
     if (commitmentsError) {
+      console.error('[POST /api/budget] Failed to query commitments:', commitmentsError.message);
       return NextResponse.json(
-        { error: 'Failed to query commitments', details: commitmentsError.message },
+        { error: 'Failed to query commitments' },
         { status: 500 }
       );
     }
@@ -125,8 +127,9 @@ export async function POST(request: NextRequest) {
       .select('monthly_contribution');
 
     if (savingsError) {
+      console.error('[POST /api/budget] Failed to query savings goals:', savingsError.message);
       return NextResponse.json(
-        { error: 'Failed to query savings goals', details: savingsError.message },
+        { error: 'Failed to query savings goals' },
         { status: 500 }
       );
     }
@@ -229,8 +232,9 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError) {
+      console.error('[POST /api/budget] Failed to store budget:', insertError.message);
       return NextResponse.json(
-        { error: 'Failed to store budget', details: insertError.message },
+        { error: 'Failed to store budget' },
         { status: 500 }
       );
     }
@@ -298,8 +302,9 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     if (queryError) {
+      console.error('[GET /api/budget] Failed to fetch budget:', queryError.message);
       return NextResponse.json(
-        { error: 'Failed to fetch budget', details: queryError.message },
+        { error: 'Failed to fetch budget' },
         { status: 500 }
       );
     }
@@ -373,8 +378,9 @@ export async function PATCH(request: NextRequest) {
       .maybeSingle();
 
     if (queryError) {
+      console.error('[PATCH /api/budget] Failed to fetch budget:', queryError.message);
       return NextResponse.json(
-        { error: 'Failed to fetch budget', details: queryError.message },
+        { error: 'Failed to fetch budget' },
         { status: 500 }
       );
     }
@@ -415,8 +421,9 @@ export async function PATCH(request: NextRequest) {
       .single();
 
     if (updateError) {
+      console.error('[PATCH /api/budget] Failed to update budget:', updateError.message);
       return NextResponse.json(
-        { error: 'Failed to update budget', details: updateError.message },
+        { error: 'Failed to update budget' },
         { status: 500 }
       );
     }

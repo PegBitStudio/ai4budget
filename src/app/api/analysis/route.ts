@@ -68,8 +68,9 @@ export async function GET(request: Request) {
       .order('date', { ascending: false });
 
     if (currentError) {
+      console.error('[GET /api/analysis] Failed to fetch current transactions:', currentError.message);
       return NextResponse.json(
-        { error: 'Failed to fetch current transactions', details: currentError.message },
+        { error: 'Failed to fetch current transactions' },
         { status: 500 }
       );
     }
@@ -83,8 +84,9 @@ export async function GET(request: Request) {
       .lte('date', previousPeriod.end);
 
     if (previousError) {
+      console.error('[GET /api/analysis] Failed to fetch previous transactions:', previousError.message);
       return NextResponse.json(
-        { error: 'Failed to fetch previous transactions', details: previousError.message },
+        { error: 'Failed to fetch previous transactions' },
         { status: 500 }
       );
     }
@@ -97,8 +99,9 @@ export async function GET(request: Request) {
       .eq('type', 'expense');
 
     if (allError) {
+      console.error('[GET /api/analysis] Failed to fetch transaction history:', allError.message);
       return NextResponse.json(
-        { error: 'Failed to fetch transaction history', details: allError.message },
+        { error: 'Failed to fetch transaction history' },
         { status: 500 }
       );
     }
@@ -138,8 +141,9 @@ export async function GET(request: Request) {
       .maybeSingle();
 
     if (budgetError) {
+      console.error('[GET /api/analysis] Failed to fetch budget comparison:', budgetError.message);
       return NextResponse.json(
-        { error: 'Failed to fetch budget comparison', details: budgetError.message },
+        { error: 'Failed to fetch budget comparison' },
         { status: 500 }
       );
     }

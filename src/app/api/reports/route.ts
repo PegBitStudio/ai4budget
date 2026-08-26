@@ -48,8 +48,9 @@ export async function GET(request: NextRequest) {
       .order('date', { ascending: true });
 
     if (txError) {
+      console.error('[GET /api/reports] Failed to fetch transactions:', txError.message);
       return NextResponse.json(
-        { error: 'Failed to fetch transactions', details: txError.message },
+        { error: 'Failed to fetch transactions' },
         { status: 500 }
       );
     }

@@ -40,8 +40,9 @@ export async function GET() {
       .lte('date', currentPeriod.end);
 
     if (incomeError) {
+      console.error('[GET /api/summary] Failed to fetch income data:', incomeError.message);
       return NextResponse.json(
-        { error: 'Failed to fetch income data', details: incomeError.message },
+        { error: 'Failed to fetch income data' },
         { status: 500 }
       );
     }
@@ -55,8 +56,9 @@ export async function GET() {
       .lte('date', currentPeriod.end);
 
     if (expenseError) {
+      console.error('[GET /api/summary] Failed to fetch expense data:', expenseError.message);
       return NextResponse.json(
-        { error: 'Failed to fetch expense data', details: expenseError.message },
+        { error: 'Failed to fetch expense data' },
         { status: 500 }
       );
     }
