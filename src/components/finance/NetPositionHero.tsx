@@ -42,7 +42,7 @@ export default function NetPositionHero({
 
   return (
     <section
-      className="relative isolate overflow-hidden rounded-xl bg-ink-950 px-6 py-7 text-paper shadow-raised sm:px-8"
+      className="surface-deep relative isolate overflow-hidden rounded-xl bg-ink-950 px-6 py-7 text-paper shadow-raised sm:px-8"
       aria-label="Net position this month"
     >
       {/* Two drifting lights. Without them the panel is a black rectangle. */}

@@ -42,6 +42,17 @@ export default function TransactionsPage() {
   const [selected, setSelected] = useState<Transaction | null>(null);
   const [showForm, setShowForm] = useState(false);
 
+  // Arriving from the command menu with ?search=… should land on that row.
+  // Read from `window.location` rather than `useSearchParams`, which would drag
+  // this statically-rendered page into needing a Suspense boundary for a value
+  // only ever used once, on mount.
+  useEffect(() => {
+    const initial = new URLSearchParams(window.location.search).get("search");
+    if (!initial) return;
+    setFilters((f) => ({ ...f, search: initial }));
+    setDebouncedSearch(initial);
+  }, []);
+
   // Typing should not fire a request per keystroke.
   useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(filters.search), 250);

@@ -67,7 +67,7 @@ const GAP_PATH = `${IN_PATH} L ${x(MONTHS.length - 1)} ${y(MONTHS[MONTHS.length 
 
 export default function AuthAside() {
   return (
-    <aside className="relative hidden overflow-hidden bg-ink-950 lg:flex lg:flex-col lg:justify-between">
+    <aside className="surface-deep relative hidden overflow-hidden rounded-xl bg-ink-950 lg:flex lg:flex-col lg:justify-between">
       {/* Ambient light. Two washes on different periods, so the panel is never
           quite the same twice and never resolves into a loop you can see. */}
       <div

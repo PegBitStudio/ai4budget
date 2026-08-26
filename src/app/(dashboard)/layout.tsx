@@ -2,6 +2,7 @@ import DisclaimerModal from "@/components/ui/DisclaimerModal";
 import TopHeader from "@/components/navigation/TopHeader";
 import BottomNav from "@/components/navigation/BottomNav";
 import Sidebar from "@/components/navigation/Sidebar";
+import CommandMenu from "@/components/command/CommandMenu";
 
 /**
  * The application shell: a persistent rail on desktop, a title bar and bottom
@@ -17,6 +18,7 @@ export default function DashboardLayout({
   return (
     <div className="flex min-h-screen bg-ink-50">
       <DisclaimerModal />
+      <CommandMenu />
       <Sidebar />
 
       <div className="flex min-w-0 flex-1 flex-col">

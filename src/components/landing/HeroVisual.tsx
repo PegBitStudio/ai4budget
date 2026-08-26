@@ -30,7 +30,7 @@ export default function HeroVisual() {
         className="animate-drift pointer-events-none absolute -inset-8 rounded-[2rem] bg-[radial-gradient(60%_50%_at_50%_35%,rgba(14,124,102,0.22),transparent_75%)] blur-2xl"
       />
 
-      <div className="animate-rise relative overflow-hidden rounded-xl border border-ink-800 bg-ink-950 shadow-overlay">
+      <div className="surface-deep animate-rise relative overflow-hidden rounded-xl border border-ink-800 bg-ink-950 shadow-overlay">
         {/* Statement head */}
         <div className="flex items-center justify-between border-b border-ink-800/80 px-5 py-3.5">
           <p className="text-eyebrow uppercase text-ink-400">August</p>

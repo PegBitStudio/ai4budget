@@ -44,11 +44,11 @@ export default function LandingPage() {
       />
       <div
         aria-hidden="true"
-        className="animate-wash-b pointer-events-none absolute inset-x-[-10%] top-[-10%] h-[46rem] bg-[radial-gradient(40%_45%_at_18%_12%,rgba(20,24,26,0.08),transparent_70%)]"
+        className="animate-wash-b hero-wash-neutral pointer-events-none absolute inset-x-[-10%] top-[-10%] h-[46rem]"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-[42rem] [background-image:linear-gradient(to_right,rgba(20,24,26,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(20,24,26,0.045)_1px,transparent_1px)] [background-size:64px_64px] [mask-image:radial-gradient(70%_60%_at_50%_0%,#000,transparent)]"
+        className="hero-grid pointer-events-none absolute inset-x-0 top-0 h-[42rem]"
       />
 
       <header className="sticky top-0 z-40 border-b border-ink-200/60 bg-ink-50/80 backdrop-blur-md">
@@ -110,7 +110,7 @@ export default function LandingPage() {
 
         {/* Proof, in the product's own figures */}
         <section
-          className="mt-24 overflow-hidden rounded-xl border border-ink-800 bg-ink-950 shadow-overlay"
+          className="surface-deep mt-24 overflow-hidden rounded-xl border border-ink-800 bg-ink-950 shadow-overlay"
           aria-label="What the demo account shows"
         >
           <div className="border-b border-ink-800 px-6 py-4 sm:px-8">

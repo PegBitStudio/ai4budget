@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { formatCurrency } from '@/utils/formatters';
 import { CATEGORIES } from '@/models/category';
 import AccountSection from '@/components/settings/AccountSection';
+import AppearanceSection from '@/components/settings/AppearanceSection';
 import { PageHeader } from "@/components/ui/primitives";
 
 // --- Types ---
@@ -224,6 +225,8 @@ export default function SettingsPage() {
       />
 
       <AccountSection />
+
+      <AppearanceSection />
 
       {/* --- CSV Export Section --- */}
       <section className="bg-paper border border-ink-200 rounded-lg p-5 shadow-card">

@@ -57,12 +57,18 @@
   --color-warning-100: #fbe7cf;
   --color-warning-50: #fef8f0;
 
-  /* --- Radii: tight and few. Nothing rounder than 14px. ------------------ */
-  --radius-xs: 4px;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 10px;
-  --radius-xl: 14px;
+  /* --- Radii ------------------------------------------------------------
+     Softer than the first pass, which capped at 14px on the theory that tight
+     corners read as serious. They also read as austere. The reference points
+     for this product round harder — cards at 16-22px, controls fully pilled —
+     and warmth is not the same thing as unseriousness. Still one scale, still
+     few steps: what changed is where the scale sits, not how it is used. */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
 
   /* --- Type scale -------------------------------------------------------- */
   --text-display: 2.25rem;
@@ -113,11 +119,136 @@
   --duration-slow: 320ms;
 }
 
+/* ==========================================================================
+   Dark
+   --------------------------------------------------------------------------
+   The neutral ramp inverts, so every `bg-ink-50`, `text-ink-900` and
+   `border-ink-200` in the product flips without a single component knowing
+   about it — ink-950 is "the strongest ink against the page" in both themes,
+   and only its value changes. A dark statement card becomes a light one on a
+   dark page, which is the correct translation rather than an accident.
+
+   The semantic hues do NOT invert — red must stay red — but they are
+   re-stepped, because a colour chosen to read against white is the wrong
+   lightness against near-black. The tints (-50, -100) become dark, low-chroma
+   surfaces so `bg-negative-50 text-negative-700` keeps working as a pair.
+
+   `data-theme` is always written explicitly by the boot script in the document
+   head, which resolves "system" and follows it. That keeps this to one block
+   rather than a media query and a selector saying the same thing twice.
+   ========================================================================== */
+
+:root[data-theme="dark"] {
+  /* Neutrals, inverted. Not a numeric inversion: a dark interface needs its
+     black lifted off zero and its whites pulled back off pure. */
+  --color-ink-950: #f8faf9;
+  --color-ink-900: #eef0ef;
+  --color-ink-800: #dbe0e0;
+  --color-ink-700: #c0c7c8;
+  --color-ink-600: #a2abad;
+  --color-ink-500: #808a8d;
+  --color-ink-400: #6b7578;
+  --color-ink-300: #3a4245;
+  --color-ink-200: #262c2e;
+  --color-ink-100: #1c2123;
+  --color-ink-50: #0c0f10;
+  /* The raised surface, one step off the page rather than pure black. */
+  --color-paper: #14181a;
+
+  --color-jade-700: #8ce8cb;
+  --color-jade-600: #4fd8ab;
+  --color-jade-500: #3ccb9c;
+  --color-jade-100: #0e3d33;
+  --color-jade-50: #0b2c25;
+
+  --color-positive-700: #6fe0b8;
+  --color-positive-600: #3fc79a;
+  --color-positive-100: #0d3a2c;
+  --color-positive-50: #0a2620;
+
+  --color-negative-700: #fda29b;
+  --color-negative-600: #f97066;
+  --color-negative-100: #4a1512;
+  --color-negative-50: #33100e;
+
+  --color-warning-700: #fec84b;
+  --color-warning-600: #fdb022;
+  --color-warning-100: #4a2c08;
+  --color-warning-50: #331d05;
+
+  /* A shadow tuned for white barely exists against a dark page. Elevation has
+     to come back through opacity, or every surface reads as flat. */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-raised: 0 4px 12px -2px rgba(0, 0, 0, 0.6),
+    0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --shadow-overlay: 0 16px 40px -8px rgba(0, 0, 0, 0.75),
+    0 4px 12px -4px rgba(0, 0, 0, 0.5);
+}
+
+/* Native controls — date pickers, scrollbars, form fields — follow suit. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* --------------------------------------------------------------------------
+   Deep surfaces
+
+   A few panels are deliberately dark against a light page — the net position
+   hero, the landing figure band, the sign-in aside. Left to the global
+   inversion they would become near-white slabs in dark mode, which is glare
+   rather than emphasis: the brightest thing on screen, for no reason.
+
+   So they opt out. Marking one `.surface-deep` restores the light-theme ink
+   values *inside that subtree only*, which works because every utility reads
+   the variable rather than a baked colour — so `text-ink-200`, `border-ink-800`
+   and the rest keep meaning what they meant when the panel was designed. The
+   surface itself lifts a step off pure black, because a dark panel on a dark
+   page still has to read as a separate object.
+   -------------------------------------------------------------------------- */
+
+:root[data-theme="dark"] .surface-deep {
+  --color-ink-950: #12171a;
+  --color-ink-900: #191f22;
+  --color-ink-800: #252d30;
+  --color-ink-700: #333a3d;
+  --color-ink-600: #4b5457;
+  --color-ink-500: #7c8689;
+  --color-ink-400: #949c9e;
+  --color-ink-300: #c2c7c7;
+  --color-ink-200: #e0e3e2;
+  --color-ink-100: #eef0ef;
+  --color-ink-50: #f7f8f7;
+  --color-paper: #ffffff;
+
+  --color-jade-700: #0b5c4c;
+  --color-jade-600: #0e7c66;
+  --color-jade-500: #14957b;
+
+  --color-positive-700: #04674a;
+  --color-positive-600: #047857;
+  --color-positive-100: #d6efe5;
+
+  --color-negative-700: #912018;
+  --color-negative-600: #b42318;
+  --color-negative-100: #fbdedb;
+
+  --color-warning-700: #93370d;
+  --color-warning-600: #b54708;
+  --color-warning-100: #fbe7cf;
+}
+
 body {
   color: var(--color-ink-900);
   background: var(--color-ink-50);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* Tabular by default, not by opt-in. This typeface ships proportional figures
+     — a "1" is half the width of a "0" — so any money rendered without the
+     tabular flag would visibly fail to line up in a column. In a product whose
+     job is columns of Naira, the safe default is the one that cannot break, and
+     prose opts out with `.pnum` instead. */
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }
 
 ::selection {
@@ -125,10 +256,18 @@ body {
   background: var(--color-ink-900);
 }
 
-/* Money, percentages and dates line up in columns wherever they appear. */
+/* Money, percentages and dates line up in columns wherever they appear. Now the
+   body default, but kept as an explicit marker on figures — it says "this is a
+   number in a column" at the point of use, and survives a change of typeface. */
 .tnum {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
+}
+
+/* The deliberate way out, for running prose where even spacing reads better. */
+.pnum {
+  font-variant-numeric: proportional-nums;
+  font-feature-settings: "pnum";
 }
 
 /* Focus that is visible without being loud. */
@@ -264,6 +403,42 @@ body {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
   animation: draw 1.6s var(--ease-out-quart) both;
+}
+
+/* The hairline grid behind a hero, fading out as it falls. Drawn in ink on a
+   light page and in light on a dark one — a fixed colour would simply vanish
+   into one of the two themes. */
+.hero-grid {
+  background-image:
+    linear-gradient(to right, rgba(20, 24, 26, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(20, 24, 26, 0.045) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(70% 60% at 50% 0%, #000, transparent);
+  -webkit-mask-image: radial-gradient(70% 60% at 50% 0%, #000, transparent);
+}
+
+:root[data-theme="dark"] .hero-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+}
+
+/* The second, cooler wash behind the hero. Ink on a light page; a faint light
+   lift on a dark one, where more ink would be invisible. */
+.hero-wash-neutral {
+  background-image: radial-gradient(
+    40% 45% at 18% 12%,
+    rgba(20, 24, 26, 0.08),
+    transparent 70%
+  );
+}
+
+:root[data-theme="dark"] .hero-wash-neutral {
+  background-image: radial-gradient(
+    40% 45% at 18% 12%,
+    rgba(200, 220, 230, 0.06),
+    transparent 70%
+  );
 }
 
 /* A panel arriving from the right edge. Short and eased-out: the point is to

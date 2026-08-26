@@ -15,7 +15,11 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid min-h-screen bg-ink-50 lg:grid-cols-2">
+    // The panel is inset with the page showing around it rather than running
+    // to the edge — a card the layout holds, not a half the screen is split
+    // into. It is a small thing that separates a considered page from a
+    // two-column div.
+    <div className="grid min-h-screen bg-paper lg:grid-cols-2 lg:gap-0 lg:p-3">
       <div className="flex min-w-0 flex-col px-5 py-8 sm:px-8">
         {/* On the wide layout the mark lives on the dark panel, so it is not
             repeated here. */}

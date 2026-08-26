@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { NAV_ITEMS, isActive } from "./navItems";
 import { cx } from "@/components/ui/primitives";
+import CommandTrigger from "@/components/command/CommandTrigger";
 
 const COLLAPSE_KEY = "kobopilot:sidebar-collapsed";
 
@@ -61,6 +62,10 @@ export default function Sidebar() {
             <span className="truncate text-title text-ink-900">KoboPilot</span>
           )}
         </Link>
+      </div>
+
+      <div className="px-3 pb-1 pt-2">
+        <CommandTrigger collapsed={collapsed} />
       </div>
 
       {/* Primary navigation */}

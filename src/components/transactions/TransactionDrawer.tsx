@@ -155,7 +155,7 @@ export default function TransactionDrawer({
       aria-label="Transaction detail"
     >
       <div
-        className="animate-fade absolute inset-0 bg-ink-950/30 backdrop-blur-[2px]"
+        className="animate-fade absolute inset-0 bg-[rgba(6,8,9,0.45)] backdrop-blur-[2px]"
         onClick={onClose}
         aria-hidden="true"
       />
