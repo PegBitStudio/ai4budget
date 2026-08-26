@@ -1,27 +1,28 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import React from "react";
 import { render, screen, cleanup } from "@testing-library/react";
 
-// Mock react-chartjs-2 to avoid canvas/DOM issues in tests
+// Chart.js needs a canvas, so the rendered chart is stubbed and the tests
+// assert on the data handed to it instead.
 vi.mock("react-chartjs-2", () => ({
-  Doughnut: ({ data }: { data: unknown }) => (
-    <div data-testid="doughnut-chart" data-chart-data={JSON.stringify(data)} />
+  Bar: ({ data }: { data: unknown }) => (
+    <div data-testid="bar-chart" data-chart-data={JSON.stringify(data)} />
   ),
   Line: ({ data }: { data: unknown }) => (
     <div data-testid="line-chart" data-chart-data={JSON.stringify(data)} />
   ),
 }));
 
-// Mock chart.js registration
 vi.mock("chart.js", () => ({
   Chart: { register: vi.fn() },
   CategoryScale: {},
   LinearScale: {},
   PointElement: {},
   LineElement: {},
+  BarElement: {},
   ArcElement: {},
   Tooltip: {},
   Legend: {},
@@ -32,62 +33,86 @@ vi.mock("chart.js", () => ({
 import { CategoryBreakdown } from "./CategoryBreakdown";
 import { SpendingTrend } from "./SpendingTrend";
 
+function chartData(testId: string) {
+  const raw = screen.getByTestId(testId).getAttribute("data-chart-data");
+  return JSON.parse(raw ?? "{}");
+}
+
+afterEach(cleanup);
+
 describe("CategoryBreakdown", () => {
-  beforeEach(() => {
-    Object.defineProperty(window, "innerWidth", {
-      writable: true,
-      configurable: true,
-      value: 1024,
-    });
-  });
+  const sample = [
+    { category: "Groceries", amount: 200, percentage: 40 },
+    { category: "Shopping", amount: 400, percentage: 50 },
+    { category: "Transport", amount: 150, percentage: 10 },
+  ];
 
-  afterEach(() => {
-    cleanup();
-  });
-
-  it("shows empty state when data is empty", () => {
+  it("shows an empty state rather than an empty chart", () => {
     render(<CategoryBreakdown data={[]} />);
-    expect(screen.getByText("No spending data available")).toBeDefined();
-    expect(screen.queryByTestId("doughnut-chart")).toBeNull();
+    expect(screen.getByText(/no spending recorded/i)).toBeDefined();
+    expect(screen.queryByTestId("bar-chart")).toBeNull();
   });
 
-  it("renders doughnut chart when data is provided", () => {
-    const data = [
+  it("ranks categories with the largest first", () => {
+    // The chart's job is "what costs me most?", so order is the whole point.
+    render(<CategoryBreakdown data={sample} />);
+    expect(chartData("bar-chart").labels).toEqual([
+      "Shopping",
+      "Groceries",
+      "Transport",
+    ]);
+  });
+
+  it("uses one colour for every bar", () => {
+    // Bar length already encodes magnitude. Giving each bar its own hue would
+    // restate that in the only free channel the chart has.
+    render(<CategoryBreakdown data={sample} />);
+    const [dataset] = chartData("bar-chart").datasets;
+    expect(typeof dataset.backgroundColor).toBe("string");
+  });
+
+  it("survives a malformed row without blanking the page", () => {
+    const malformed = [
       { category: "Groceries", amount: 200, percentage: 40 },
-      { category: "Transport", amount: 150, percentage: 30 },
-      { category: "Entertainment", amount: 150, percentage: 30 },
-    ];
-    render(<CategoryBreakdown data={data} />);
-    expect(screen.getByTestId("doughnut-chart")).toBeDefined();
-    expect(screen.queryByText("No spending data available")).toBeNull();
+      // Shapes that have reached this component from the API before.
+      { category: undefined, amount: 50, percentage: undefined },
+      { category: "Broken", amount: Number.NaN, percentage: 10 },
+    ] as unknown as Parameters<typeof CategoryBreakdown>[0]["data"];
+
+    render(<CategoryBreakdown data={malformed} />);
+
+    expect(chartData("bar-chart").labels).toEqual(["Groceries", "Other"]);
   });
 });
 
 describe("SpendingTrend", () => {
-  afterEach(() => {
-    cleanup();
+  const sample = [
+    { period: "Jan 2024", amount: 1200 },
+    { period: "Feb 2024", amount: 1400 },
+    { period: "Mar 2024", amount: 1100 },
+  ];
+
+  it.each([[[]], [[{ period: "Jan", amount: 100 }]]])(
+    "explains that history is still building when given %j",
+    (data) => {
+      render(<SpendingTrend data={data} />);
+      expect(screen.getByText(/not enough history/i)).toBeDefined();
+      expect(screen.queryByTestId("line-chart")).toBeNull();
+    }
+  );
+
+  it("plots a single unlabelled series", () => {
+    render(<SpendingTrend data={sample} />);
+    const parsed = chartData("line-chart");
+    expect(parsed.datasets).toHaveLength(1);
+    expect(parsed.datasets[0].data).toEqual([1200, 1400, 1100]);
   });
 
-  it("shows empty state when fewer than 2 data points", () => {
-    render(<SpendingTrend data={[{ period: "Jan", amount: 100 }]} />);
-    expect(screen.getByText("Not enough data for trend")).toBeDefined();
-    expect(screen.queryByTestId("line-chart")).toBeNull();
-  });
-
-  it("shows empty state when data is empty", () => {
-    render(<SpendingTrend data={[]} />);
-    expect(screen.getByText("Not enough data for trend")).toBeDefined();
-    expect(screen.queryByTestId("line-chart")).toBeNull();
-  });
-
-  it("renders line chart when 2+ data points provided", () => {
-    const data = [
-      { period: "Jan 2024", amount: 1200 },
-      { period: "Feb 2024", amount: 1400 },
-      { period: "Mar 2024", amount: 1100 },
-    ];
-    render(<SpendingTrend data={data} />);
-    expect(screen.getByTestId("line-chart")).toBeDefined();
-    expect(screen.queryByText("Not enough data for trend")).toBeNull();
+  it("marks only the most recent point", () => {
+    // The current month is what the reader is asking about; the rest of the
+    // points appear on hover so the line stays clean.
+    render(<SpendingTrend data={sample} />);
+    const [dataset] = chartData("line-chart").datasets;
+    expect(dataset.pointRadius).toEqual([0, 0, 5]);
   });
 });
