@@ -75,7 +75,10 @@ export default function LandingPage() {
           <div className="animate-rise min-w-0">
             <p className="inline-flex items-center gap-2 rounded-full border border-paper/15 bg-paper/5 px-3.5 py-1.5 text-eyebrow uppercase text-ink-300 backdrop-blur-sm">
               <span aria-hidden="true" className="size-1.5 rounded-full bg-jade-500" />
-              Personal finance, in Naira
+              {/* Built here, not limited to here. The local knowledge is the
+                  moat; the currency range is evidence it was engineered rather
+                  than hardcoded. */}
+              Built for Nigeria · Works in 8 currencies
             </p>
 
             {/* Sized against the column it actually sits in, which is not the
@@ -189,6 +192,19 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+
+          {/* The reach, stated after the local knowledge rather than instead of
+              it. The bank-alert parsing is what nothing else here does; the
+              currency range is what proves it was built properly. */}
+          <p className="mt-8 max-w-3xl text-body leading-relaxed text-ink-600 [text-wrap:pretty]">
+            <strong className="font-medium text-ink-900">
+              Naira by default — and eight currencies in all.
+            </strong>{" "}
+            Dollars, euros, pounds, cedis, shillings, rand and Canadian dollars,
+            chosen when you sign up. The categories, the budgets, the forecasts
+            and the assistant all follow whichever you pick, because none of it
+            was written against a hardcoded currency.
+          </p>
         </div>
       </section>
 
