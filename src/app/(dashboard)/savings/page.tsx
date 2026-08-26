@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { formatCurrency } from '@/utils/formatters';
+import { PageHeader } from "@/components/ui/primitives";
 
 // --- Types ---
 
@@ -139,11 +140,11 @@ export default function SavingsPage() {
     return (
       <div className="px-4 py-6 sm:px-6 md:px-8 lg:px-12 max-w-3xl mx-auto">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 rounded w-48" />
-          <div className="h-24 bg-gray-200 rounded" />
-          <div className="h-24 bg-gray-200 rounded" />
-          <div className="h-8 bg-gray-200 rounded w-56" />
-          <div className="h-32 bg-gray-200 rounded" />
+          <div className="h-8 bg-ink-200 rounded w-48" />
+          <div className="h-24 bg-ink-200 rounded" />
+          <div className="h-24 bg-ink-200 rounded" />
+          <div className="h-8 bg-ink-200 rounded w-56" />
+          <div className="h-32 bg-ink-200 rounded" />
         </div>
       </div>
     );
@@ -153,12 +154,12 @@ export default function SavingsPage() {
   if (error && !data) {
     return (
       <div className="px-4 py-6 sm:px-6 md:px-8 lg:px-12 max-w-3xl mx-auto">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-700 font-medium">Error loading savings data</p>
-          <p className="text-red-600 text-sm mt-1">{error}</p>
+        <div className="bg-negative-50 border border-negative-100 rounded-lg p-4">
+          <p className="text-negative-700 font-medium">Error loading savings data</p>
+          <p className="text-negative-600 text-sm mt-1">{error}</p>
           <button
             onClick={fetchSavings}
-            className="mt-3 min-h-[44px] min-w-[44px] px-4 py-2 bg-red-100 text-red-700 rounded-md font-medium hover:bg-red-200 transition-colors"
+            className="mt-3 min-h-[44px] min-w-[44px] px-4 py-2 bg-negative-100 text-negative-700 rounded-md font-medium hover:bg-negative-100 transition-colors"
           >
             Try Again
           </button>
@@ -171,11 +172,16 @@ export default function SavingsPage() {
   const recommendation = data?.recommendation;
 
   return (
-    <div className="px-4 py-6 sm:px-6 md:px-8 lg:px-12 max-w-3xl mx-auto space-y-8">
+    <div className="space-y-6">
+      <PageHeader
+        title="Goals"
+        description="What you are saving for, and whether you will get there."
+      />
+
       {/* Inline error banner */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-          <p className="text-red-700 text-sm">{error}</p>
+        <div className="bg-negative-50 border border-negative-100 rounded-lg p-3">
+          <p className="text-negative-700 text-sm">{error}</p>
         </div>
       )}
 
@@ -184,7 +190,7 @@ export default function SavingsPage() {
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={() => setShowForm(!showForm)}
-            className="min-h-[44px] min-w-[44px] px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
+            className="min-h-[44px] min-w-[44px] px-4 py-2 bg-ink-900 text-paper rounded-lg font-medium hover:bg-ink-900 transition-colors text-sm"
             aria-expanded={showForm}
             aria-controls="add-goal-form"
           >
@@ -197,16 +203,16 @@ export default function SavingsPage() {
           <form
             id="add-goal-form"
             onSubmit={handleCreateGoal}
-            className="bg-white border border-gray-200 rounded-lg p-4 mb-6 space-y-4 shadow-sm"
+            className="bg-paper border border-ink-200 rounded-lg p-4 mb-6 space-y-4 shadow-card"
           >
-            <h2 className="text-lg font-semibold text-gray-800">
+            <h2 className="text-lg font-semibold text-ink-800">
               New Savings Goal
             </h2>
 
             <div>
               <label
                 htmlFor="target-amount"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-ink-700 mb-1"
               >
                 Target Amount *
               </label>
@@ -220,14 +226,14 @@ export default function SavingsPage() {
                 onChange={(e) => setTargetAmount(e.target.value)}
                 placeholder="e.g. 500000"
                 required
-                className="w-full min-h-[44px] px-3 py-2 border border-gray-300 rounded-md text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                className="w-full min-h-[44px] px-3 py-2 border border-ink-300 rounded-md text-base focus:ring-2 focus:ring-ink-700 focus:border-ink-700 outline-none"
               />
             </div>
 
             <div>
               <label
                 htmlFor="deadline"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-ink-700 mb-1"
               >
                 Deadline (optional)
               </label>
@@ -237,12 +243,12 @@ export default function SavingsPage() {
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
                 min={getTomorrowDate()}
-                className="w-full min-h-[44px] px-3 py-2 border border-gray-300 rounded-md text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                className="w-full min-h-[44px] px-3 py-2 border border-ink-300 rounded-md text-base focus:ring-2 focus:ring-ink-700 focus:border-ink-700 outline-none"
               />
             </div>
 
             {formError && (
-              <p className="text-red-600 text-sm" role="alert">
+              <p className="text-negative-600 text-sm" role="alert">
                 {formError}
               </p>
             )}
@@ -250,7 +256,7 @@ export default function SavingsPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full min-h-[44px] px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full min-h-[44px] px-4 py-3 bg-positive-600 text-paper rounded-lg font-medium hover:bg-positive-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {submitting ? 'Creating...' : 'Create Goal'}
             </button>
@@ -259,8 +265,8 @@ export default function SavingsPage() {
 
         {/* --- Goals List --- */}
         {goals.length === 0 ? (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-            <p className="text-gray-600">
+          <div className="bg-ink-50 border border-ink-200 rounded-lg p-6 text-center">
+            <p className="text-ink-600">
               No savings goals yet. Add one to get started!
             </p>
           </div>
@@ -278,15 +284,15 @@ export default function SavingsPage() {
               return (
                 <li
                   key={goal.id}
-                  className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
+                  className="bg-paper border border-ink-200 rounded-lg p-4 shadow-card"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-lg font-semibold text-gray-900">
+                      <p className="text-lg font-semibold text-ink-900">
                         {formatCurrency(goal.target_amount)}
                       </p>
                       {goal.deadline && (
-                        <p className="text-sm text-gray-500 mt-0.5">
+                        <p className="text-sm text-ink-500 mt-0.5">
                           Deadline:{' '}
                           {new Date(goal.deadline + 'T00:00:00').toLocaleDateString(
                             undefined,
@@ -298,7 +304,7 @@ export default function SavingsPage() {
                     <button
                       onClick={() => handleDeleteGoal(goal.id)}
                       disabled={deletingId === goal.id}
-                      className="min-h-[44px] min-w-[44px] flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
+                      className="min-h-[44px] min-w-[44px] flex items-center justify-center text-negative-600 hover:text-negative-700 hover:bg-negative-50 rounded-md transition-colors disabled:opacity-50"
                       aria-label={`Delete savings goal of ${formatCurrency(goal.target_amount)}`}
                     >
                       {deletingId === goal.id ? (
@@ -323,15 +329,15 @@ export default function SavingsPage() {
 
                   {/* Progress bar */}
                   <div className="mt-3">
-                    <div className="flex justify-between text-sm text-gray-600 mb-1">
+                    <div className="flex justify-between text-sm text-ink-600 mb-1">
                       <span>
                         {formatCurrency(goal.current_amount)} saved
                       </span>
                       <span>{progress.toFixed(1)}%</span>
                     </div>
-                    <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="w-full h-3 bg-ink-200 rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-300"
+                        className="h-full rounded-full bg-gradient-to-r from-ink-700 to-positive-600 transition-all duration-300"
                         style={{ width: `${progress}%` }}
                         role="progressbar"
                         aria-valuenow={goal.current_amount}
@@ -351,15 +357,15 @@ export default function SavingsPage() {
       {/* --- Recommendations Section --- */}
       {recommendation && (
         <section>
-          <h2 className="text-xl font-bold text-gray-900 mb-4 sm:text-2xl">
+          <h2 className="text-xl font-bold text-ink-900 mb-4 sm:text-2xl">
             Recommendations
           </h2>
 
-          <div className="bg-gradient-to-br from-blue-50 to-green-50 border border-blue-100 rounded-lg p-5 shadow-sm">
+          <div className="bg-gradient-to-br from-ink-50 to-positive-50 border border-ink-100 rounded-lg p-5 shadow-card">
             {/* Main recommendation text. When the alternatives are listed
                 below, only the opening sentence goes here — the full
                 explanation spells them out again word for word. */}
-            <p className="text-gray-800 leading-relaxed">
+            <p className="text-ink-800 leading-relaxed">
               {recommendation.isExcessive && recommendation.alternatives
                 ? recommendation.explanation.split(' Consider:')[0]
                 : recommendation.explanation}
@@ -367,22 +373,22 @@ export default function SavingsPage() {
 
             {/* Monthly contribution highlight */}
             <div className="mt-4 flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-600">
+              <span className="text-sm font-medium text-ink-600">
                 Suggested monthly:
               </span>
-              <span className="text-lg font-bold text-blue-700">
+              <span className="text-lg font-bold text-ink-900">
                 {formatCurrency(recommendation.monthlyContribution)}
               </span>
             </div>
 
             {/* Alternatives when recommendation is excessive */}
             {recommendation.isExcessive && recommendation.alternatives && (
-              <div className="mt-5 border-t border-blue-200 pt-4">
-                <p className="text-sm font-semibold text-amber-700 mb-3">
+              <div className="mt-5 border-t border-ink-200 pt-4">
+                <p className="text-sm font-semibold text-warning-700 mb-3">
                   ⚠️ This exceeds 30% of your discretionary income. Consider
                   these alternatives:
                 </p>
-                <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+                <ol className="list-decimal list-inside space-y-2 text-sm text-ink-700">
                   {recommendation.alternatives.longerTimeline && (
                     <li>
                       <span className="font-medium">Extend your timeline</span>{' '}

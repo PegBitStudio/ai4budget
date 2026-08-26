@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { formatCurrency } from "@/utils/formatters";
 import ImportPanel from "@/components/transactions/ImportPanel";
 import TransactionCard from "@/components/transactions/TransactionCard";
+import { PageHeader } from "@/components/ui/primitives";
 
 // --- Types ---
 
@@ -127,20 +128,24 @@ export default function TransactionsPage() {
   };
 
   return (
-    <div className="px-4 py-4 sm:px-6 md:px-8 max-w-3xl mx-auto">
+    <div className="space-y-6">
+      <PageHeader
+        title="Transactions"
+        description="Everything recorded, sorted automatically."
+      />
       <ImportPanel onImported={fetchTransactions} />
 
       {/* Action bar */}
       <div className="flex items-center justify-between mb-4">
         {/* The empty state below already says there is nothing here. */}
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-ink-500">
           {transactions.length > 0
             ? `${transactions.length} recent transaction${transactions.length === 1 ? "" : "s"}`
             : ""}
         </p>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors min-h-[44px]"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-ink-900 px-3.5 py-2 text-sm font-medium text-paper hover:bg-ink-900 transition-colors min-h-[44px]"
           aria-expanded={showForm}
           aria-controls="add-transaction-form"
         >
@@ -164,12 +169,12 @@ export default function TransactionsPage() {
 
       {/* Feedback messages */}
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">
+        <div className="mb-4 rounded-lg border border-negative-100 bg-negative-50 p-3 text-sm text-negative-700" role="alert">
           {error}
         </div>
       )}
       {success && (
-        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700" role="status">
+        <div className="mb-4 rounded-lg border border-positive-100 bg-positive-50 p-3 text-sm text-positive-700" role="status">
           {success}
         </div>
       )}
@@ -179,17 +184,17 @@ export default function TransactionsPage() {
         <form
           id="add-transaction-form"
           onSubmit={handleSubmit}
-          className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm space-y-4"
+          className="mb-6 rounded-lg border border-ink-200 bg-paper p-4 shadow-card space-y-4"
         >
           {/* Type toggle */}
-          <div className="flex rounded-lg bg-gray-100 p-1">
+          <div className="flex rounded-lg bg-ink-100 p-1">
             <button
               type="button"
               onClick={() => setType("expense")}
               className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors min-h-[40px] ${
                 type === "expense"
-                  ? "bg-white text-red-600 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "bg-paper text-negative-600 shadow-card"
+                  : "text-ink-600 hover:text-ink-900"
               }`}
             >
               Expense
@@ -199,8 +204,8 @@ export default function TransactionsPage() {
               onClick={() => setType("income")}
               className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors min-h-[40px] ${
                 type === "income"
-                  ? "bg-white text-green-600 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "bg-paper text-positive-600 shadow-card"
+                  : "text-ink-600 hover:text-ink-900"
               }`}
             >
               Income
@@ -209,11 +214,11 @@ export default function TransactionsPage() {
 
           {/* Amount */}
           <div>
-            <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="amount" className="block text-sm font-medium text-ink-700 mb-1">
               Amount
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₦</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 text-sm">₦</span>
               <input
                 id="amount"
                 type="number"
@@ -223,14 +228,14 @@ export default function TransactionsPage() {
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
                 required
-                className="w-full min-h-[44px] pl-7 pr-3 py-2 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full min-h-[44px] pl-7 pr-3 py-2 text-base border border-ink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink-700 focus:border-transparent"
               />
             </div>
           </div>
 
           {/* Description */}
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="description" className="block text-sm font-medium text-ink-700 mb-1">
               Description
             </label>
             <input
@@ -241,16 +246,16 @@ export default function TransactionsPage() {
               placeholder="e.g. Grocery shopping at Shoprite"
               required
               maxLength={255}
-              className="w-full min-h-[44px] px-3 py-2 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full min-h-[44px] px-3 py-2 text-base border border-ink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink-700 focus:border-transparent"
             />
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-ink-400">
               AI will auto-categorize based on description
             </p>
           </div>
 
           {/* Date */}
           <div>
-            <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="date" className="block text-sm font-medium text-ink-700 mb-1">
               Date
             </label>
             <input
@@ -260,20 +265,20 @@ export default function TransactionsPage() {
               onChange={(e) => setDate(e.target.value)}
               max={new Date().toISOString().split("T")[0]}
               required
-              className="w-full min-h-[44px] px-3 py-2 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full min-h-[44px] px-3 py-2 text-base border border-ink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink-700 focus:border-transparent"
             />
           </div>
 
           {/* Category (optional override) */}
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-              Category <span className="text-gray-400 font-normal">(optional)</span>
+            <label htmlFor="category" className="block text-sm font-medium text-ink-700 mb-1">
+              Category <span className="text-ink-400 font-normal">(optional)</span>
             </label>
             <select
               id="category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full min-h-[44px] px-3 py-2 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              className="w-full min-h-[44px] px-3 py-2 text-base border border-ink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink-700 focus:border-transparent bg-paper"
             >
               <option value="">Auto-detect from description</option>
               {CATEGORIES.map((cat) => (
@@ -288,7 +293,7 @@ export default function TransactionsPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full min-h-[44px] rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full min-h-[44px] rounded-lg bg-ink-900 px-4 py-2.5 text-sm font-medium text-paper hover:bg-ink-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {submitting ? "Adding..." : `Add ${type === "income" ? "Income" : "Expense"}`}
           </button>
@@ -299,18 +304,18 @@ export default function TransactionsPage() {
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-lg bg-gray-100" />
+            <div key={i} className="h-16 animate-pulse rounded-lg bg-ink-100" />
           ))}
         </div>
       ) : transactions.length === 0 ? (
         <div className="text-center py-12">
-          <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7 text-gray-400">
+          <div className="w-14 h-14 rounded-full bg-ink-100 flex items-center justify-center mx-auto mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7 text-ink-400">
               <path d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 9a.75.75 0 0 0-1.5 0v2.25H9a.75.75 0 0 0 0 1.5h2.25V15a.75.75 0 0 0 1.5 0v-2.25H15a.75.75 0 0 0 0-1.5h-2.25V9Z" />
             </svg>
           </div>
-          <h3 className="text-sm font-medium text-gray-900 mb-1">No transactions yet</h3>
-          <p className="text-sm text-gray-500 mb-4">
+          <h3 className="text-sm font-medium text-ink-900 mb-1">No transactions yet</h3>
+          <p className="text-sm text-ink-500 mb-4">
             Tap the Add button above to record your first transaction.
           </p>
         </div>

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { formatCurrency } from '@/utils/formatters';
 import { CATEGORIES } from '@/models/category';
 import AccountSection from '@/components/settings/AccountSection';
+import { PageHeader } from "@/components/ui/primitives";
 
 // --- Types ---
 
@@ -216,27 +217,31 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="px-4 py-4 sm:px-6 md:px-8 lg:px-12 max-w-3xl mx-auto space-y-8 pb-24">
+    <div className="space-y-6">
+      <PageHeader
+        title="Settings"
+        description="Your account, commitments and data."
+      />
 
       <AccountSection />
 
       {/* --- CSV Export Section --- */}
-      <section className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">Export Data</h2>
-        <p className="text-sm text-gray-600 mb-4">
+      <section className="bg-paper border border-ink-200 rounded-lg p-5 shadow-card">
+        <h2 className="text-lg font-semibold text-ink-900 mb-2">Export Data</h2>
+        <p className="text-sm text-ink-600 mb-4">
           Download all your transactions as a CSV file for backup or use in other tools.
         </p>
         <button
           onClick={handleExport}
           disabled={exporting}
-          className="min-h-[44px] min-w-[44px] px-5 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="min-h-[44px] min-w-[44px] px-5 py-3 bg-ink-900 text-paper rounded-lg font-medium hover:bg-ink-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {exporting ? 'Exporting...' : 'Export CSV'}
         </button>
         {exportMessage && (
           <p
             className={`mt-3 text-sm ${
-              exportMessage.includes('successfully') ? 'text-green-700' : 'text-amber-700'
+              exportMessage.includes('successfully') ? 'text-positive-700' : 'text-warning-700'
             }`}
             role="status"
             aria-live="polite"
@@ -247,21 +252,21 @@ export default function SettingsPage() {
       </section>
 
       {/* --- Data Transparency Panel --- */}
-      <section className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+      <section className="bg-paper border border-ink-200 rounded-lg shadow-card overflow-hidden">
         <button
           onClick={() => setShowTransparency(!showTransparency)}
-          className="w-full min-h-[44px] px-5 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+          className="w-full min-h-[44px] px-5 py-4 flex items-center justify-between text-left hover:bg-ink-50 transition-colors"
           aria-expanded={showTransparency}
           aria-controls="transparency-panel"
         >
-          <span className="text-lg font-semibold text-gray-900">
+          <span className="text-lg font-semibold text-ink-900">
             What data is sent to the AI?
           </span>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 20 20"
             fill="currentColor"
-            className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${
+            className={`w-5 h-5 text-ink-500 transition-transform duration-200 ${
               showTransparency ? 'rotate-180' : ''
             }`}
             aria-hidden="true"
@@ -276,18 +281,18 @@ export default function SettingsPage() {
 
         {showTransparency && (
           <div id="transparency-panel" className="px-5 pb-5 space-y-4">
-            <div className="border-t border-gray-100 pt-4">
-              <h3 className="font-medium text-gray-800 mb-2">Data sent to the AI:</h3>
-              <ul className="space-y-2 text-sm text-gray-700">
+            <div className="border-t border-ink-100 pt-4">
+              <h3 className="font-medium text-ink-800 mb-2">Data sent to the AI:</h3>
+              <ul className="space-y-2 text-sm text-ink-700">
                 <li className="flex items-start gap-2">
-                  <span className="text-green-600 font-bold mt-0.5">✓</span>
+                  <span className="text-positive-600 font-bold mt-0.5">✓</span>
                   <span>
                     <strong>Transaction descriptions</strong> — used to classify your
                     expenses into categories (e.g. &quot;Woolworths&quot; → Groceries)
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-green-600 font-bold mt-0.5">✓</span>
+                  <span className="text-positive-600 font-bold mt-0.5">✓</span>
                   <span>
                     <strong>Aggregated totals</strong> — category totals and spending
                     summaries for generating plain-language overviews
@@ -297,26 +302,26 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <h3 className="font-medium text-gray-800 mb-2">
-                Data <span className="text-red-600">NOT</span> sent to the AI:
+              <h3 className="font-medium text-ink-800 mb-2">
+                Data <span className="text-negative-600">NOT</span> sent to the AI:
               </h3>
-              <ul className="space-y-2 text-sm text-gray-700">
+              <ul className="space-y-2 text-sm text-ink-700">
                 <li className="flex items-start gap-2">
-                  <span className="text-red-600 font-bold mt-0.5">✗</span>
+                  <span className="text-negative-600 font-bold mt-0.5">✗</span>
                   <span>Account numbers or banking credentials</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-red-600 font-bold mt-0.5">✗</span>
+                  <span className="text-negative-600 font-bold mt-0.5">✗</span>
                   <span>Full transaction histories (only individual descriptions)</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-red-600 font-bold mt-0.5">✗</span>
+                  <span className="text-negative-600 font-bold mt-0.5">✗</span>
                   <span>Personal information (name, address, phone, email)</span>
                 </li>
               </ul>
             </div>
 
-            <p className="text-xs text-gray-500 border-t border-gray-100 pt-3">
+            <p className="text-xs text-ink-500 border-t border-ink-100 pt-3">
               All AI processing happens server-side. Your API keys are never exposed to
               the browser. Data is transmitted securely over HTTPS.
             </p>
@@ -325,14 +330,14 @@ export default function SettingsPage() {
       </section>
 
       {/* --- Financial Commitments Section --- */}
-      <section className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+      <section className="bg-paper border border-ink-200 rounded-lg p-5 shadow-card">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-ink-900">
             Financial Commitments
           </h2>
           <button
             onClick={() => setShowCommitmentForm(!showCommitmentForm)}
-            className="min-h-[44px] min-w-[44px] px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
+            className="min-h-[44px] min-w-[44px] px-4 py-2 bg-ink-900 text-paper rounded-lg font-medium hover:bg-ink-900 transition-colors text-sm"
             aria-expanded={showCommitmentForm}
             aria-controls="commitment-form"
           >
@@ -345,12 +350,12 @@ export default function SettingsPage() {
           <form
             id="commitment-form"
             onSubmit={handleCreateCommitment}
-            className="border border-gray-200 rounded-lg p-4 mb-5 space-y-4 bg-gray-50"
+            className="border border-ink-200 rounded-lg p-4 mb-5 space-y-4 bg-ink-50"
           >
             <div>
               <label
                 htmlFor="commit-description"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-ink-700 mb-1"
               >
                 Description *
               </label>
@@ -362,7 +367,7 @@ export default function SettingsPage() {
                 placeholder="e.g. Rent, Netflix subscription"
                 required
                 maxLength={255}
-                className="w-full min-h-[44px] px-3 py-2 border border-gray-300 rounded-md text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                className="w-full min-h-[44px] px-3 py-2 border border-ink-300 rounded-md text-base focus:ring-2 focus:ring-ink-700 focus:border-ink-700 outline-none"
               />
             </div>
 
@@ -370,7 +375,7 @@ export default function SettingsPage() {
               <div>
                 <label
                   htmlFor="commit-amount"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-ink-700 mb-1"
                 >
                   Amount *
                 </label>
@@ -384,14 +389,14 @@ export default function SettingsPage() {
                   onChange={(e) => setCommitAmount(e.target.value)}
                   placeholder="0.00"
                   required
-                  className="w-full min-h-[44px] px-3 py-2 border border-gray-300 rounded-md text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  className="w-full min-h-[44px] px-3 py-2 border border-ink-300 rounded-md text-base focus:ring-2 focus:ring-ink-700 focus:border-ink-700 outline-none"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="commit-frequency"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-ink-700 mb-1"
                 >
                   Frequency *
                 </label>
@@ -399,7 +404,7 @@ export default function SettingsPage() {
                   id="commit-frequency"
                   value={commitFrequency}
                   onChange={(e) => setCommitFrequency(e.target.value as Frequency)}
-                  className="w-full min-h-[44px] px-3 py-2 border border-gray-300 rounded-md text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+                  className="w-full min-h-[44px] px-3 py-2 border border-ink-300 rounded-md text-base focus:ring-2 focus:ring-ink-700 focus:border-ink-700 outline-none bg-paper"
                 >
                   <option value="weekly">Weekly</option>
                   <option value="fortnightly">Fortnightly</option>
@@ -412,7 +417,7 @@ export default function SettingsPage() {
             <div>
               <label
                 htmlFor="commit-category"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-ink-700 mb-1"
               >
                 Category *
               </label>
@@ -420,7 +425,7 @@ export default function SettingsPage() {
                 id="commit-category"
                 value={commitCategory}
                 onChange={(e) => setCommitCategory(e.target.value)}
-                className="w-full min-h-[44px] px-3 py-2 border border-gray-300 rounded-md text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+                className="w-full min-h-[44px] px-3 py-2 border border-ink-300 rounded-md text-base focus:ring-2 focus:ring-ink-700 focus:border-ink-700 outline-none bg-paper"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>
@@ -431,7 +436,7 @@ export default function SettingsPage() {
             </div>
 
             {commitFormError && (
-              <p className="text-red-600 text-sm" role="alert">
+              <p className="text-negative-600 text-sm" role="alert">
                 {commitFormError}
               </p>
             )}
@@ -439,7 +444,7 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={submittingCommitment}
-              className="w-full min-h-[44px] px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full min-h-[44px] px-4 py-3 bg-positive-600 text-paper rounded-lg font-medium hover:bg-positive-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {submittingCommitment ? 'Adding...' : 'Add Commitment'}
             </button>
@@ -449,21 +454,21 @@ export default function SettingsPage() {
         {/* Commitments List */}
         {loadingCommitments ? (
           <div className="animate-pulse space-y-3">
-            <div className="h-16 bg-gray-100 rounded" />
-            <div className="h-16 bg-gray-100 rounded" />
+            <div className="h-16 bg-ink-100 rounded" />
+            <div className="h-16 bg-ink-100 rounded" />
           </div>
         ) : commitmentsError ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-            <p className="text-red-700 text-sm">{commitmentsError}</p>
+          <div className="bg-negative-50 border border-negative-100 rounded-lg p-3">
+            <p className="text-negative-700 text-sm">{commitmentsError}</p>
             <button
               onClick={fetchCommitments}
-              className="mt-2 min-h-[44px] min-w-[44px] px-3 py-2 bg-red-100 text-red-700 rounded-md text-sm font-medium hover:bg-red-200 transition-colors"
+              className="mt-2 min-h-[44px] min-w-[44px] px-3 py-2 bg-negative-100 text-negative-700 rounded-md text-sm font-medium hover:bg-negative-100 transition-colors"
             >
               Retry
             </button>
           </div>
         ) : commitments.length === 0 ? (
-          <p className="text-gray-500 text-sm text-center py-4">
+          <p className="text-ink-500 text-sm text-center py-4">
             No financial commitments yet. Add recurring bills and subscriptions.
           </p>
         ) : (
@@ -471,15 +476,15 @@ export default function SettingsPage() {
             {commitments.map((c) => (
               <li
                 key={c.id}
-                className="flex items-center justify-between gap-3 border border-gray-100 rounded-lg p-3 hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between gap-3 border border-ink-100 rounded-lg p-3 hover:bg-ink-50 transition-colors"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium text-ink-900 truncate">
                     {c.description}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="text-xs text-ink-500 mt-0.5">
                     {formatCurrency(c.amount)} · {frequencyLabel(c.frequency)} ·{' '}
-                    <span className="inline-block bg-gray-100 px-1.5 py-0.5 rounded text-xs">
+                    <span className="inline-block bg-ink-100 px-1.5 py-0.5 rounded text-xs">
                       {c.category}
                     </span>
                   </p>
@@ -487,7 +492,7 @@ export default function SettingsPage() {
                 <button
                   onClick={() => handleDeleteCommitment(c.id)}
                   disabled={deletingCommitmentId === c.id}
-                  className="min-h-[44px] min-w-[44px] flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center text-negative-600 hover:text-negative-700 hover:bg-negative-50 rounded-md transition-colors disabled:opacity-50"
                   aria-label={`Delete commitment: ${c.description}`}
                 >
                   {deletingCommitmentId === c.id ? (
@@ -515,9 +520,9 @@ export default function SettingsPage() {
       </section>
 
       {/* --- Danger Zone: Delete All Data --- */}
-      <section className="bg-white border border-red-200 rounded-lg p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-red-700 mb-2">Danger Zone</h2>
-        <p className="text-sm text-gray-600 mb-4">
+      <section className="bg-paper border border-negative-100 rounded-lg p-5 shadow-card">
+        <h2 className="text-lg font-semibold text-negative-700 mb-2">Danger Zone</h2>
+        <p className="text-sm text-ink-600 mb-4">
           Permanently delete all your financial data, including transactions, budgets,
           savings goals, commitments, alerts, and classification rules. This action
           cannot be undone.
@@ -526,27 +531,27 @@ export default function SettingsPage() {
         {!showDeleteConfirm ? (
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="min-h-[44px] min-w-[44px] px-5 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+            className="min-h-[44px] min-w-[44px] px-5 py-3 bg-negative-600 text-paper rounded-lg font-medium hover:bg-negative-700 transition-colors"
           >
             Delete All Data
           </button>
         ) : (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
-            <p className="text-red-800 font-medium text-sm">
+          <div className="bg-negative-50 border border-negative-100 rounded-lg p-4 space-y-3">
+            <p className="text-negative-700 font-medium text-sm">
               Are you sure? This will permanently delete ALL your data.
             </p>
             <div className="flex gap-3 flex-wrap">
               <button
                 onClick={handleDeleteAllData}
                 disabled={deleting}
-                className="min-h-[44px] min-w-[44px] px-5 py-3 bg-red-700 text-white rounded-lg font-medium hover:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="min-h-[44px] min-w-[44px] px-5 py-3 bg-negative-700 text-paper rounded-lg font-medium hover:bg-negative-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {deleting ? 'Deleting...' : 'Yes, Delete Everything'}
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={deleting}
-                className="min-h-[44px] min-w-[44px] px-5 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                className="min-h-[44px] min-w-[44px] px-5 py-3 bg-paper text-ink-700 border border-ink-300 rounded-lg font-medium hover:bg-ink-50 disabled:opacity-50 transition-colors"
               >
                 Cancel
               </button>
@@ -557,7 +562,7 @@ export default function SettingsPage() {
         {deleteMessage && (
           <p
             className={`mt-3 text-sm ${
-              deleteMessage.includes('successfully') ? 'text-green-700' : 'text-red-700'
+              deleteMessage.includes('successfully') ? 'text-positive-700' : 'text-negative-700'
             }`}
             role="status"
             aria-live="polite"

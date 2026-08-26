@@ -28,15 +28,15 @@ export default function BudgetProgress({ rows }: { rows: ComparisonRow[] }) {
   return (
     <div>
       <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-ink-600">
           {overCount === 0
             ? "Every category is inside its plan."
             : overCount === 1
               ? `1 of ${rows.length} categories is over plan.`
               : `${overCount} of ${rows.length} categories are over plan.`}
         </p>
-        <p className="text-sm text-slate-600 tabular-nums">
-          <span className="font-semibold text-slate-900">
+        <p className="text-sm text-ink-600 tabular-nums">
+          <span className="font-semibold text-ink-900">
             {formatCurrency(totalActual)}
           </span>{" "}
           spent of {formatCurrency(totalPlanned)} planned
@@ -63,17 +63,17 @@ function CategoryBar({ row }: { row: ComparisonRow }) {
     return (
       <li>
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
-          <p className="text-sm font-semibold text-slate-900">{row.category}</p>
-          <p className="text-sm font-semibold tabular-nums text-slate-900">
+          <p className="text-sm font-semibold text-ink-900">{row.category}</p>
+          <p className="text-sm font-semibold tabular-nums text-ink-900">
             {formatCurrency(row.actual)}
           </p>
         </div>
-        <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-slate-100">
-          <div className="h-full w-full bg-slate-400" />
+        <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-ink-100">
+          <div className="h-full w-full bg-ink-400" />
         </div>
-        <p className="mt-1 text-xs font-medium text-slate-600">
+        <p className="mt-1 text-xs font-medium text-ink-600">
           Not in your plan
-          <span className="text-slate-500">
+          <span className="text-ink-500">
             {" · "}set an amount to start tracking it
           </span>
         </p>
@@ -87,25 +87,25 @@ function CategoryBar({ row }: { row: ComparisonRow }) {
   const spill = pct > 100 ? Math.min(((pct - 100) / pct) * 100, 100) : 0;
 
   const tone = isOver
-    ? { bar: "bg-rose-500", spill: "bg-rose-700", text: "text-rose-700" }
+    ? { bar: "bg-negative-600", spill: "bg-negative-700", text: "text-negative-700" }
     : row.status === "on-track"
-      ? { bar: "bg-amber-500", spill: "", text: "text-amber-700" }
-      : { bar: "bg-emerald-500", spill: "", text: "text-emerald-700" };
+      ? { bar: "bg-warning-600", spill: "", text: "text-warning-700" }
+      : { bar: "bg-positive-600", spill: "", text: "text-positive-700" };
 
   return (
     <li>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
-        <p className="text-sm font-semibold text-slate-900">{row.category}</p>
-        <p className="text-sm tabular-nums text-slate-600">
-          <span className="font-semibold text-slate-900">
+        <p className="text-sm font-semibold text-ink-900">{row.category}</p>
+        <p className="text-sm tabular-nums text-ink-600">
+          <span className="font-semibold text-ink-900">
             {formatCurrency(row.actual)}
           </span>
-          <span className="text-slate-400"> / </span>
+          <span className="text-ink-400"> / </span>
           {formatCurrency(row.budgeted)}
         </p>
       </div>
 
-      <div className="mt-1.5 flex h-2.5 overflow-hidden rounded-full bg-slate-100">
+      <div className="mt-1.5 flex h-2.5 overflow-hidden rounded-full bg-ink-100">
         <div
           className={`h-full ${tone.bar}`}
           style={{ width: `${filled}%` }}
@@ -125,7 +125,7 @@ function CategoryBar({ row }: { row: ComparisonRow }) {
 
       <p className={`mt-1 text-xs font-medium tabular-nums ${tone.text}`}>
         {Math.round(pct)}% used
-        <span className="text-slate-500">
+        <span className="text-ink-500">
           {" · "}
           {isOver
             ? `${formatCurrency(Math.abs(row.variance))} over`

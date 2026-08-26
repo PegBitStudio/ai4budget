@@ -3,154 +3,147 @@ import DemoLoginButton from "@/components/landing/DemoLoginButton";
 
 export const dynamic = "force-dynamic";
 
-const FEATURES = [
+const CAPABILITIES = [
   {
-    title: "It sorts your spending for you",
-    body: "Type “Bolt ride to work” and it files itself under Transport. Correct it once and every future one is filed your way.",
+    title: "It reads your bank alerts",
+    body: "Paste the debit alerts already sitting in your messages — GTBank, Zenith, Access, Kuda, Opay. Any format. It extracts every transaction and files each one.",
   },
   {
     title: "It tells you what changed",
-    body: "Not just what you spent — what crept up. Dining is up 27% since June. Your subscriptions quietly grew by ₦7,050 a month.",
+    body: "Not just what you spent, but what crept up. Dining up 27% since June. Subscriptions quietly ₦7,050 a month heavier than they were.",
   },
   {
-    title: "It answers in plain English",
-    body: "“Why am I over budget?” “What should I cut first?” Ask the way you'd ask a friend who happens to have read every line of your statement.",
+    title: "It prices spending in what it costs you",
+    body: "Not “you spent ₦285,000”. A phone purchase that put your savings goal three months further away. Figures you can act on.",
   },
+];
+
+/** Real output from the demo account, not illustrative copy. */
+const DEMO_FIGURES = [
+  { label: "Earned in August", value: "₦535,000", tone: "neutral" as const },
+  { label: "Actually spent", value: "₦745,400", tone: "negative" as const },
+  { label: "Over budget in", value: "7 of 10", tone: "negative" as const },
 ];
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen">
-      {/* Header */}
+    <div className="min-h-screen bg-ink-50">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-800 shadow-lg shadow-violet-300/40">
-            <span className="text-sm font-bold text-white">✦</span>
-          </div>
-          <span className="text-base font-semibold tracking-tight text-slate-900">
-            KoboPilot
+          <span className="grid size-8 place-items-center rounded-md bg-ink-900 text-body font-semibold text-paper">
+            K
           </span>
+          <span className="text-title text-ink-900">KoboPilot</span>
         </div>
         <Link
           href="/login"
-          className="rounded-xl px-4 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-white hover:text-violet-700"
+          className="rounded-md px-3 py-2 text-body font-medium text-ink-600 transition-colors duration-[--duration-fast] hover:bg-ink-100 hover:text-ink-900"
         >
           Sign in
         </Link>
       </header>
 
-      {/* Hero */}
-      <main className="mx-auto max-w-6xl px-5 pb-20 sm:px-8">
-        <section className="pt-10 sm:pt-16">
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-violet-700">
+      <main className="mx-auto max-w-6xl px-5 pb-24 sm:px-8">
+        {/* Hero */}
+        <section className="pt-12 sm:pt-20">
+          <p className="text-eyebrow uppercase text-ink-500">
             Personal finance, in Naira
           </p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight text-slate-900 sm:text-5xl md:text-6xl">
+          <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-[1.05] tracking-[-0.03em] text-ink-950 sm:text-5xl lg:text-6xl">
             You earned well this month.
             <br />
-            <span className="text-violet-700">So where did it all go?</span>
+            <span className="text-ink-400">So where did it all go?</span>
           </h1>
-          <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-600">
-            KoboPilot reads your spending, sorts it, spots what is quietly
+          <p className="mt-6 max-w-xl text-base leading-relaxed text-ink-600">
+            KoboPilot reads your spending, sorts it, finds what is quietly
             growing, and tells you in plain language what to do about it.
           </p>
 
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <DemoLoginButton />
             <Link
               href="/signup"
-              className="inline-flex min-h-[52px] items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 text-base font-semibold text-slate-700 shadow-sm transition-colors hover:border-violet-200 hover:text-violet-700"
+              className="inline-flex min-h-11 items-center justify-center rounded-md border border-ink-200 bg-paper px-5 text-body font-medium text-ink-800 shadow-card transition-colors duration-[--duration-fast] hover:border-ink-300 hover:bg-ink-50"
             >
               Create your own account
             </Link>
           </div>
-          <p className="mt-3 text-sm text-slate-500">
-            The demo account is preloaded with three months of real-shaped
-            spending — no signup needed.
+          <p className="mt-3 text-label text-ink-500">
+            The demo account holds three months of real-shaped spending. No
+            signup needed.
           </p>
         </section>
 
-        {/* The story, told with numbers */}
+        {/* Proof, in the product's own figures */}
         <section
-          className="mt-16 overflow-hidden rounded-[2rem] bg-[#27235b] px-6 py-8 text-white shadow-[0_24px_60px_rgba(49,46,129,0.22)] sm:px-10 sm:py-10"
-          aria-label="Example insight"
+          className="mt-16 overflow-hidden rounded-xl border border-ink-800 bg-ink-950"
+          aria-label="What the demo account shows"
         >
-          <p className="text-sm font-medium text-violet-200">
-            What the demo account looks like
-          </p>
-          <div className="mt-6 grid gap-6 sm:grid-cols-3">
-            <Figure label="Earned in August" value="₦535,000" tone="calm" />
-            <Figure label="Actually spent" value="₦757,750" tone="alarm" />
-            <Figure label="Over budget in" value="7 of 10 categories" tone="alarm" />
+          <div className="border-b border-ink-800 px-6 py-4 sm:px-8">
+            <p className="text-eyebrow uppercase text-ink-400">
+              What the demo account shows
+            </p>
           </div>
-          <p className="mt-8 max-w-2xl border-l-2 border-emerald-300 pl-4 text-base leading-relaxed text-violet-50">
-            “This month you earned ₦535,000 but spent ₦757,750, leaving you
-            ₦222,750 short. Your biggest areas were Shopping, Housing and
-            Groceries — and Shopping alone is ₦280,500 past its plan.”
-          </p>
-          <p className="mt-2 pl-4 text-xs uppercase tracking-[0.14em] text-violet-300">
-            Actual output from the demo account
-          </p>
+
+          <div className="grid gap-px bg-ink-800 sm:grid-cols-3">
+            {DEMO_FIGURES.map((figure) => (
+              <div key={figure.label} className="bg-ink-950 px-6 py-5 sm:px-8">
+                <p className="text-eyebrow uppercase text-ink-400">
+                  {figure.label}
+                </p>
+                <p
+                  className={`mt-2 text-figure tnum ${
+                    figure.tone === "negative"
+                      ? "text-negative-100"
+                      : "text-paper"
+                  }`}
+                >
+                  {figure.value}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <figure className="border-t border-ink-800 px-6 py-6 sm:px-8">
+            <blockquote className="max-w-2xl border-l-2 border-jade-500 pl-4 text-base leading-relaxed text-ink-200">
+              “This month you earned ₦535,000 but spent ₦745,400, leaving you
+              ₦210,400 short. Your biggest areas were Shopping, Housing and
+              Groceries — and Shopping alone is ₦280,500 past its plan.”
+            </blockquote>
+            <figcaption className="mt-3 pl-4 text-eyebrow uppercase text-ink-500">
+              Actual output from the demo account
+            </figcaption>
+          </figure>
         </section>
 
-        {/* Features */}
-        <section className="mt-16" aria-labelledby="features-heading">
+        {/* Capabilities */}
+        <section className="mt-16" aria-labelledby="capabilities">
           <h2
-            id="features-heading"
-            className="text-2xl font-semibold tracking-tight text-slate-900"
+            id="capabilities"
+            className="text-2xl font-semibold tracking-[-0.02em] text-ink-950"
           >
             Built for how money actually moves here
           </h2>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            {FEATURES.map((feature) => (
-              <div
-                key={feature.title}
-                className="rounded-[1.5rem] border border-white bg-white p-6 shadow-sm"
-              >
-                <h3 className="text-base font-semibold text-slate-900">
-                  {feature.title}
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {feature.body}
-                </p>
+          <div className="mt-6 grid gap-px overflow-hidden rounded-lg border border-ink-200 bg-ink-200 md:grid-cols-3">
+            {CAPABILITIES.map((capability) => (
+              <div key={capability.title} className="bg-paper p-6">
+                <h3 className="text-title text-ink-900">{capability.title}</h3>
+                <p className="mt-2 text-body text-ink-600">{capability.body}</p>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="mt-14 rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5">
-          <p className="text-sm leading-6 text-amber-900">
-            <strong className="font-semibold">A note on advice.</strong> Budget
-            AI offers general budgeting support based on the figures you give
-            it. It is not professional financial or investment advice.
+        <section className="mt-12 rounded-lg border border-ink-200 bg-paper p-5">
+          <p className="text-body leading-relaxed text-ink-600">
+            <strong className="font-medium text-ink-900">
+              A note on advice.
+            </strong>{" "}
+            KoboPilot offers general budgeting support based on the figures you
+            give it. It is not professional financial or investment advice.
           </p>
         </section>
       </main>
-    </div>
-  );
-}
-
-function Figure({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone: "calm" | "alarm";
-}) {
-  return (
-    <div className="rounded-2xl border border-white/15 bg-white/10 px-5 py-4 backdrop-blur-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-200">
-        {label}
-      </p>
-      <p
-        className={`mt-1.5 text-2xl font-semibold tracking-tight ${
-          tone === "alarm" ? "text-rose-200" : "text-emerald-200"
-        }`}
-      >
-        {value}
-      </p>
     </div>
   );
 }

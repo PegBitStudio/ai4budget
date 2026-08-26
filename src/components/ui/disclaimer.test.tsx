@@ -112,13 +112,16 @@ describe("FooterDisclaimer", () => {
     expect(paragraph.className).toContain("text-base");
   });
 
-  it("uses gray text and centered layout", () => {
+  it("renders as quiet, centred footnote text", () => {
     render(<FooterDisclaimer />);
 
     const paragraph = screen.getByText(
       /does not constitute professional financial or investment advice/i
     );
-    expect(paragraph.className).toContain("text-gray-500");
+
+    // Asserts the intent — de-emphasised body copy — rather than one exact
+    // colour class, so a palette change does not read as a broken test.
+    expect(paragraph.className).toMatch(/text-ink-(400|500|600)/);
 
     const footer = paragraph.closest("footer");
     expect(footer?.className).toContain("text-center");

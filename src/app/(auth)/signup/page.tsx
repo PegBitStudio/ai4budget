@@ -64,7 +64,7 @@ export default function SignupPage() {
       {error && (
         <div
           role="alert"
-          className="rounded-md bg-red-50 p-3 text-sm text-red-700"
+          className="rounded-md bg-negative-50 p-3 text-sm text-negative-700"
         >
           {error}
         </div>
@@ -73,7 +73,7 @@ export default function SignupPage() {
       <div>
         <label
           htmlFor="email"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-medium text-ink-700"
         >
           Email
         </label>
@@ -85,7 +85,7 @@ export default function SignupPage() {
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-base shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[44px]"
+          className="mt-1 block w-full rounded-md border border-ink-300 px-3 py-2 text-base shadow-card placeholder:text-ink-400 focus:border-ink-700 focus:outline-none focus:ring-1 focus:ring-ink-700 min-h-[44px]"
           placeholder="you@example.com"
           aria-required="true"
         />
@@ -94,7 +94,7 @@ export default function SignupPage() {
       <div>
         <label
           htmlFor="password"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-medium text-ink-700"
         >
           Password
         </label>
@@ -107,12 +107,12 @@ export default function SignupPage() {
           autoComplete="new-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-base shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[44px]"
+          className="mt-1 block w-full rounded-md border border-ink-300 px-3 py-2 text-base shadow-card placeholder:text-ink-400 focus:border-ink-700 focus:outline-none focus:ring-1 focus:ring-ink-700 min-h-[44px]"
           placeholder="Min. 6 characters"
           aria-required="true"
           aria-describedby="password-hint"
         />
-        <p id="password-hint" className="mt-1 text-xs text-gray-500">
+        <p id="password-hint" className="mt-1 text-xs text-ink-500">
           Must be at least 6 characters
         </p>
       </div>
@@ -120,7 +120,7 @@ export default function SignupPage() {
       <div>
         <label
           htmlFor="confirm-password"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-medium text-ink-700"
         >
           Confirm Password
         </label>
@@ -132,7 +132,7 @@ export default function SignupPage() {
           autoComplete="new-password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-base shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[44px]"
+          className="mt-1 block w-full rounded-md border border-ink-300 px-3 py-2 text-base shadow-card placeholder:text-ink-400 focus:border-ink-700 focus:outline-none focus:ring-1 focus:ring-ink-700 min-h-[44px]"
           placeholder="Re-enter your password"
           aria-required="true"
         />
@@ -145,10 +145,10 @@ export default function SignupPage() {
           type="checkbox"
           checked={disclaimerAcknowledged}
           onChange={(e) => setDisclaimerAcknowledged(e.target.checked)}
-          className="mt-0.5 h-5 w-5 rounded border-gray-300 text-blue-700 focus:ring-blue-500 min-h-[44px] min-w-[20px]"
+          className="mt-0.5 h-5 w-5 rounded border-ink-300 text-ink-900 focus:ring-ink-700 min-h-[44px] min-w-[20px]"
           aria-required="true"
         />
-        <label htmlFor="disclaimer" className="text-sm text-gray-600">
+        <label htmlFor="disclaimer" className="text-sm text-ink-600">
           I understand this is a budgeting tool and not professional financial
           advice
         </label>
@@ -157,16 +157,16 @@ export default function SignupPage() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-md bg-blue-700 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
+        className="w-full rounded-md bg-ink-900 px-4 py-2 text-base font-medium text-paper shadow-card hover:bg-ink-900 focus:outline-none focus:ring-2 focus:ring-ink-700 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
       >
         {loading ? "Creating account..." : "Create Account"}
       </button>
 
-      <p className="text-center text-sm text-gray-600">
+      <p className="text-center text-sm text-ink-600">
         Already have an account?{" "}
         <Link
           href="/login"
-          className="font-medium text-blue-700 hover:text-blue-800"
+          className="font-medium text-ink-900 hover:text-ink-900"
         >
           Sign in
         </Link>

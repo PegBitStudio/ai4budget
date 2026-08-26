@@ -51,29 +51,29 @@ export default function RecurringCharges({
     <section className="mt-8" aria-labelledby="recurring-heading">
       <h2
         id="recurring-heading"
-        className="text-lg font-semibold tracking-tight text-slate-900"
+        className="text-lg font-semibold tracking-tight text-ink-900"
       >
         Money on autopilot
       </h2>
-      <p className="mt-1 text-sm text-slate-600">
+      <p className="mt-1 text-sm text-ink-600">
         Charges that repeat every month. They never look unusual, which is why
         they are easy to miss.
       </p>
 
-      <div className="mt-4 rounded-[1.5rem] bg-[#27235b] p-5 text-white shadow-sm sm:p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-200">
+      <div className="mt-4 rounded-lg bg-[#27235b] p-5 text-paper shadow-card sm:p-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-200">
           Leaving your account every month
         </p>
         <p className="mt-1.5 text-3xl font-semibold tracking-tight tabular-nums">
           {formatCurrency(summary.totalMonthlyCost)}
         </p>
-        <p className="mt-2 text-sm leading-6 text-violet-100">
+        <p className="mt-2 text-sm leading-6 text-ink-100">
           Across {summary.charges.length} recurring{" "}
           {summary.charges.length === 1 ? "charge" : "charges"}
           {creeping.length > 0 && (
             <>
               {" — "}
-              <span className="font-semibold text-rose-200">
+              <span className="font-semibold text-negative-100">
                 {formatCurrency(summary.increaseAmount)} more than it used to be
               </span>
             </>
@@ -84,10 +84,10 @@ export default function RecurringCharges({
         {/* The creep, priced in goal progress. It is small each month, which
             is exactly why it is worth naming. */}
         {summary.goalImpact && (
-          <p className="mt-3 border-t border-white/15 pt-3 text-sm leading-6 text-violet-100">
+          <p className="mt-3 border-t border-ink-200/15 pt-3 text-sm leading-6 text-ink-100">
             Left alone for a year, that increase alone sets your savings goal
             back{" "}
-            <span className="font-semibold text-white">
+            <span className="font-semibold text-paper">
               {summary.goalImpact.label}
             </span>
             .
@@ -95,28 +95,28 @@ export default function RecurringCharges({
         )}
       </div>
 
-      <ul className="mt-4 divide-y divide-slate-100 rounded-[1.5rem] border border-white bg-white shadow-sm">
+      <ul className="mt-4 divide-y divide-ink-100 rounded-lg border border-ink-200 bg-paper shadow-card">
         {visible.map((charge) => (
           <li
             key={`${charge.description}-${charge.category}`}
             className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 p-4"
           >
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-900">
+              <p className="truncate text-sm font-semibold text-ink-900">
                 {charge.description}
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-ink-500">
                 {charge.category} · seen in {charge.monthsSeen} months
               </p>
             </div>
 
             <div className="text-right">
-              <p className="text-sm font-semibold tabular-nums text-slate-900">
+              <p className="text-sm font-semibold tabular-nums text-ink-900">
                 {formatCurrency(charge.latestMonthCost)}
-                <span className="font-normal text-slate-500">/mo</span>
+                <span className="font-normal text-ink-500">/mo</span>
               </p>
               {charge.increased && (
-                <p className="text-xs font-medium text-rose-700">
+                <p className="text-xs font-medium text-negative-700">
                   up {Math.round(charge.changePercent)}% from{" "}
                   {formatCurrency(charge.monthlyCost)}
                 </p>
@@ -125,7 +125,7 @@ export default function RecurringCharges({
           </li>
         ))}
         {remaining > 0 && (
-          <li className="p-4 text-sm text-slate-500">
+          <li className="p-4 text-sm text-ink-500">
             and {remaining} smaller recurring{" "}
             {remaining === 1 ? "charge" : "charges"}
           </li>

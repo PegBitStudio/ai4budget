@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { formatCurrency, formatPercentage } from "@/utils/formatters";
 import RecurringCharges from "@/components/analysis/RecurringCharges";
 import type { RecurringSummary } from "@/components/analysis/RecurringCharges";
+import { PageHeader } from "@/components/ui/primitives";
 
 interface AnomalyData {
   transaction: {
@@ -83,17 +84,18 @@ export default function AnalysisPage() {
   }
 
   return (
-    <div className="px-4 py-4 sm:px-6 md:px-8">
-      <p className="text-sm text-gray-600">
-        Unusual transactions and spending trends for this period.
-      </p>
+    <div>
+      <PageHeader
+        title="Insights"
+        description="Unusual spending, rising costs, and the money leaving on autopilot."
+      />
 
       {/* Anomalies Section */}
       {data && data.anomalies.length > 0 && (
         <section className="mt-6" aria-labelledby="anomalies-heading">
           <h2
             id="anomalies-heading"
-            className="text-lg font-medium text-gray-900"
+            className="text-lg font-medium text-ink-900"
           >
             Unusual Transactions
           </h2>
@@ -110,7 +112,7 @@ export default function AnalysisPage() {
         <section className="mt-8" aria-labelledby="trends-heading">
           <h2
             id="trends-heading"
-            className="text-lg font-medium text-gray-900"
+            className="text-lg font-medium text-ink-900"
           >
             Increasing Spend Categories
           </h2>
@@ -136,28 +138,28 @@ function AnomalyCard({ anomaly }: { anomaly: AnomalyData }) {
 
   return (
     <article
-      className="rounded-lg border border-amber-200 bg-amber-50 p-4 shadow-sm"
+      className="rounded-lg border border-warning-100 bg-warning-50 p-4 shadow-card"
       aria-label={`Unusual transaction: ${transaction.description}`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium text-gray-900">
+          <p className="truncate font-medium text-ink-900">
             {transaction.description}
           </p>
-          <p className="mt-0.5 text-sm text-gray-600">
+          <p className="mt-0.5 text-sm text-ink-600">
             {transaction.category} &middot; {formattedDate}
           </p>
         </div>
-        <span className="shrink-0 text-lg font-semibold text-amber-800">
+        <span className="shrink-0 text-lg font-semibold text-warning-700">
           {formatCurrency(transaction.amount)}
         </span>
       </div>
-      <p className="mt-2 text-sm text-amber-700">{explanation}</p>
+      <p className="mt-2 text-sm text-warning-700">{explanation}</p>
 
       {/* What it cost in progress, not just in Naira. A figure is an
           abstraction; a delay to something you are saving for is a decision. */}
       {anomaly.goalImpact && (
-        <p className="mt-2 flex items-start gap-1.5 border-t border-amber-200 pt-2 text-sm font-medium text-amber-900">
+        <p className="mt-2 flex items-start gap-1.5 border-t border-warning-100 pt-2 text-sm font-medium text-warning-700">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 20 20"
@@ -185,22 +187,22 @@ function AnomalyCard({ anomaly }: { anomaly: AnomalyData }) {
 function TrendCard({ trend }: { trend: TrendData }) {
   return (
     <article
-      className="rounded-lg border border-purple-200 bg-purple-50 p-4 shadow-sm"
+      className="rounded-lg border border-ink-200 bg-ink-50 p-4 shadow-card"
       aria-label={`Spending trend: ${trend.category}`}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="font-medium text-gray-900">{trend.category}</p>
-        <span className="shrink-0 rounded-full bg-purple-100 px-2.5 py-0.5 text-sm font-semibold text-purple-800">
+        <p className="font-medium text-ink-900">{trend.category}</p>
+        <span className="shrink-0 rounded-full bg-ink-100 px-2.5 py-0.5 text-sm font-semibold text-ink-900">
           +{formatPercentage(trend.percentageChange, 0)}
         </span>
       </div>
-      <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
+      <div className="mt-2 flex items-center gap-2 text-sm text-ink-600">
         <span>{formatCurrency(trend.previousAmount)}</span>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 20 20"
           fill="currentColor"
-          className="h-4 w-4 text-purple-500"
+          className="h-4 w-4 text-ink-700"
           aria-hidden="true"
         >
           <path
@@ -209,11 +211,11 @@ function TrendCard({ trend }: { trend: TrendData }) {
             clipRule="evenodd"
           />
         </svg>
-        <span className="font-medium text-purple-800">
+        <span className="font-medium text-ink-900">
           {formatCurrency(trend.currentAmount)}
         </span>
       </div>
-      <p className="mt-2 text-sm text-purple-700">{trend.explanation}</p>
+      <p className="mt-2 text-sm text-ink-900">{trend.explanation}</p>
     </article>
   );
 }
@@ -225,10 +227,10 @@ function LoadingState() {
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="h-28 animate-pulse rounded-lg bg-gray-100"
+            className="h-28 animate-pulse rounded-lg bg-ink-100"
           />
         ))}
-        <p className="text-center text-sm text-gray-500">
+        <p className="text-center text-sm text-ink-500">
           Analysing your spending patterns…
         </p>
       </div>
@@ -241,13 +243,13 @@ function ErrorState({ message }: { message: string }) {
     <div className="px-4 py-4 sm:px-6 md:px-8">
       <div
         role="alert"
-        className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4"
+        className="mt-4 rounded-lg border border-negative-100 bg-negative-50 p-4"
       >
-        <p className="font-medium text-red-800">Unable to load analysis</p>
-        <p className="mt-1 text-sm text-red-700">{message}</p>
+        <p className="font-medium text-negative-700">Unable to load analysis</p>
+        <p className="mt-1 text-sm text-negative-700">{message}</p>
         <button
           onClick={() => window.location.reload()}
-          className="mt-3 inline-flex items-center rounded-md bg-red-100 px-3 py-2 text-sm font-medium text-red-800 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 min-h-[44px]"
+          className="mt-3 inline-flex items-center rounded-md bg-negative-100 px-3 py-2 text-sm font-medium text-negative-700 hover:bg-negative-100 focus:outline-none focus:ring-2 focus:ring-negative-600 focus:ring-offset-2 min-h-[44px]"
         >
           Try again
         </button>
@@ -259,14 +261,14 @@ function ErrorState({ message }: { message: string }) {
 function NoPatternsState() {
   return (
     <div className="px-4 py-4 sm:px-6 md:px-8">
-      <div className="mt-4 flex flex-col items-center rounded-lg border border-gray-200 bg-white p-8 text-center">
+      <div className="mt-4 flex flex-col items-center rounded-lg border border-ink-200 bg-paper p-8 text-center">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
           strokeWidth={1.5}
-          className="h-12 w-12 text-green-500"
+          className="h-12 w-12 text-positive-600"
           aria-hidden="true"
         >
           <path
@@ -275,10 +277,10 @@ function NoPatternsState() {
             d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
-        <h2 className="mt-4 text-lg font-medium text-gray-900">
+        <h2 className="mt-4 text-lg font-medium text-ink-900">
           All looks good!
         </h2>
-        <p className="mt-2 max-w-sm text-sm text-gray-600">
+        <p className="mt-2 max-w-sm text-sm text-ink-600">
           No unusual spending patterns were found for this period. Your spending
           is consistent with your usual habits.
         </p>

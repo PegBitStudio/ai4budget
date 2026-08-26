@@ -140,8 +140,8 @@ export default function QAPage() {
   return (
     <div className="flex flex-col h-[calc(100vh-theme(spacing.14)-theme(spacing.16))]">
       {/* Subheader */}
-      <div className="px-4 py-2 border-b border-gray-100 bg-white">
-        <p className="text-sm text-gray-500">Ask questions about your finances in plain English</p>
+      <div className="px-4 py-2 border-b border-ink-100 bg-paper">
+        <p className="text-sm text-ink-500">Ask questions about your finances in plain English</p>
       </div>
 
       {/* Messages area */}
@@ -157,10 +157,10 @@ export default function QAPage() {
             className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-3 ${
+              className={`max-w-[85%] sm:max-w-[70%] rounded-lg px-4 py-3 ${
                 message.role === 'user'
-                  ? 'bg-blue-600 text-white rounded-br-md'
-                  : 'bg-gray-100 text-gray-900 rounded-bl-md'
+                  ? 'bg-ink-900 text-paper rounded-br-md'
+                  : 'bg-ink-100 text-ink-900 rounded-bl-md'
               }`}
             >
               {message.role === 'assistant' ? (
@@ -175,15 +175,15 @@ export default function QAPage() {
               {message.role === 'assistant' &&
                 message.id !== 'welcome' &&
                 shouldShowDisclaimer(message.content) && (
-                  <div className="mt-3 pt-3 border-t border-gray-300">
-                    <p className="text-xs text-gray-600 leading-relaxed">{DISCLAIMER_TEXT}</p>
+                  <div className="mt-3 pt-3 border-t border-ink-300">
+                    <p className="text-xs text-ink-600 leading-relaxed">{DISCLAIMER_TEXT}</p>
                   </div>
                 )}
 
               {message.id !== 'welcome' && (
                 <p
                   className={`text-xs mt-1 ${
-                    message.role === 'user' ? 'text-blue-200' : 'text-gray-400'
+                    message.role === 'user' ? 'text-ink-200' : 'text-ink-400'
                   }`}
                 >
                   {message.timestamp.toLocaleTimeString([], {
@@ -205,7 +205,7 @@ export default function QAPage() {
                 key={question}
                 type="button"
                 onClick={() => ask(question)}
-                className="rounded-full border border-violet-200 bg-violet-50 px-3.5 py-2 text-sm font-medium text-violet-800 transition-colors hover:border-violet-300 hover:bg-violet-100"
+                className="rounded-full border border-ink-200 bg-ink-50 px-3.5 py-2 text-sm font-medium text-ink-900 transition-colors hover:border-ink-300 hover:bg-ink-100"
               >
                 {question}
               </button>
@@ -216,11 +216,11 @@ export default function QAPage() {
         {/* Loading indicator */}
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 rounded-2xl rounded-bl-md px-4 py-3">
+            <div className="bg-ink-100 rounded-lg rounded-bl-md px-4 py-3">
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                <div className="w-2 h-2 bg-ink-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                <div className="w-2 h-2 bg-ink-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                <div className="w-2 h-2 bg-ink-400 rounded-full animate-bounce" />
               </div>
             </div>
           </div>
@@ -230,7 +230,7 @@ export default function QAPage() {
       </div>
 
       {/* Input area */}
-      <div className="border-t border-gray-200 bg-white px-4 py-3 pb-[calc(0.75rem+var(--sab))]">
+      <div className="border-t border-ink-200 bg-paper px-4 py-3 pb-[calc(0.75rem+var(--sab))]">
         <form onSubmit={handleSubmit} className="flex items-center gap-2">
           <input
             ref={inputRef}
@@ -239,13 +239,13 @@ export default function QAPage() {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about your spending..."
             disabled={isLoading}
-            className="flex-1 min-h-[44px] px-4 py-2 text-base bg-gray-50 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 min-h-[44px] px-4 py-2 text-base bg-ink-50 border border-ink-300 rounded-full focus:outline-none focus:ring-2 focus:ring-ink-700 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Ask a question about your finances"
           />
           <button
             type="submit"
             disabled={isLoading || !input.trim()}
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center bg-blue-600 text-white rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center bg-ink-900 text-paper rounded-full hover:bg-ink-900 focus:outline-none focus:ring-2 focus:ring-ink-700 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             aria-label="Send question"
           >
             <svg

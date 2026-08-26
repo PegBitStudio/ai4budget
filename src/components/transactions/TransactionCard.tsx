@@ -134,12 +134,12 @@ export default function TransactionCard({
       <form
         onSubmit={save}
         noValidate
-        className="rounded-xl border border-violet-200 bg-white p-4 shadow-sm"
+        className="rounded-lg border border-ink-200 bg-paper p-4 shadow-card"
       >
         {error && (
           <p
             role="alert"
-            className="mb-3 rounded-lg bg-rose-50 p-2.5 text-sm text-rose-700"
+            className="mb-3 rounded-lg bg-negative-50 p-2.5 text-sm text-negative-700"
           >
             {error}
           </p>
@@ -149,7 +149,7 @@ export default function TransactionCard({
           <div className="sm:col-span-2">
             <label
               htmlFor={`desc-${transaction.id}`}
-              className="mb-1 block text-sm font-medium text-slate-700"
+              className="mb-1 block text-sm font-medium text-ink-700"
             >
               Description
             </label>
@@ -157,14 +157,14 @@ export default function TransactionCard({
               id={`desc-${transaction.id}`}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="min-h-[44px] w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+              className="min-h-[44px] w-full rounded-lg border border-ink-300 px-3 py-2 focus:border-ink-700 focus:outline-none focus:ring-1 focus:ring-ink-700"
             />
           </div>
 
           <div>
             <label
               htmlFor={`amount-${transaction.id}`}
-              className="mb-1 block text-sm font-medium text-slate-700"
+              className="mb-1 block text-sm font-medium text-ink-700"
             >
               Amount
             </label>
@@ -175,14 +175,14 @@ export default function TransactionCard({
               min="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="min-h-[44px] w-full rounded-lg border border-slate-300 px-3 py-2 tabular-nums focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+              className="min-h-[44px] w-full rounded-lg border border-ink-300 px-3 py-2 tabular-nums focus:border-ink-700 focus:outline-none focus:ring-1 focus:ring-ink-700"
             />
           </div>
 
           <div>
             <label
               htmlFor={`date-${transaction.id}`}
-              className="mb-1 block text-sm font-medium text-slate-700"
+              className="mb-1 block text-sm font-medium text-ink-700"
             >
               Date
             </label>
@@ -192,7 +192,7 @@ export default function TransactionCard({
               value={date}
               max={localToday()}
               onChange={(e) => setDate(e.target.value)}
-              className="min-h-[44px] w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+              className="min-h-[44px] w-full rounded-lg border border-ink-300 px-3 py-2 focus:border-ink-700 focus:outline-none focus:ring-1 focus:ring-ink-700"
             />
           </div>
 
@@ -200,7 +200,7 @@ export default function TransactionCard({
             <div className="sm:col-span-2">
               <label
                 htmlFor={`cat-${transaction.id}`}
-                className="mb-1 block text-sm font-medium text-slate-700"
+                className="mb-1 block text-sm font-medium text-ink-700"
               >
                 Category
               </label>
@@ -208,7 +208,7 @@ export default function TransactionCard({
                 id={`cat-${transaction.id}`}
                 value={category}
                 onChange={(e) => setCategory(e.target.value as Category)}
-                className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 py-2 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                className="min-h-[44px] w-full rounded-lg border border-ink-300 bg-paper px-3 py-2 focus:border-ink-700 focus:outline-none focus:ring-1 focus:ring-ink-700"
               >
                 {CATEGORIES.map((c) => (
                   <option key={c} value={c}>
@@ -217,7 +217,7 @@ export default function TransactionCard({
                 ))}
               </select>
               {category !== transaction.category && (
-                <p className="mt-1.5 text-xs text-violet-700">
+                <p className="mt-1.5 text-xs text-ink-900">
                   Future transactions for “{transaction.description}” will be
                   filed under {category}.
                 </p>
@@ -230,29 +230,29 @@ export default function TransactionCard({
           <button
             type="submit"
             disabled={busy}
-            className="min-h-[44px] rounded-lg bg-violet-700 px-5 text-sm font-semibold text-white transition-colors hover:bg-violet-800 disabled:opacity-50"
+            className="min-h-[44px] rounded-lg bg-ink-900 px-5 text-sm font-semibold text-paper transition-colors hover:bg-ink-900 disabled:opacity-50"
           >
             {busy ? "Saving…" : "Save changes"}
           </button>
           <button
             type="button"
             onClick={cancel}
-            className="min-h-[44px] rounded-lg px-4 text-sm font-medium text-slate-600 hover:bg-slate-100"
+            className="min-h-[44px] rounded-lg px-4 text-sm font-medium text-ink-600 hover:bg-ink-100"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={() => setConfirmingDelete(true)}
-            className="ml-auto min-h-[44px] rounded-lg px-4 text-sm font-medium text-rose-700 hover:bg-rose-50"
+            className="ml-auto min-h-[44px] rounded-lg px-4 text-sm font-medium text-negative-700 hover:bg-negative-50"
           >
             Delete
           </button>
         </div>
 
         {confirmingDelete && (
-          <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 p-3">
-            <p className="text-sm text-rose-900">
+          <div className="mt-3 rounded-lg border border-negative-100 bg-negative-50 p-3">
+            <p className="text-sm text-negative-700">
               Delete “{transaction.description}”? This cannot be undone.
             </p>
             <div className="mt-2.5 flex gap-2">
@@ -260,14 +260,14 @@ export default function TransactionCard({
                 type="button"
                 onClick={remove}
                 disabled={busy}
-                className="min-h-[44px] rounded-lg bg-rose-600 px-4 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+                className="min-h-[44px] rounded-lg bg-negative-600 px-4 text-sm font-semibold text-paper hover:bg-negative-700 disabled:opacity-50"
               >
                 {busy ? "Deleting…" : "Yes, delete it"}
               </button>
               <button
                 type="button"
                 onClick={() => setConfirmingDelete(false)}
-                className="min-h-[44px] rounded-lg px-4 text-sm font-medium text-slate-600 hover:bg-white"
+                className="min-h-[44px] rounded-lg px-4 text-sm font-medium text-ink-600 hover:bg-paper"
               >
                 Keep it
               </button>
@@ -281,12 +281,12 @@ export default function TransactionCard({
   return (
     <button
       onClick={() => setEditing(true)}
-      className="flex w-full items-center gap-3 rounded-xl border border-gray-100 bg-white p-3.5 text-left shadow-sm transition-colors hover:border-violet-200 hover:bg-violet-50/40"
+      className="flex w-full items-center gap-3 rounded-lg border border-ink-100 bg-paper p-3.5 text-left shadow-card transition-colors hover:border-ink-200 hover:bg-ink-50/40"
       aria-label={`Edit ${transaction.description}`}
     >
       <div
         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-          isIncome ? "bg-green-50" : "bg-red-50"
+          isIncome ? "bg-positive-50" : "bg-negative-50"
         }`}
       >
         <span className="text-lg" aria-hidden="true">
@@ -295,16 +295,16 @@ export default function TransactionCard({
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-gray-900">
+        <p className="truncate text-sm font-medium text-ink-900">
           {transaction.description}
         </p>
-        <p className="flex items-center gap-1.5 text-xs text-gray-500">
+        <p className="flex items-center gap-1.5 text-xs text-ink-500">
           <span>{transaction.category}</span>
           <span aria-hidden="true">·</span>
           <span>{formatDate(transaction.date)}</span>
           {!isIncome && !transaction.is_manual_category && (
             <span
-              className="rounded bg-violet-100 px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-700"
+              className="rounded bg-ink-100 px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-900"
               title="Category chosen by the assistant — tap to correct it"
             >
               AI
@@ -315,7 +315,7 @@ export default function TransactionCard({
 
       <p
         className={`shrink-0 text-sm font-semibold tabular-nums ${
-          isIncome ? "text-green-600" : "text-red-600"
+          isIncome ? "text-positive-600" : "text-negative-600"
         }`}
       >
         {isIncome ? "+" : "-"}

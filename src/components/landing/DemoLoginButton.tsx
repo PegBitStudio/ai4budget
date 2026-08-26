@@ -36,7 +36,7 @@ export default function DemoLoginButton() {
         type="button"
         onClick={openDemo}
         disabled={loading}
-        className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-violet-700 px-7 text-base font-semibold text-white shadow-lg shadow-violet-300/40 transition-colors hover:bg-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-ink-900 px-5 text-body font-medium text-paper transition-colors duration-[--duration-fast] hover:bg-ink-800 disabled:cursor-not-allowed disabled:bg-ink-300"
       >
         {loading ? (
           <>
@@ -67,7 +67,7 @@ export default function DemoLoginButton() {
         )}
       </button>
       {error && (
-        <p role="alert" className="text-sm text-rose-600">
+        <p role="alert" className="text-label text-negative-600">
           {error}
         </p>
       )}

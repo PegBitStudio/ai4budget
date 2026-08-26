@@ -58,20 +58,20 @@ export default function DisclaimerModal() {
       aria-labelledby="disclaimer-title"
       aria-describedby="disclaimer-body"
     >
-      <div className="mx-4 max-w-md w-full rounded-lg bg-white p-6 shadow-xl">
+      <div className="mx-4 max-w-md w-full rounded-lg bg-paper p-6 shadow-xl">
         <h2
           id="disclaimer-title"
-          className="text-lg font-semibold text-gray-900 mb-4"
+          className="text-lg font-semibold text-ink-900 mb-4"
         >
           Important Notice
         </h2>
-        <p id="disclaimer-body" className="text-base text-gray-700 mb-6">
+        <p id="disclaimer-body" className="text-base text-ink-700 mb-6">
           {DISCLAIMER_TEXT}
         </p>
         <button
           ref={buttonRef}
           onClick={handleAcknowledge}
-          className="w-full min-h-[44px] min-w-[44px] rounded-md bg-blue-800 px-4 py-3 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+          className="w-full min-h-[44px] min-w-[44px] rounded-md bg-ink-900 px-4 py-3 text-base font-medium text-paper hover:bg-ink-900 focus:outline-none focus:ring-2 focus:ring-ink-700 focus:ring-offset-2 transition-colors"
         >
           I understand
         </button>

@@ -42,7 +42,7 @@ export default function LoginPage() {
       {error && (
         <div
           role="alert"
-          className="rounded-md bg-red-50 p-3 text-sm text-red-700"
+          className="rounded-md bg-negative-50 p-3 text-sm text-negative-700"
         >
           {error}
         </div>
@@ -51,7 +51,7 @@ export default function LoginPage() {
       <div>
         <label
           htmlFor="email"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-medium text-ink-700"
         >
           Email
         </label>
@@ -63,7 +63,7 @@ export default function LoginPage() {
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-base shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[44px]"
+          className="mt-1 block w-full rounded-md border border-ink-300 px-3 py-2 text-base shadow-card placeholder:text-ink-400 focus:border-ink-700 focus:outline-none focus:ring-1 focus:ring-ink-700 min-h-[44px]"
           placeholder="you@example.com"
           aria-required="true"
         />
@@ -72,7 +72,7 @@ export default function LoginPage() {
       <div>
         <label
           htmlFor="password"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-medium text-ink-700"
         >
           Password
         </label>
@@ -84,7 +84,7 @@ export default function LoginPage() {
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-base shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[44px]"
+          className="mt-1 block w-full rounded-md border border-ink-300 px-3 py-2 text-base shadow-card placeholder:text-ink-400 focus:border-ink-700 focus:outline-none focus:ring-1 focus:ring-ink-700 min-h-[44px]"
           placeholder="Enter your password"
           aria-required="true"
         />
@@ -93,17 +93,17 @@ export default function LoginPage() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-md bg-blue-700 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
+        className="w-full rounded-md bg-ink-900 px-4 py-2 text-base font-medium text-paper shadow-card hover:bg-ink-900 focus:outline-none focus:ring-2 focus:ring-ink-700 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
       >
         {loading ? "Signing in..." : "Sign In"}
       </button>
 
       <div className="flex items-center justify-between text-sm">
-        <p className="text-gray-600">
+        <p className="text-ink-600">
           Don&apos;t have an account?{" "}
           <Link
             href="/signup"
-            className="font-medium text-blue-700 hover:text-blue-800"
+            className="font-medium text-ink-900 hover:text-ink-900"
           >
             Create one
           </Link>
@@ -111,7 +111,7 @@ export default function LoginPage() {
         <button
           type="button"
           onClick={() => alert("Please contact support to reset your password.")}
-          className="font-medium text-gray-500 hover:text-gray-700"
+          className="font-medium text-ink-500 hover:text-ink-700"
         >
           Forgot password?
         </button>
