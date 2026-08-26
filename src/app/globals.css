@@ -147,8 +147,73 @@ body {
 /* --------------------------------------------------------------------------
    Motion
    Every animation here exists to explain a change: something arrived, a value
-   settled, a panel opened. Nothing loops, nothing bounces.
+   settled, a panel opened. Nothing loops, nothing bounces — but it does need
+   to be *felt*. Motion too subtle to notice is the same as no motion, and a
+   static interface reads as a document rather than a product.
    -------------------------------------------------------------------------- */
+
+/* A surface that lifts under the cursor. The border brightens with it so the
+   change reads even where a shadow is hard to see. */
+.lift {
+  transition:
+    transform var(--duration-base) var(--ease-out-quart),
+    box-shadow var(--duration-base) var(--ease-out-quart),
+    border-color var(--duration-base) var(--ease-out-quart);
+}
+
+.lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-raised);
+  border-color: var(--color-ink-300);
+}
+
+/* Bars and meters grow from nothing on first paint, so the eye follows the
+   fill rather than finding it already there. */
+@keyframes grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.animate-grow {
+  transform-origin: left center;
+  animation: grow var(--duration-slow) var(--ease-out-quart) both;
+}
+
+/* The whole page settles into place on navigation. */
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-enter {
+  animation: enter 340ms var(--ease-out-quart) both;
+}
+
+/* A slow drift behind the hero panel — the only ambient motion in the product,
+   and the reason the dark surface reads as lit rather than flat. */
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(6%, -4%, 0) scale(1.12);
+  }
+}
+
+.animate-drift {
+  animation: drift 18s ease-in-out infinite;
+}
 
 @keyframes rise {
   from {
@@ -220,8 +285,14 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .animate-rise,
   .animate-fade,
+  .animate-enter,
+  .animate-grow,
+  .animate-drift,
   .stagger > * {
     animation: none;
+  }
+  .lift:hover {
+    transform: none;
   }
   .skeleton::after {
     animation: none;

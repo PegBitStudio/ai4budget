@@ -61,7 +61,7 @@ export default function FinancialMetricCard({
         : "text-ink-950";
 
   return (
-    <Card className="flex flex-col justify-between p-5">
+    <Card className="lift flex flex-col justify-between p-5">
       <div>
         <p className="text-eyebrow uppercase text-ink-500">{label}</p>
         <p className={cx("mt-2 text-figure tnum", figureTone)}>

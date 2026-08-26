@@ -39,7 +39,7 @@ export default function AIInsightCard({ insight }: { insight: Insight }) {
   const meta = KIND_META[insight.kind];
 
   return (
-    <Card className="group relative overflow-hidden p-5 transition-colors duration-[--duration-base] hover:border-ink-300">
+    <Card className="lift group relative overflow-hidden p-5">
       {/* A severity rule rather than a coloured card — the surface stays calm. */}
       <span
         aria-hidden="true"

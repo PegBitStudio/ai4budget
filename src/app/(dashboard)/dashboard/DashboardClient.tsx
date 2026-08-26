@@ -21,6 +21,7 @@ import {
   cx,
 } from "@/components/ui/primitives";
 import FinancialMetricCard from "@/components/finance/FinancialMetricCard";
+import NetPositionHero from "@/components/finance/NetPositionHero";
 import AIInsightCard, {
   AIIntelligencePanel,
   type Insight,
@@ -214,15 +215,17 @@ export default function DashboardClient() {
         }
       />
 
-      {/* Headline figures */}
-      <div className="grid gap-3 stagger sm:grid-cols-2 xl:grid-cols-4">
-        <FinancialMetricCard
-          label="Net position"
-          value={net}
-          tone={net >= 0 ? "positive" : "negative"}
-          caption={net >= 0 ? "Left this month" : "Spent beyond income"}
-          loading={loading}
-        />
+      {/* The month's headline, on the one rich surface in the product */}
+      <NetPositionHero
+        net={net}
+        income={income}
+        spending={spending}
+        spendingDelta={percentChange(spending, stats?.previousSpending ?? null)}
+        loading={loading}
+      />
+
+      {/* Supporting figures */}
+      <div className="mt-3 grid gap-3 stagger sm:grid-cols-3">
         <FinancialMetricCard
           label="Income"
           value={income}

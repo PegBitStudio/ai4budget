@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { formatCurrency } from "@/utils/formatters";
 import { CATEGORIES, Category } from "@/models/category";
+import { categoryColor } from "@/config/categories";
 
 export interface Transaction {
   id: string;
@@ -299,6 +300,14 @@ export default function TransactionCard({
           {transaction.description}
         </p>
         <p className="flex items-center gap-1.5 text-xs text-ink-500">
+          {/* A colour marker, always beside its written label — three of the
+              category hues sit under 3:1 contrast, so colour never carries the
+              meaning on its own. */}
+          <span
+            aria-hidden="true"
+            className="size-2 shrink-0 rounded-full"
+            style={{ backgroundColor: categoryColor(transaction.category) }}
+          />
           <span>{transaction.category}</span>
           <span aria-hidden="true">·</span>
           <span>{formatDate(transaction.date)}</span>
