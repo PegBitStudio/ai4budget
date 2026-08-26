@@ -46,7 +46,8 @@ Dear customer, your transaction OTP is 771204. Never share this code.
 ```
 
 That buffer is deliberate: five banks, five formats, one credit, and an OTP that
-must be ignored.
+must be ignored. Verified against production — it returns exactly five
+transactions in about four seconds.
 
 ---
 
@@ -85,7 +86,7 @@ with the problem, and let the product be the answer.
 
 > *[Review table appears]*
 >
-> "Six transactions. It stripped the account numbers. It worked out that the
+> "Five transactions. It stripped the account numbers. It worked out that the
 > Opay one was money coming *in*, not going out. And it ignored the OTP —
 > that's not a transaction.
 >
@@ -93,7 +94,7 @@ with the problem, and let the product be the answer.
 >
 > And nothing is saved yet. It's showing me first."
 
-> *[Click "Add 6 transactions"]*
+> *[Click "Add 5 transactions"]*
 
 **This is your strongest 50 seconds.** Do not rush it. If one thing lands with
 the judges, it is watching unstructured mess become a categorised month.
