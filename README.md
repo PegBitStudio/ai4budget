@@ -60,7 +60,7 @@ else. Four places:
 | Feature | What the model does | Why it earns its place |
 |---|---|---|
 | **Bank-alert parsing** | Reads unstructured SMS from any bank into structured transactions | No regex survives contact with a dozen bank formats. This is the feature that makes the product usable at all. |
-| **Categorisation** | Third tier of a three-tier classifier | Tried only after your own corrections and ~170 built-in merchant and keyword patterns miss — so it is cheap, fast and rarely needed |
+| **Categorisation** | Third tier of a three-tier classifier | Tried only after your own corrections and ~170 built-in Nigerian merchant keywords miss — so it is cheap, fast and rarely needed |
 | **Plain-language summary** | Turns the month's figures into a paragraph | Plain language is the brief's explicit ask |
 | **Question answering** | Answers against your real data | Natural-language access to your own finances |
 
@@ -70,7 +70,7 @@ functions in `src/lib/`. The model narrates and extracts. It never computes a
 figure you are shown.
 
 That line matters for a money product. It is also why the arithmetic is testable
-— 476 tests, most of them against those engines.
+— 600 tests, most of them against those engines.
 
 ### The model is never trusted
 
@@ -87,7 +87,7 @@ without you seeing it first**.
 - **Next.js 14** (App Router) · **TypeScript** · **Tailwind CSS v4**
 - **Supabase** — Postgres, Auth, and row-level security on all six tables
 - **OpenAI `gpt-4o-mini`** — extraction, classification, summary, Q&A
-- **Chart.js** · **Zod** · **Vitest** (476 tests)
+- **Chart.js** · **Zod** · **Vitest** (600 tests)
 - Deployed on **Vercel**
 
 ---
@@ -124,7 +124,7 @@ The script is idempotent and dates everything relative to the day it runs, so th
 demo always shows a current month.
 
 ```bash
-npm test          # 476 tests
+npm test          # 600 tests
 npm run build     # production build
 ```
 
