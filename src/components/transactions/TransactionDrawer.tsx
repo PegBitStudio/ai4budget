@@ -5,6 +5,7 @@ import { formatCurrency } from "@/utils/formatters";
 import { CATEGORIES, Category } from "@/models/category";
 import { categoryColor } from "@/config/categories";
 import { Button, Badge, cx } from "@/components/ui/primitives";
+import Portal from "@/components/ui/Portal";
 import type { Transaction } from "@/models/transaction";
 
 /**
@@ -148,6 +149,7 @@ export default function TransactionDrawer({
   }
 
   return (
+    <Portal>
     <div
       className="fixed inset-0 z-50 flex justify-end overflow-hidden"
       role="dialog"
@@ -300,6 +302,7 @@ export default function TransactionDrawer({
         )}
       </div>
     </div>
+    </Portal>
   );
 }
 

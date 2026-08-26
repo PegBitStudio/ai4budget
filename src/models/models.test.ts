@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CATEGORIES, CategorySchema } from './category';
 import { CreateTransactionSchema } from './transaction';
 import { CreateBudgetSchema } from './budget';
-import { CreateSavingsGoalSchema } from './savingsGoal';
+import { CreateSavingsGoalSchema, ContributeToSavingsGoalSchema } from './savingsGoal';
 import { CreateCommitmentSchema } from './commitment';
 import {
   validateTransaction,
@@ -190,6 +190,40 @@ describe('CreateSavingsGoalSchema', () => {
       target_amount: 10000,
       deadline: '2020-01-01',
     });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('ContributeToSavingsGoalSchema', () => {
+  it('accepts a positive amount', () => {
+    const result = ContributeToSavingsGoalSchema.safeParse({ amount: 1000 });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects zero — a contribution has to be worth recording', () => {
+    const result = ContributeToSavingsGoalSchema.safeParse({ amount: 0 });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a negative amount', () => {
+    const result = ContributeToSavingsGoalSchema.safeParse({ amount: -50 });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects an amount above the storage ceiling', () => {
+    const result = ContributeToSavingsGoalSchema.safeParse({
+      amount: 1_000_000_000,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a missing amount', () => {
+    const result = ContributeToSavingsGoalSchema.safeParse({});
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a non-numeric amount', () => {
+    const result = ContributeToSavingsGoalSchema.safeParse({ amount: '1000' });
     expect(result.success).toBe(false);
   });
 });

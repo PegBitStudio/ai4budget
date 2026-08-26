@@ -2,6 +2,13 @@
 
 import { useState, useRef, useEffect, FormEvent } from 'react';
 import FormattedAnswer from '@/components/qa/FormattedAnswer';
+import { createClient } from '@/lib/supabase/client';
+import {
+  loadQAHistory,
+  saveQAHistory,
+  clearQAHistory,
+  type StoredChatMessage,
+} from '@/lib/qaHistory';
 
 // --- Interfaces ---
 
@@ -67,8 +74,48 @@ export default function QAPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // True only once the saved conversation (if any) has been read back in, so
+  // the effect that persists messages does not immediately overwrite it with
+  // the single fresh WELCOME_MESSAGE that render started with.
+  const restoredRef = useRef(false);
+
+  // Read back whatever conversation this account left off with, once we know
+  // who they are.
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      const id = data.user?.id ?? null;
+      setUserId(id);
+
+      if (id) {
+        const stored = loadQAHistory(id);
+        if (stored && stored.length > 0) {
+          setMessages(
+            stored.map((m) => ({ ...m, timestamp: new Date(m.timestamp) }))
+          );
+        }
+      }
+      restoredRef.current = true;
+    });
+  }, []);
+
+  // Persist on every change, once restoration has had its turn.
+  useEffect(() => {
+    if (!userId || !restoredRef.current) return;
+    const toStore: StoredChatMessage[] = messages.map((m) => ({
+      ...m,
+      timestamp: m.timestamp.toISOString(),
+    }));
+    saveQAHistory(userId, toStore);
+  }, [messages, userId]);
+
+  function startNewConversation() {
+    setMessages([WELCOME_MESSAGE]);
+    if (userId) clearQAHistory(userId);
+  }
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -140,8 +187,17 @@ export default function QAPage() {
   return (
     <div className="flex flex-col h-[calc(100vh-theme(spacing.14)-theme(spacing.16))]">
       {/* Subheader */}
-      <div className="px-4 py-2 border-b border-ink-100 bg-paper">
+      <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-ink-100 bg-paper">
         <p className="text-sm text-ink-500">Ask questions about your finances in plain English</p>
+        {messages.length > 1 && (
+          <button
+            type="button"
+            onClick={startNewConversation}
+            className="shrink-0 min-h-[36px] rounded-md px-2.5 text-xs font-medium text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-900"
+          >
+            New conversation
+          </button>
+        )}
       </div>
 
       {/* Messages area */}

@@ -41,3 +41,15 @@ export const CreateSavingsGoalSchema = z.object({
 });
 
 export type CreateSavingsGoalInput = z.infer<typeof CreateSavingsGoalSchema>;
+
+/** Recording money actually set aside toward a goal — not editing the goal. */
+export const ContributeToSavingsGoalSchema = z.object({
+  amount: z
+    .number()
+    .min(0.01, 'Amount must be at least 0.01')
+    .max(999999999.99, 'Amount must not exceed 999,999,999.99'),
+});
+
+export type ContributeToSavingsGoalInput = z.infer<
+  typeof ContributeToSavingsGoalSchema
+>;

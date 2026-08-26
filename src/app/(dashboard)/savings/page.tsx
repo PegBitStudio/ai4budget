@@ -42,6 +42,13 @@ export default function SavingsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Which goal's "I saved this" form is open, and its own small amount of
+  // form state — kept separate from the create-goal form above.
+  const [contributingId, setContributingId] = useState<string | null>(null);
+  const [contributionAmount, setContributionAmount] = useState('');
+  const [contributionError, setContributionError] = useState<string | null>(null);
+  const [contributionSubmitting, setContributionSubmitting] = useState(false);
+
   // Form state
   const [targetAmount, setTargetAmount] = useState('');
   const [deadline, setDeadline] = useState('');
@@ -134,6 +141,45 @@ export default function SavingsPage() {
       setDeletingId(null);
     }
   };
+
+  function startContributing(id: string) {
+    setContributingId(id);
+    setContributionAmount('');
+    setContributionError(null);
+  }
+
+  async function handleContribute(id: string) {
+    setContributionError(null);
+
+    const amount = parseFloat(contributionAmount);
+    if (isNaN(amount) || amount < 0.01 || amount > 999999999.99) {
+      setContributionError('Enter an amount greater than 0');
+      return;
+    }
+
+    try {
+      setContributionSubmitting(true);
+      const res = await fetch(`/api/savings?id=${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'Could not record that contribution');
+      }
+
+      setContributingId(null);
+      await fetchSavings();
+    } catch (err) {
+      setContributionError(
+        err instanceof Error ? err.message : 'Could not record that contribution'
+      );
+    } finally {
+      setContributionSubmitting(false);
+    }
+  }
 
   // --- Loading State ---
   if (loading) {
@@ -346,6 +392,77 @@ export default function SavingsPage() {
                         aria-label={`${progress.toFixed(1)}% of ${formatCurrency(goal.target_amount)} saved`}
                       />
                     </div>
+                  </div>
+
+                  {/* Recording progress — the one thing a goal actually needs
+                      and, until now, had no way to do: current_amount was set
+                      to 0 at creation and nothing ever moved it. */}
+                  <div className="mt-3">
+                    {goal.current_amount >= goal.target_amount ? (
+                      <p className="text-sm font-medium text-positive-700">
+                        Goal reached — {formatCurrency(goal.current_amount)} saved.
+                      </p>
+                    ) : contributingId === goal.id ? (
+                      <div className="flex flex-wrap items-start gap-2">
+                        <div className="min-w-0 flex-1">
+                          <label htmlFor={`contribute-${goal.id}`} className="sr-only">
+                            Amount saved
+                          </label>
+                          <div className="relative">
+                            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-ink-400">
+                              ₦
+                            </span>
+                            <input
+                              id={`contribute-${goal.id}`}
+                              type="number"
+                              step="0.01"
+                              min="0.01"
+                              autoFocus
+                              value={contributionAmount}
+                              onChange={(e) => setContributionAmount(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleContribute(goal.id);
+                                }
+                                if (e.key === 'Escape') setContributingId(null);
+                              }}
+                              placeholder="0.00"
+                              className="w-full min-h-[40px] rounded-lg border border-ink-300 pl-7 pr-3 py-2 text-sm focus:border-ink-700 focus:outline-none focus:ring-1 focus:ring-ink-700"
+                            />
+                          </div>
+                          {contributionError && (
+                            <p role="alert" className="mt-1 text-xs text-negative-700">
+                              {contributionError}
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleContribute(goal.id)}
+                          disabled={contributionSubmitting}
+                          className="min-h-[40px] shrink-0 rounded-lg bg-positive-600 px-3.5 text-sm font-medium text-paper hover:bg-positive-700 disabled:opacity-50"
+                        >
+                          {contributionSubmitting ? 'Saving…' : 'Confirm'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setContributingId(null)}
+                          disabled={contributionSubmitting}
+                          className="min-h-[40px] shrink-0 rounded-lg px-3 text-sm font-medium text-ink-600 hover:bg-ink-100"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => startContributing(goal.id)}
+                        className="min-h-[36px] rounded-lg border border-ink-300 px-3 text-sm font-medium text-ink-700 hover:bg-ink-50"
+                      >
+                        + I saved some of this
+                      </button>
+                    )}
                   </div>
                 </li>
               );

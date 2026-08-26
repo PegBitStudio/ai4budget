@@ -8,6 +8,49 @@ import { fetchNotifications } from "@/lib/notificationsClient";
 
 const READ_KEY = "kobopilot:read-notifications";
 
+/** Never closer than this to any edge of the viewport. */
+const EDGE_MARGIN = 16;
+/** The panel's width when there is room for it — 22rem, same as before. */
+const PREFERRED_WIDTH = 352;
+
+interface PanelPosition {
+  top: number;
+  left: number;
+  width: number;
+}
+
+/**
+ * Where the panel lands, computed from the trigger's actual position rather
+ * than a fixed CSS side.
+ *
+ * This button appears in two places that put it near opposite edges of the
+ * screen: the far left in the desktop sidebar, the far right in the mobile
+ * title bar. Anchoring purely in CSS ("right: 0, grow left" or the reverse)
+ * only stays on-screen if the button happens to have panel-width's worth of
+ * room on the side it grows toward — true on neither edge, so the panel used
+ * to run off the side of the screen in both. Measuring the trigger and
+ * clamping the result to the viewport is what actually guarantees the panel
+ * is fully visible everywhere the button might be, including layouts this
+ * component does not know about yet.
+ */
+function computePanelPosition(trigger: HTMLElement): PanelPosition {
+  const rect = trigger.getBoundingClientRect();
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  const width = Math.min(PREFERRED_WIDTH, vw - EDGE_MARGIN * 2);
+
+  // Prefer the panel's right edge flush with the button's, the same lean as
+  // before — then pull it back onto the screen if that runs past either edge.
+  const left = Math.max(
+    EDGE_MARGIN,
+    Math.min(rect.right - width, vw - width - EDGE_MARGIN)
+  );
+  const top = Math.min(rect.bottom + 8, vh - EDGE_MARGIN);
+
+  return { top, left, width };
+}
+
 /**
  * What the product noticed, without being asked.
  *
@@ -27,7 +70,9 @@ export default function NotificationBell() {
   const [readIds, setReadIds] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [panelPosition, setPanelPosition] = useState<PanelPosition | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     try {
@@ -54,9 +99,20 @@ export default function NotificationBell() {
     };
   }, []);
 
-  // Escape closes, and so does a click anywhere outside the panel.
+  // Escape closes, so does a click outside, and the position is measured
+  // fresh on every open — and kept current across a resize or an orientation
+  // change, since the button's on-screen position can move under the panel
+  // while it is open.
   useEffect(() => {
     if (!open) return;
+
+    function measure() {
+      if (triggerRef.current) {
+        setPanelPosition(computePanelPosition(triggerRef.current));
+      }
+    }
+
+    measure();
 
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
@@ -66,12 +122,14 @@ export default function NotificationBell() {
     }
 
     document.addEventListener("keydown", onKey);
+    window.addEventListener("resize", measure);
     // Deferred a tick, or the click that opened the panel closes it again.
     const id = setTimeout(() => document.addEventListener("click", onClick), 0);
 
     return () => {
       document.removeEventListener("keydown", onKey);
       document.removeEventListener("click", onClick);
+      window.removeEventListener("resize", measure);
       clearTimeout(id);
     };
   }, [open]);
@@ -98,6 +156,7 @@ export default function NotificationBell() {
   return (
     <div ref={panelRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
@@ -137,8 +196,16 @@ export default function NotificationBell() {
         )}
       </button>
 
-      {open && (
-        <div className="animate-rise absolute right-0 z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-ink-200 bg-paper shadow-overlay">
+      {open && panelPosition && (
+        <div
+          style={{
+            position: "fixed",
+            top: panelPosition.top,
+            left: panelPosition.left,
+            width: panelPosition.width,
+          }}
+          className="animate-rise z-50 overflow-hidden rounded-lg border border-ink-200 bg-paper shadow-overlay"
+        >
           <div className="flex items-center justify-between border-b border-ink-100 px-4 py-3">
             <p className="text-label font-medium text-ink-900">
               What KoboPilot noticed

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { CreateSavingsGoalSchema } from '@/models/savingsGoal';
+import {
+  CreateSavingsGoalSchema,
+  ContributeToSavingsGoalSchema,
+} from '@/models/savingsGoal';
 import { getRecommendation } from '@/lib/savingsAdvisor';
 import { getCurrentMonthPeriod } from '@/utils/dateUtils';
 
@@ -152,6 +155,95 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ goal }, { status: 201 });
   } catch (error) {
     console.error('[POST /api/savings] Unexpected error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PATCH /api/savings?id=UUID
+ * Records money actually set aside toward a goal.
+ *
+ * A goal was created with current_amount fixed at 0 and nothing anywhere
+ * could ever move it — the progress bar was permanently stuck at the start.
+ * This adds the one operation a goal actually needs: "I put this much aside",
+ * added to whatever is already saved rather than replacing it, so confirming
+ * a contribution can never accidentally erase progress already recorded.
+ */
+export async function PATCH(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Missing required query parameter: id' },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const validation = ContributeToSavingsGoalSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: validation.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const { amount } = validation.data;
+
+    // Read the current amount first: Supabase's update() sets an absolute
+    // value, it cannot express "add to whatever is there" as a single
+    // expression, and adding to the wrong base would misstate every goal
+    // after it. RLS scopes this to the caller's own goal.
+    const { data: goal, error: fetchError } = await supabase
+      .from('savings_goals')
+      .select('current_amount')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !goal) {
+      return NextResponse.json(
+        { error: 'Savings goal not found' },
+        { status: 404 }
+      );
+    }
+
+    const newAmount = Math.round((goal.current_amount + amount) * 100) / 100;
+
+    const { data: updated, error: updateError } = await supabase
+      .from('savings_goals')
+      .update({ current_amount: newAmount })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error('[PATCH /api/savings] Failed to record contribution:', updateError.message);
+      return NextResponse.json(
+        { error: 'Failed to record contribution' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ goal: updated }, { status: 200 });
+  } catch (error) {
+    console.error('[PATCH /api/savings] Unexpected error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
