@@ -2,14 +2,40 @@
  * Display formatting utilities for currency, percentages, and numbers.
  */
 
+const FALLBACK_SYMBOL = '₦';
+
 /**
- * Formats a number as currency with the given symbol.
- * Defaults to "₦" (Naira) symbol. Pass a different symbol for other currencies.
+ * The symbol this browser is currently displaying money in.
+ *
+ * Deliberately module-level, and deliberately client-only. One browser serves
+ * one signed-in account, so a single value is correct there and saves threading
+ * a symbol through a hundred call sites. On the server the same process serves
+ * every user at once, so a shared mutable symbol would be a data leak waiting
+ * for two concurrent requests — which is why `activeSymbol()` refuses to read it
+ * there and server code must pass the symbol explicitly.
+ */
+let clientSymbol = FALLBACK_SYMBOL;
+
+export function setActiveCurrencySymbol(symbol: string): void {
+  if (typeof window === 'undefined') return;
+  clientSymbol = symbol || FALLBACK_SYMBOL;
+}
+
+export function activeSymbol(): string {
+  return typeof window === 'undefined' ? FALLBACK_SYMBOL : clientSymbol;
+}
+
+/**
+ * Formats a number as currency.
+ *
+ * With no symbol given it uses whatever this browser is set to, and the Naira
+ * fallback on the server. Server code that builds a user-facing string must
+ * pass the symbol rather than rely on the default.
  *
  * @example formatCurrency(1234.56) => "₦1,234.56"
  * @example formatCurrency(1234.56, '$') => "$1,234.56"
  */
-export function formatCurrency(amount: number, symbol: string = '₦'): string {
+export function formatCurrency(amount: number, symbol: string = activeSymbol()): string {
   const formatted = Math.abs(amount)
     .toFixed(2)
     .replace(/\B(?=(\d{3})+(?!\d))/g, ',');

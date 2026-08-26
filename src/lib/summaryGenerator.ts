@@ -89,7 +89,12 @@ export function buildSummaryData(params: SummaryParams): SummaryData {
  * Generates a basic plain-text financial summary without LLM (fallback).
  * Uses simple language with no abbreviations or financial jargon.
  */
-export function generatePlainTextSummary(data: SummaryData): string {
+export function generatePlainTextSummary(
+  data: SummaryData,
+  /** Explicit, because this runs on a server shared by every account. */
+  symbol?: string
+): string {
+  const money = (v: number) => formatCurrency(v, symbol);
   if (!data.hasData) {
     return 'There is not enough data to generate a summary. Please add your income and expense transactions to get started.';
   }
@@ -98,13 +103,13 @@ export function generatePlainTextSummary(data: SummaryData): string {
 
   // Income and spending overview
   lines.push(
-    `This ${data.periodType === 'weekly' ? 'week' : 'month'}, you earned ${formatCurrency(data.totalIncome)} and spent ${formatCurrency(data.totalSpending)}.`
+    `This ${data.periodType === 'weekly' ? 'week' : 'month'}, you earned ${money(data.totalIncome)} and spent ${money(data.totalSpending)}.`
   );
 
   // Top spending categories
   if (data.topCategories.length > 0) {
     const categoryList = data.topCategories
-      .map((cat) => `${cat.name} (${formatCurrency(cat.amount)})`)
+      .map((cat) => `${cat.name} (${money(cat.amount)})`)
       .join(', ');
     lines.push(`Your top spending areas were: ${categoryList}.`);
   }
@@ -113,14 +118,14 @@ export function generatePlainTextSummary(data: SummaryData): string {
   if (data.totalBudgeted > 0) {
     const status = data.isOnTrack ? 'on track' : 'over budget';
     lines.push(
-      `You are ${status} — ${formatCurrency(data.totalSpending)} of ${formatCurrency(data.totalBudgeted)} spent.`
+      `You are ${status} — ${money(data.totalSpending)} of ${money(data.totalBudgeted)} spent.`
     );
   }
 
   // Savings progress
   if (data.savingsProgress) {
     lines.push(
-      `You've saved ${formatCurrency(data.savingsProgress.current)} toward your ${formatCurrency(data.savingsProgress.goal)} target.`
+      `You've saved ${money(data.savingsProgress.current)} toward your ${money(data.savingsProgress.goal)} target.`
     );
   }
 
@@ -134,7 +139,14 @@ export function generatePlainTextSummary(data: SummaryData): string {
 export async function generateSummary(
   data: SummaryData,
   useLLM: boolean,
-  llmClient?: { generateSummary: (input: SummaryInput) => Promise<string> }
+  llmClient?: {
+    generateSummary: (
+      input: SummaryInput,
+      currency?: { llmName: string; symbol: string }
+    ) => Promise<string>;
+  },
+  /** Explicit, because this runs on a server shared by every account. */
+  currency?: { llmName: string; symbol: string }
 ): Promise<string> {
   // Handle insufficient data
   if (!data.hasData) {
@@ -151,14 +163,14 @@ export async function generateSummary(
         savingsProgress: data.savingsProgress,
         periodType: data.periodType,
       };
-      const result = await llmClient.generateSummary(input);
+      const result = await llmClient.generateSummary(input, currency);
       return result;
     } catch {
       // Fall back to plain text on LLM failure
-      return generatePlainTextSummary(data);
+      return generatePlainTextSummary(data, currency?.symbol);
     }
   }
 
   // Fallback: generate plain-text summary
-  return generatePlainTextSummary(data);
+  return generatePlainTextSummary(data, currency?.symbol);
 }

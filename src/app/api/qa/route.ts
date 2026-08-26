@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { answerQuestion } from '@/lib/qaEngine';
+import { getUserCurrency } from '@/lib/userCurrency';
 import { getLLMClient } from '@/lib/llmClient';
 import { getCurrentMonthPeriod } from '@/utils/dateUtils';
 
@@ -99,7 +100,9 @@ export async function POST(request: NextRequest) {
 
     // Call QA engine
     const llmClient = getLLMClient();
+    const currency = await getUserCurrency();
     const result = await answerQuestion({
+      symbol: currency.symbol,
       question: question.trim(),
       transactions: (transactions ?? []).map((t) => ({
         amount: t.amount,

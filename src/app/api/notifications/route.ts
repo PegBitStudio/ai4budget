@@ -10,6 +10,7 @@ import { detectAnomalies, detectIncreasingCategories } from '@/lib/spendingAnaly
 import { buildNotifications } from '@/lib/notifications';
 import { getCurrentMonthPeriod } from '@/utils/dateUtils';
 import { Category } from '@/models/category';
+import { getUserCurrency } from '@/lib/userCurrency';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,6 +40,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const currency = await getUserCurrency();
     const period = getCurrentMonthPeriod();
     const today = localToday();
     const progress = getPeriodProgress(period.start, period.end, today);
@@ -147,6 +149,7 @@ export async function GET() {
       risingCategories,
       periodStart: period.start,
       daysRemaining: progress.daysRemaining,
+      symbol: currency.symbol,
     });
 
     return NextResponse.json(
@@ -158,7 +161,7 @@ export async function GET() {
         // the same thing twice, but on that page the projection is the point.
         forecasts: forecasts
           .filter((f) => f.usable && f.verdict !== 'on-track')
-          .map((f) => ({ ...f, sentence: describeForecast(f, progress.daysRemaining) })),
+          .map((f) => ({ ...f, sentence: describeForecast(f, progress.daysRemaining, currency.symbol) })),
       },
       { status: 200 }
     );

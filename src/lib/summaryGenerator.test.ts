@@ -348,17 +348,44 @@ describe('generateSummary', () => {
 
     await generateSummary(validData, true, mockClient);
 
-    expect(mockClient.generateSummary).toHaveBeenCalledWith({
-      totalIncome: 6000,
-      totalSpending: 3000,
-      topCategories: [
-        { name: 'Housing', amount: 1200 },
-        { name: 'Groceries', amount: 800 },
-        { name: 'Transport', amount: 500 },
-      ],
-      savingsProgress: { goal: 10000, current: 2500 },
-      periodType: 'monthly',
+    expect(mockClient.generateSummary).toHaveBeenCalledWith(
+      {
+        totalIncome: 6000,
+        totalSpending: 3000,
+        topCategories: [
+          { name: 'Housing', amount: 1200 },
+          { name: 'Groceries', amount: 800 },
+          { name: 'Transport', amount: 500 },
+        ],
+        savingsProgress: { goal: 10000, current: 2500 },
+        periodType: 'monthly',
+      },
+      // The account's currency travels with the data, so the model names the
+      // money the user actually keeps their books in. Undefined here because
+      // this caller did not pass one, which is the Naira default.
+      undefined
+    );
+  });
+
+  it('hands the account currency to the model', async () => {
+    const mockClient = { generateSummary: vi.fn().mockResolvedValue('summary') };
+    const euro = { llmName: 'Euros', symbol: '€' };
+
+    await generateSummary(validData, true, mockClient, euro);
+
+    expect(mockClient.generateSummary).toHaveBeenCalledWith(
+      expect.anything(),
+      euro
+    );
+  });
+
+  it('writes the fallback summary in the account currency', async () => {
+    const result = await generateSummary(validData, false, undefined, {
+      llmName: 'Euros',
+      symbol: '€',
     });
+    expect(result).toContain('€');
+    expect(result).not.toContain('₦');
   });
 
   it('falls back to plain text when useLLM is false', async () => {

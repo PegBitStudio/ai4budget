@@ -50,6 +50,8 @@ export interface NotificationInput {
   risingCategories: CategoryTrend[];
   periodStart: string;
   daysRemaining: number;
+  /** Explicit, because this runs on a server shared by every account. */
+  symbol?: string;
 }
 
 /** Ranked worst-first, so the top of the list is the thing most worth doing. */
@@ -63,8 +65,9 @@ const SEVERITY_RANK: Record<NotificationSeverity, number> = {
 export const MAX_NOTIFICATIONS = 8;
 
 export function buildNotifications(input: NotificationInput): Notification[] {
-  const { alerts, forecasts, anomalies, risingCategories, periodStart, daysRemaining } =
+  const { alerts, forecasts, anomalies, risingCategories, periodStart, daysRemaining, symbol } =
     input;
+  const money = (value: number) => formatCurrency(value, symbol);
 
   const notifications: Notification[] = [];
 
@@ -78,7 +81,7 @@ export function buildNotifications(input: NotificationInput): Notification[] {
         kind: 'budget-exceeded',
         severity: 'critical',
         title: `${alert.category} is over budget`,
-        body: `${formatCurrency(alert.amount_spent)} spent against a ${formatCurrency(alert.budgeted_amount)} plan — ${formatCurrency(over)} over.`,
+        body: `${money(alert.amount_spent)} spent against a ${money(alert.budgeted_amount)} plan — ${money(over)} over.`,
         href: '/budget',
         category: alert.category,
       });
@@ -88,7 +91,7 @@ export function buildNotifications(input: NotificationInput): Notification[] {
         kind: 'budget-approaching',
         severity: 'warning',
         title: `${alert.category} is close to its limit`,
-        body: `${formatCurrency(alert.amount_spent)} of ${formatCurrency(alert.budgeted_amount)} used — ${Math.round(alert.percentage)}% of the plan.`,
+        body: `${money(alert.amount_spent)} of ${money(alert.budgeted_amount)} used — ${Math.round(alert.percentage)}% of the plan.`,
         href: '/budget',
         category: alert.category,
       });
@@ -112,7 +115,7 @@ export function buildNotifications(input: NotificationInput): Notification[] {
       kind: 'budget-forecast',
       severity: 'warning',
       title: `${forecast.category} is on course to go over`,
-      body: describeForecast(forecast, daysRemaining),
+      body: describeForecast(forecast, daysRemaining, symbol),
       href: '/budget',
       category: forecast.category,
     });
@@ -125,7 +128,7 @@ export function buildNotifications(input: NotificationInput): Notification[] {
       kind: 'unusual-spend',
       severity: 'info',
       title: `Unusual ${anomaly.transaction.category} spend`,
-      body: `${anomaly.transaction.description} at ${formatCurrency(anomaly.transaction.amount)} — about ${anomaly.multiple.toFixed(1)}× your usual ${formatCurrency(anomaly.categoryAverage)}.`,
+      body: `${anomaly.transaction.description} at ${money(anomaly.transaction.amount)} — about ${anomaly.multiple.toFixed(1)}× your usual ${money(anomaly.categoryAverage)}.`,
       href: '/analysis',
       category: anomaly.transaction.category,
     });
@@ -138,7 +141,7 @@ export function buildNotifications(input: NotificationInput): Notification[] {
       kind: 'category-rising',
       severity: 'info',
       title: `${trend.category} is rising`,
-      body: `Up ${Math.round(trend.percentageChange)}% on last period — ${formatCurrency(trend.previousAmount)} to ${formatCurrency(trend.currentAmount)}.`,
+      body: `Up ${Math.round(trend.percentageChange)}% on last period — ${money(trend.previousAmount)} to ${money(trend.currentAmount)}.`,
       href: '/analysis',
       category: trend.category,
     });

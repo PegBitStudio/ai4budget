@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { activeSymbol } from "@/utils/formatters";
 import ImportPanel from "@/components/transactions/ImportPanel";
 import TransactionTable, { SortKey } from "@/components/transactions/TransactionTable";
 import TransactionDrawer from "@/components/transactions/TransactionDrawer";
@@ -362,7 +363,7 @@ function AddTransactionForm({ onAdded }: { onAdded: () => void }) {
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-label text-ink-400">
-                ₦
+                {activeSymbol()}
               </span>
               <input
                 id="t-amount"

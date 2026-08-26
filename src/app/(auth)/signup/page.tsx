@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { CURRENCIES, DEFAULT_CURRENCY_CODE } from "@/config/currencies";
 import { createClient } from "@/lib/supabase/client";
 
 export default function SignupPage() {
@@ -10,6 +11,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [currency, setCurrency] = useState(DEFAULT_CURRENCY_CODE);
   const [disclaimerAcknowledged, setDisclaimerAcknowledged] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -40,6 +42,7 @@ export default function SignupPage() {
       const { error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: { data: { currency } },
       });
 
       if (authError) {
@@ -141,6 +144,33 @@ export default function SignupPage() {
           placeholder="Re-enter your password"
           aria-required="true"
         />
+      </div>
+
+      <div>
+        <label
+          htmlFor="currency"
+          className="mb-1.5 block text-label font-medium text-ink-700"
+        >
+          Currency
+        </label>
+        <select
+          id="currency"
+          name="currency"
+          value={currency}
+          onChange={(e) => setCurrency(e.target.value)}
+          className={FIELD}
+        >
+          {CURRENCIES.map((option) => (
+            <option key={option.code} value={option.code}>
+              {option.symbol} {option.name} ({option.code})
+            </option>
+          ))}
+        </select>
+        {/* Said here rather than discovered later: this sets what amounts are
+            labelled as, and KoboPilot never applies an exchange rate. */}
+        <p className="mt-1 text-xs text-ink-500">
+          What your money is shown as. You can change it later.
+        </p>
       </div>
 
       <div className="flex items-start gap-3">

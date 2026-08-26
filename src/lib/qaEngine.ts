@@ -9,6 +9,8 @@ export interface QAParams {
   budget?: { category: string; budgeted: number; actual: number }[];
   period: string;
   llmClient?: { answerQuestion: (q: string, ctx: FinancialContext) => Promise<string> };
+  /** Explicit, because this runs on a server shared by every account. */
+  symbol?: string;
 }
 
 export interface QAResult {
@@ -20,6 +22,8 @@ export interface QAResult {
 export interface QAData {
   transactions: { amount: number; category: string; date: string; type: string }[];
   budget?: { category: string; budgeted: number; actual: number }[];
+  /** Explicit, because this runs on a server shared by every account. */
+  symbol?: string;
 }
 
 export interface QAContextParams {
@@ -110,10 +114,6 @@ const ADVICE_PHRASINGS = [
 ];
 
 /**
- * True when the user is asking to be told what to do with their money rather
- * than what they have done with it.
- */
-/**
  * Asking where to place money names no investment at all — "what should I put
  * my savings into" is the same question as "should I buy shares", and has to
  * be caught on its own shape.
@@ -124,6 +124,10 @@ const PLACEMENT_PATTERNS = [
   /what\s+(should|can)\s+(i|we)\s+do\s+with\s+(my\s+)?(savings|money|cash)/,
 ];
 
+/**
+ * True when the user is asking to be told what to do with their money rather
+ * than what they have done with it.
+ */
 export function isInvestmentAdviceRequest(question: string): boolean {
   const lower = question.toLowerCase();
 
@@ -146,6 +150,7 @@ export function isInvestmentAdviceRequest(question: string): boolean {
  * dead end, and the honest alternative is genuinely useful.
  */
 export function investmentAdviceDecline(data: QAData): string {
+  const money = (v: number) => formatCurrency(v, data.symbol);
   const income = data.transactions
     .filter((t) => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -162,10 +167,10 @@ export function investmentAdviceDecline(data: QAData): string {
   }
 
   if (left > 0) {
-    return `${opening}\n\nWhat I can tell you is what is actually spare. This period you brought in ${formatCurrency(income)} and spent ${formatCurrency(spending)}, leaving ${formatCurrency(left)}. Whatever you decide to do with money, that figure is the honest ceiling — and it is worth checking against your savings goal before committing any of it.`;
+    return `${opening}\n\nWhat I can tell you is what is actually spare. This period you brought in ${money(income)} and spent ${money(spending)}, leaving ${money(left)}. Whatever you decide to do with money, that figure is the honest ceiling — and it is worth checking against your savings goal before committing any of it.`;
   }
 
-  return `${opening}\n\nWhat I can tell you is that there is nothing spare to commit right now. This period you brought in ${formatCurrency(income)} and spent ${formatCurrency(spending)} — ${formatCurrency(Math.abs(left))} more than you earned. Closing that gap comes before putting money anywhere else.`;
+  return `${opening}\n\nWhat I can tell you is that there is nothing spare to commit right now. This period you brought in ${money(income)} and spent ${money(spending)} — ${money(Math.abs(left))} more than you earned. Closing that gap comes before putting money anywhere else.`;
 }
 
 /**
@@ -173,6 +178,7 @@ export function investmentAdviceDecline(data: QAData): string {
  * Returns null if the question is too complex for local parsing.
  */
 export function getLocalAnswer(question: string, data: QAData): string | null {
+  const money = (v: number) => formatCurrency(v, data.symbol);
   const lower = question.toLowerCase();
 
   // Handled before anything else, so no phrasing can route around it into the
@@ -196,7 +202,7 @@ export function getLocalAnswer(question: string, data: QAData): string | null {
       return `You haven't spent anything on ${queriedCategory} in this period.`;
     }
     const total = expenses.reduce((sum, t) => sum + t.amount, 0);
-    return `You spent ${formatCurrency(total)} on ${expenses[0].category} (${expenses.length} transaction${expenses.length > 1 ? 's' : ''}).`;
+    return `You spent ${money(total)} on ${expenses[0].category} (${expenses.length} transaction${expenses.length > 1 ? 's' : ''}).`;
   }
 
   // "what is my total spending?" / "how much have I spent in total?"
@@ -209,7 +215,7 @@ export function getLocalAnswer(question: string, data: QAData): string | null {
       return 'You have no expense transactions recorded for this period.';
     }
     const total = expenses.reduce((sum, t) => sum + t.amount, 0);
-    return `Your total spending is ${formatCurrency(total)} across ${expenses.length} transaction${expenses.length > 1 ? 's' : ''}.`;
+    return `Your total spending is ${money(total)} across ${expenses.length} transaction${expenses.length > 1 ? 's' : ''}.`;
   }
 
   // "what is my income?" / "how much did I earn?"
@@ -223,7 +229,7 @@ export function getLocalAnswer(question: string, data: QAData): string | null {
       return 'You have no income transactions recorded for this period.';
     }
     const total = incomes.reduce((sum, t) => sum + t.amount, 0);
-    return `Your total income is ${formatCurrency(total)} from ${incomes.length} source${incomes.length > 1 ? 's' : ''}.`;
+    return `Your total income is ${money(total)} from ${incomes.length} source${incomes.length > 1 ? 's' : ''}.`;
   }
 
   // Can't answer locally — return null to fall through to LLM
@@ -235,7 +241,7 @@ export function getLocalAnswer(question: string, data: QAData): string | null {
  * Tries local data first, then falls back to LLM for complex questions.
  */
 export async function answerQuestion(params: QAParams): Promise<QAResult> {
-  const { question, transactions, budget, period, llmClient } = params;
+  const { question, transactions, budget, period, llmClient, symbol } = params;
 
   // Validate input
   if (!question || question.trim().length === 0) {
@@ -251,7 +257,7 @@ export async function answerQuestion(params: QAParams): Promise<QAResult> {
   // "there is not enough financial data".
   if (isInvestmentAdviceRequest(question)) {
     return {
-      answer: investmentAdviceDecline({ transactions, budget }),
+      answer: investmentAdviceDecline({ transactions, budget, symbol }),
       source: 'local',
     };
   }
@@ -277,7 +283,7 @@ export async function answerQuestion(params: QAParams): Promise<QAResult> {
   }
 
   // Try to answer locally first
-  const data: QAData = { transactions, budget };
+  const data: QAData = { transactions, budget, symbol };
   const localAnswer = getLocalAnswer(question, data);
   if (localAnswer !== null) {
     return {

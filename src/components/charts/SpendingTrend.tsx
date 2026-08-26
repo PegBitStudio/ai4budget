@@ -3,7 +3,7 @@
 import "./ChartRegistration";
 import { Line } from "react-chartjs-2";
 import type { ChartOptions } from "chart.js";
-import { formatCurrency } from "@/utils/formatters";
+import { formatCurrency, activeSymbol } from "@/utils/formatters";
 import {
   CHART_COLORS,
   TOOLTIP_STYLE,
@@ -89,7 +89,7 @@ export function SpendingTrend({ data }: SpendingTrendProps) {
           color: CHART_COLORS.axisText,
           font: AXIS_TICK_FONT,
           maxTicksLimit: 5,
-          callback: (value) => compactNaira(Number(value)),
+          callback: (value) => compactMoney(Number(value)),
         },
       },
     },
@@ -102,8 +102,9 @@ export function SpendingTrend({ data }: SpendingTrendProps) {
   );
 }
 
-function compactNaira(value: number): string {
-  if (Math.abs(value) >= 1_000_000) return `₦${(value / 1_000_000).toFixed(1)}M`;
-  if (Math.abs(value) >= 1_000) return `₦${Math.round(value / 1_000)}k`;
-  return `₦${value}`;
+function compactMoney(value: number): string {
+  const symbol = activeSymbol();
+  if (Math.abs(value) >= 1_000_000) return `${symbol}${(value / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(value) >= 1_000) return `${symbol}${Math.round(value / 1_000)}k`;
+  return `${symbol}${value}`;
 }

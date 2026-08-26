@@ -6,6 +6,7 @@ import { CATEGORIES } from '@/models/category';
 import AccountSection from '@/components/settings/AccountSection';
 import AppearanceSection from '@/components/settings/AppearanceSection';
 import ProfileSection from '@/components/settings/ProfileSection';
+import CurrencySection from '@/components/settings/CurrencySection';
 import { PageHeader } from "@/components/ui/primitives";
 
 // --- Types ---
@@ -228,6 +229,8 @@ export default function SettingsPage() {
       <AccountSection />
 
       <ProfileSection />
+
+      <CurrencySection />
 
       <AppearanceSection />
 

@@ -216,25 +216,29 @@ function forecastOne(
  */
 export function describeForecast(
   forecast: CategoryForecast,
-  daysRemaining: number
+  daysRemaining: number,
+  // Passed rather than defaulted: this runs on the server, where one process
+  // serves every account and a shared symbol would be another user's money.
+  symbol?: string
 ): string {
+  const money = (value: number) => formatCurrency(value, symbol);
   const { category, projectedOverspend, budgeted, spentSoFar, projected } =
     forecast;
 
   switch (forecast.verdict) {
     case 'exceeded': {
-      const already = `${category} is already ${formatCurrency(projectedOverspend)} past its ${formatCurrency(budgeted)} plan.`;
+      const already = `${category} is already ${money(projectedOverspend)} past its ${money(budgeted)} plan.`;
       // Only add the projection when it says something the fact does not.
       return projected > spentSoFar
-        ? `${already} At this rate it finishes around ${formatCurrency(projected)}.`
+        ? `${already} At this rate it finishes around ${money(projected)}.`
         : already;
     }
     case 'will-exceed':
-      return `At this rate ${category} finishes the period around ${formatCurrency(projected)} — about ${formatCurrency(projectedOverspend)} over plan, with ${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'} still to go.`;
+      return `At this rate ${category} finishes the period around ${money(projected)} — about ${money(projectedOverspend)} over plan, with ${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'} still to go.`;
     case 'close':
-      return `${category} is on course to finish close to its limit: about ${formatCurrency(projected)} against a ${formatCurrency(budgeted)} plan.`;
+      return `${category} is on course to finish close to its limit: about ${money(projected)} against a ${money(budgeted)} plan.`;
     default:
-      return `${category} is tracking within plan — ${formatCurrency(spentSoFar)} of ${formatCurrency(budgeted)} so far.`;
+      return `${category} is tracking within plan — ${money(spentSoFar)} of ${money(budgeted)} so far.`;
   }
 }
 

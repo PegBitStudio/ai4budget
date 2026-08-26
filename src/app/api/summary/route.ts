@@ -4,6 +4,7 @@ import { buildSummaryData, generateSummary } from '@/lib/summaryGenerator';
 import { getLLMClient } from '@/lib/llmClient';
 import { getCurrentMonthPeriod } from '@/utils/dateUtils';
 import { Category } from '@/models/category';
+import { getUserCurrency } from '@/lib/userCurrency';
 
 export const dynamic = 'force-dynamic';
 
@@ -117,7 +118,8 @@ export async function GET() {
 
     // Generate summary with LLM
     const llmClient = getLLMClient();
-    const summary = await generateSummary(summaryData, true, llmClient);
+    const currency = await getUserCurrency();
+    const summary = await generateSummary(summaryData, true, llmClient, currency);
 
     return NextResponse.json({
       summary,

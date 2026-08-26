@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { formatCurrency } from '@/utils/formatters';
 import BudgetProgress from '@/components/budget/BudgetProgress';
 import BudgetForecast from '@/components/budget/BudgetForecast';
 import { PageHeader } from "@/components/ui/primitives";
@@ -34,13 +35,6 @@ interface BudgetComparison {
 
 // --- Helpers ---
 
-function formatCurrency(amount: number): string {
-  const formatted = Math.abs(amount)
-    .toFixed(2)
-    .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  const sign = amount < 0 ? '-' : '';
-  return `${sign}₦${formatted}`;
-}
 
 /**
  * Renders a period as "1 – 31 August 2026", collapsing the repeated month and

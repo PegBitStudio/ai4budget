@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { buildReport, REPORT_KINDS, type ReportKind } from '@/lib/reportBuilder';
 import { Category } from '@/models/category';
+import { getUserCurrency } from '@/lib/userCurrency';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +27,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const currency = await getUserCurrency();
     const { searchParams } = new URL(request.url);
 
     const requestedKind = searchParams.get('kind');
@@ -78,6 +80,7 @@ export async function GET(request: NextRequest) {
       allocations,
       periodStart,
       periodEnd,
+      symbol: currency.symbol,
       periodLabel: new Date(month.year, month.month - 1, 1).toLocaleDateString(
         'en-NG',
         { month: 'long', year: 'numeric' }

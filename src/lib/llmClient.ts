@@ -1,7 +1,8 @@
 import OpenAI from 'openai';
 import { Category, CATEGORIES } from '@/models/category';
 import type { RawParsedAlert } from './alertParser';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency as money } from '@/utils/formatters';
+import { DEFAULT_CURRENCY } from '@/config/currencies';
 
 // --- Interfaces ---
 
@@ -30,8 +31,15 @@ export interface FinancialContext {
 
 export interface ILLMClient {
   classifyTransaction(description: string): Promise<Category | null>;
-  generateSummary(data: SummaryInput): Promise<string>;
-  answerQuestion(question: string, context: FinancialContext): Promise<string>;
+  generateSummary(
+    data: SummaryInput,
+    currency?: { llmName: string; symbol: string }
+  ): Promise<string>;
+  answerQuestion(
+    question: string,
+    context: FinancialContext,
+    currency?: { llmName: string; symbol: string }
+  ): Promise<string>;
   parseBankAlerts(text: string): Promise<RawParsedAlert[] | null>;
   isAvailable(): boolean;
 }
@@ -51,11 +59,22 @@ const INITIAL_BACKOFF_MS = 1000;
 const CLASSIFY_SYSTEM_PROMPT =
   'You are a transaction classifier. Given a transaction description, return ONLY one of these categories: Housing, Transport, Groceries, Utilities, Entertainment, Dining, Health, Shopping, Subscriptions, Other. Respond with just the category name, nothing else.';
 
-const SUMMARY_SYSTEM_PROMPT =
-  'All money amounts are in Nigerian Naira and must always be written with the ₦ symbol - never convert to dollars or any other currency. You are a helpful financial assistant. Generate a plain-language summary of the user\'s finances. Use simple language that anyone can understand. Avoid abbreviations and financial jargon. Include a one-sentence assessment of whether the user is on track or over budget. Be concise and friendly.';
+/**
+ * The currency clause, built rather than hardcoded.
+ *
+ * An account keeping its books in Euros being told its total in Naira is worse
+ * than getting no summary at all, so the currency the user actually chose is
+ * named to the model instead of the one this product started with.
+ */
+function currencyClause(name: string, symbol: string): string {
+  return `All money amounts are in ${name} and must always be written with the ${symbol} symbol - never convert to another currency. `;
+}
 
-const QA_SYSTEM_PROMPT =
-  'All money amounts are in Nigerian Naira and must always be written with the ₦ symbol - never convert to dollars or any other currency. Write every amount as a finished figure, for example ₦218,200.00. Never show your arithmetic: do not write expressions like "₦(535,000.00 - 753,200.00)" or "= -₦218,200.00" - state the result on its own. Keep answers under 150 words: lead with the direct answer, then at most three short bullet points. Do not list every category unless asked. You are a financial data assistant. You can ONLY answer questions about the user\'s financial data provided in the context. Rules: 1) If the question is unrelated to finances, politely decline and say you can only help with financial questions. 2) If the question is ambiguous, ask a clarifying follow-up question. 3) Always include specific numeric values (amounts, percentages, totals) in your answers. 4) Never make up data - only reference what is in the provided context. 5) You must never recommend or evaluate an investment, a savings product, or what someone should do with money beyond budgeting it. If asked, say plainly that this is budgeting support and not financial advice, and that a licensed adviser is the right place for that question.';
+const SUMMARY_RULES =
+  'You are a helpful financial assistant. Generate a plain-language summary of the user\'s finances. Use simple language that anyone can understand. Avoid abbreviations and financial jargon. Include a one-sentence assessment of whether the user is on track or over budget. Be concise and friendly.';
+
+const QA_RULES =
+  'Write every amount as a finished figure with thousands separators. Never show your arithmetic: do not write expressions like "(535,000.00 - 753,200.00)" or "= -218,200.00" - state the result on its own. Keep answers under 150 words: lead with the direct answer, then at most three short bullet points. Do not list every category unless asked. You are a financial data assistant. You can ONLY answer questions about the user\'s financial data provided in the context. Rules: 1) If the question is unrelated to finances, politely decline and say you can only help with financial questions. 2) If the question is ambiguous, ask a clarifying follow-up question. 3) Always include specific numeric values (amounts, percentages, totals) in your answers. 4) Never make up data - only reference what is in the provided context. 5) You must never recommend or evaluate an investment, a savings product, or what someone should do with money beyond budgeting it. If asked, say plainly that this is budgeting support and not financial advice, and that a licensed adviser is the right place for that question.';
 
 const PARSE_ALERTS_SYSTEM_PROMPT = `You extract transactions from Nigerian bank debit and credit alert messages.
 
@@ -133,16 +152,19 @@ export class LLMClient implements ILLMClient {
     }
   }
 
-  async generateSummary(data: SummaryInput): Promise<string> {
+  async generateSummary(
+    data: SummaryInput,
+    currency: { llmName: string; symbol: string } = DEFAULT_CURRENCY
+  ): Promise<string> {
     if (!this.isAvailable()) {
       return 'Financial summary is temporarily unavailable. Please try again later.';
     }
 
-    const userMessage = this.buildSummaryPrompt(data);
+    const userMessage = this.buildSummaryPrompt(data, currency.symbol);
 
     try {
       const response = await this.callWithRetry(
-        SUMMARY_SYSTEM_PROMPT,
+        currencyClause(currency.llmName, currency.symbol) + SUMMARY_RULES,
         userMessage
       );
 
@@ -158,16 +180,20 @@ export class LLMClient implements ILLMClient {
 
   async answerQuestion(
     question: string,
-    context: FinancialContext
+    context: FinancialContext,
+    currency: { llmName: string; symbol: string } = DEFAULT_CURRENCY
   ): Promise<string> {
     if (!this.isAvailable()) {
       return 'The Q&A feature is temporarily unavailable. Please try again later.';
     }
 
-    const userMessage = this.buildQAPrompt(question, context);
+    const userMessage = this.buildQAPrompt(question, context, currency.symbol);
 
     try {
-      const response = await this.callWithRetry(QA_SYSTEM_PROMPT, userMessage);
+      const response = await this.callWithRetry(
+        currencyClause(currency.llmName, currency.symbol) + QA_RULES,
+        userMessage
+      );
 
       if (!response) {
         return 'Unable to answer your question at this time. Please try again later.';
@@ -229,7 +255,8 @@ export class LLMClient implements ILLMClient {
 
   // --- Private Methods ---
 
-  private buildSummaryPrompt(data: SummaryInput): string {
+  private buildSummaryPrompt(data: SummaryInput, symbol?: string): string {
+    const formatCurrency = (v: number) => money(v, symbol);
     let prompt = `Please summarize the following financial data for the ${data.periodType} period:\n\n`;
     prompt += `- Total Income: ${formatCurrency(data.totalIncome)}\n`;
     prompt += `- Total Spending: ${formatCurrency(data.totalSpending)}\n`;
@@ -250,7 +277,12 @@ export class LLMClient implements ILLMClient {
     return prompt;
   }
 
-  private buildQAPrompt(question: string, context: FinancialContext): string {
+  private buildQAPrompt(
+    question: string,
+    context: FinancialContext,
+    symbol?: string
+  ): string {
+    const formatCurrency = (v: number) => money(v, symbol);
     let prompt = `User's financial context for period: ${context.period}\n\n`;
 
     // Income and expenses are listed separately and labelled. Presented as one

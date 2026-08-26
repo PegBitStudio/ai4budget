@@ -89,10 +89,13 @@ export interface BuildReportInput {
   periodStart: string;
   periodEnd: string;
   periodLabel: string;
+  /** Explicit, because this runs on a server shared by every account. */
+  symbol?: string;
 }
 
 export function buildReport(input: BuildReportInput): Report {
-  const { kind, transactions, allocations, periodLabel } = input;
+  const { kind, transactions, allocations, periodLabel, symbol } = input;
+  const money = (value: number) => formatCurrency(value, symbol);
 
   const income = sum(transactions.filter((t) => t.type === 'income'));
   const spending = sum(transactions.filter((t) => t.type === 'expense'));
@@ -101,11 +104,11 @@ export function buildReport(input: BuildReportInput): Report {
   const base = {
     periodLabel,
     summary: [
-      { label: 'Money in', value: formatCurrency(income) },
-      { label: 'Money out', value: formatCurrency(spending) },
+      { label: 'Money in', value: money(income) },
+      { label: 'Money out', value: money(spending) },
       {
         label: net >= 0 ? 'Left over' : 'Short by',
-        value: formatCurrency(Math.abs(net)),
+        value: money(Math.abs(net)),
       },
     ],
   };
@@ -115,7 +118,7 @@ export function buildReport(input: BuildReportInput): Report {
       return {
         ...base,
         title: 'Spending by category',
-        headline: headlineForSpending(spending, transactions),
+        headline: headlineForSpending(spending, transactions, symbol),
         sections: [
           {
             heading: 'Every category, largest first',
@@ -131,7 +134,7 @@ export function buildReport(input: BuildReportInput): Report {
         title: 'Income',
         headline:
           income > 0
-            ? `${formatCurrency(income)} came in across ${countOf(transactions.filter((t) => t.type === 'income'))}.`
+            ? `${money(income)} came in across ${countOf(transactions.filter((t) => t.type === 'income'))}.`
             : 'No income was recorded for this period.',
         sections: [
           {
@@ -146,7 +149,7 @@ export function buildReport(input: BuildReportInput): Report {
       return {
         ...base,
         title: 'Cash flow',
-        headline: headlineForNet(net, income, spending),
+        headline: headlineForNet(net, income, spending, symbol),
         sections: [
           {
             heading: 'Week by week',
@@ -159,7 +162,7 @@ export function buildReport(input: BuildReportInput): Report {
       return {
         ...base,
         title: 'Budget performance',
-        headline: headlineForBudget(allocations, transactions),
+        headline: headlineForBudget(allocations, transactions, symbol),
         sections: [
           {
             heading: 'Planned against actual',
@@ -172,7 +175,7 @@ export function buildReport(input: BuildReportInput): Report {
       return {
         ...base,
         title: 'Monthly summary',
-        headline: headlineForNet(net, income, spending),
+        headline: headlineForNet(net, income, spending, symbol),
         sections: [
           {
             heading: 'Spending by category',
@@ -281,37 +284,42 @@ function budgetVariance(
 
 // --- Headlines -------------------------------------------------------------
 
-function headlineForNet(net: number, income: number, spending: number): string {
+function headlineForNet(net: number, income: number, spending: number, symbol?: string): string {
+  const money = (v: number) => formatCurrency(v, symbol);
   if (income === 0 && spending === 0) {
     return 'Nothing was recorded for this period.';
   }
   if (net < 0) {
-    return `You spent ${formatCurrency(Math.abs(net))} more than you earned — ${formatCurrency(spending)} out against ${formatCurrency(income)} in.`;
+    return `You spent ${money(Math.abs(net))} more than you earned — ${money(spending)} out against ${money(income)} in.`;
   }
   if (net === 0) {
-    return `You spent exactly what you earned: ${formatCurrency(income)}.`;
+    return `You spent exactly what you earned: ${money(income)}.`;
   }
   const rate = income > 0 ? Math.round((net / income) * 100) : 0;
-  return `You kept ${formatCurrency(net)} of ${formatCurrency(income)} — a saving rate of ${rate}%.`;
+  return `You kept ${money(net)} of ${money(income)} — a saving rate of ${rate}%.`;
 }
 
 function headlineForSpending(
   spending: number,
-  transactions: ReportTransaction[]
+  transactions: ReportTransaction[],
+  symbol?: string
 ): string {
+  const money = (v: number) => formatCurrency(v, symbol);
   const expenses = transactions.filter((t) => t.type === 'expense');
   if (expenses.length === 0) {
     return 'No spending was recorded for this period.';
   }
   const ranked = byCategory(expenses);
   const top = ranked[0];
-  return `${formatCurrency(spending)} across ${countOf(expenses)}. ${top.label} was the largest at ${formatCurrency(top.value)}, ${Math.round(top.share ?? 0)}% of everything you spent.`;
+  return `${money(spending)} across ${countOf(expenses)}. ${top.label} was the largest at ${money(top.value)}, ${Math.round(top.share ?? 0)}% of everything you spent.`;
 }
 
 function headlineForBudget(
   allocations: { category: Category; amount: number }[],
-  transactions: ReportTransaction[]
+  transactions: ReportTransaction[],
+  symbol?: string
 ): string {
+  const money = (v: number) => formatCurrency(v, symbol);
   if (allocations.length === 0) {
     return 'No budget was set for this period, so there is nothing to compare against.';
   }
@@ -323,7 +331,7 @@ function headlineForBudget(
   }
 
   const worst = over[0];
-  return `${over.length} of ${allocations.length} categories finished over plan. ${worst.label} was the furthest out, at ${formatCurrency(worst.value)} over.`;
+  return `${over.length} of ${allocations.length} categories finished over plan. ${worst.label} was the furthest out, at ${money(worst.value)} over.`;
 }
 
 // --- Helpers ---------------------------------------------------------------
