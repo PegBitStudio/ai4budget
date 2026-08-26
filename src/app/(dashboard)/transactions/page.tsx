@@ -1,336 +1,403 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { formatCurrency } from "@/utils/formatters";
+import { useState, useEffect, useCallback, useRef } from "react";
 import ImportPanel from "@/components/transactions/ImportPanel";
-import TransactionCard from "@/components/transactions/TransactionCard";
-import { PageHeader } from "@/components/ui/primitives";
+import TransactionTable, { SortKey } from "@/components/transactions/TransactionTable";
+import TransactionDrawer from "@/components/transactions/TransactionDrawer";
+import TransactionFilters, {
+  Filters,
+  EMPTY_FILTERS,
+} from "@/components/transactions/TransactionFilters";
+import type { Transaction } from "@/models/transaction";
+import {
+  Card,
+  Button,
+  PageHeader,
+  EmptyState,
+  cx,
+} from "@/components/ui/primitives";
 
-// --- Types ---
+const PAGE_SIZE = 25;
 
-interface Transaction {
-  id: string;
-  amount: number;
-  date: string;
-  description: string;
-  category: string;
-  type: "income" | "expense";
-}
-
-interface TransactionsResponse {
-  transactions: Transaction[];
-  total: number;
-}
-
-const CATEGORIES = [
-  "Housing",
-  "Transport",
-  "Groceries",
-  "Utilities",
-  "Entertainment",
-  "Dining",
-  "Health",
-  "Shopping",
-  "Subscriptions",
-  "Other",
-] as const;
-
-// --- Main Component ---
-
+/**
+ * The ledger page.
+ *
+ * Filtering, sorting and paging all happen on the server: the table shows one
+ * page of a possibly long history, so sorting only the 25 rows in hand would
+ * quietly sort the wrong set. Every control below writes into the same query
+ * string, and one effect turns that into one request.
+ */
 export default function TransactionsPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [rows, setRows] = useState<Transaction[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [sort, setSort] = useState<SortKey>("date");
+  const [dir, setDir] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(0);
+
+  const [selected, setSelected] = useState<Transaction | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
-  // Form state
-  const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("");
-  const [type, setType] = useState<"income" | "expense">("expense");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [category, setCategory] = useState("");
+  // Typing should not fire a request per keystroke.
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(filters.search), 250);
+    return () => clearTimeout(id);
+  }, [filters.search]);
 
-  const fetchTransactions = useCallback(async () => {
+  // Any change to what is being asked for sends you back to the first page —
+  // page 3 of a different result set is a different, meaningless page.
+  useEffect(() => {
+    setPage(0);
+  }, [
+    debouncedSearch,
+    filters.category,
+    filters.type,
+    filters.from,
+    filters.to,
+    sort,
+    dir,
+  ]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+
+    const params = new URLSearchParams({
+      limit: String(PAGE_SIZE),
+      offset: String(page * PAGE_SIZE),
+      sort,
+      dir,
+    });
+    if (debouncedSearch) params.set("search", debouncedSearch);
+    if (filters.category) params.set("category", filters.category);
+    if (filters.type) params.set("type", filters.type);
+    if (filters.from) params.set("from", filters.from);
+    if (filters.to) params.set("to", filters.to);
+
     try {
-      const res = await fetch("/api/transactions?limit=50");
-      if (res.ok) {
-        const data: TransactionsResponse = await res.json();
-        setTransactions(data.transactions);
+      const res = await fetch(`/api/transactions?${params}`);
+      if (!res.ok) {
+        setLoadError("Could not load your transactions.");
+        return;
       }
+      const data = await res.json();
+      setRows(data.transactions ?? []);
+      setTotal(data.total ?? 0);
     } catch {
-      // Non-critical
+      setLoadError("Could not reach the server.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [
+    page,
+    sort,
+    dir,
+    debouncedSearch,
+    filters.category,
+    filters.type,
+    filters.from,
+    filters.to,
+  ]);
 
   useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions]);
+    load();
+  }, [load]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(null);
-    setSubmitting(true);
-
-    const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      setError("Please enter a valid amount greater than 0.");
-      setSubmitting(false);
-      return;
+  function toggleSort(key: SortKey) {
+    if (key === sort) {
+      setDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSort(key);
+      // Dates and amounts are most useful largest-first; text reads A-Z.
+      setDir(key === "description" || key === "category" ? "asc" : "desc");
     }
+  }
 
-    if (!description.trim()) {
-      setError("Please enter a description.");
-      setSubmitting(false);
-      return;
-    }
+  const filtered =
+    Boolean(debouncedSearch) ||
+    Boolean(filters.category) ||
+    Boolean(filters.type) ||
+    Boolean(filters.from) ||
+    Boolean(filters.to);
 
-    try {
-      const body: Record<string, unknown> = {
-        amount: parsedAmount,
-        description: description.trim(),
-        type,
-        date,
-      };
-
-      // Only include category if user explicitly selected one
-      if (category) {
-        body.category = category;
-      }
-
-      const res = await fetch("/api/transactions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "Failed to add transaction.");
-      } else {
-        setSuccess("Transaction added successfully.");
-        setAmount("");
-        setDescription("");
-        setCategory("");
-        setDate(new Date().toISOString().split("T")[0]);
-        setShowForm(false);
-        fetchTransactions();
-      }
-    } catch {
-      setError("Unable to reach the server. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const lastPage = Math.max(0, Math.ceil(total / PAGE_SIZE) - 1);
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Transactions"
         description="Everything recorded, sorted automatically."
+        actions={
+          <Button
+            variant={showForm ? "secondary" : "primary"}
+            onClick={() => setShowForm((s) => !s)}
+            aria-expanded={showForm}
+            aria-controls="add-transaction-form"
+          >
+            {showForm ? "Cancel" : "Add transaction"}
+          </Button>
+        }
       />
-      <ImportPanel onImported={fetchTransactions} />
 
-      {/* Action bar */}
-      <div className="flex items-center justify-between mb-4">
-        {/* The empty state below already says there is nothing here. */}
-        <p className="text-sm text-ink-500">
-          {transactions.length > 0
-            ? `${transactions.length} recent transaction${transactions.length === 1 ? "" : "s"}`
-            : ""}
-        </p>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-ink-900 px-3.5 py-2 text-sm font-medium text-paper hover:bg-ink-900 transition-colors min-h-[44px]"
-          aria-expanded={showForm}
-          aria-controls="add-transaction-form"
-        >
-          {showForm ? (
-            <>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-              </svg>
-              Cancel
-            </>
-          ) : (
-            <>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
-              </svg>
-              Add
-            </>
-          )}
-        </button>
-      </div>
-
-      {/* Feedback messages */}
-      {error && (
-        <div className="mb-4 rounded-lg border border-negative-100 bg-negative-50 p-3 text-sm text-negative-700" role="alert">
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className="mb-4 rounded-lg border border-positive-100 bg-positive-50 p-3 text-sm text-positive-700" role="status">
-          {success}
-        </div>
-      )}
-
-      {/* Add transaction form */}
       {showForm && (
-        <form
-          id="add-transaction-form"
-          onSubmit={handleSubmit}
-          className="mb-6 rounded-lg border border-ink-200 bg-paper p-4 shadow-card space-y-4"
-        >
-          {/* Type toggle */}
-          <div className="flex rounded-lg bg-ink-100 p-1">
-            <button
-              type="button"
-              onClick={() => setType("expense")}
-              className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors min-h-[40px] ${
-                type === "expense"
-                  ? "bg-paper text-negative-600 shadow-card"
-                  : "text-ink-600 hover:text-ink-900"
-              }`}
-            >
-              Expense
-            </button>
-            <button
-              type="button"
-              onClick={() => setType("income")}
-              className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors min-h-[40px] ${
-                type === "income"
-                  ? "bg-paper text-positive-600 shadow-card"
-                  : "text-ink-600 hover:text-ink-900"
-              }`}
-            >
-              Income
-            </button>
+        <AddTransactionForm
+          onAdded={() => {
+            setShowForm(false);
+            load();
+          }}
+        />
+      )}
+
+      <ImportPanel onImported={load} />
+
+      <Card className="overflow-hidden">
+        <div className="border-b border-ink-100 px-5 py-4">
+          <TransactionFilters
+            value={filters}
+            onChange={setFilters}
+            total={total}
+            showing={rows.length}
+          />
+        </div>
+
+        <div className="px-5">
+          {loadError ? (
+            <p role="alert" className="py-10 text-center text-body text-negative-700">
+              {loadError}
+            </p>
+          ) : !loading && rows.length === 0 ? (
+            <div className="py-6">
+              <EmptyState
+                title={filtered ? "Nothing matches those filters" : "No transactions yet"}
+                description={
+                  filtered
+                    ? "Try a wider date range, or clear the filters to see everything."
+                    : "Add one by hand, paste your bank alerts, or drop in a CSV — the assistant files each one for you."
+                }
+                action={
+                  filtered ? (
+                    <Button onClick={() => setFilters(EMPTY_FILTERS)}>
+                      Clear filters
+                    </Button>
+                  ) : (
+                    <Button variant="primary" onClick={() => setShowForm(true)}>
+                      Add your first transaction
+                    </Button>
+                  )
+                }
+              />
+            </div>
+          ) : (
+            <TransactionTable
+              rows={rows}
+              loading={loading}
+              sort={sort}
+              dir={dir}
+              onSort={toggleSort}
+              onSelect={setSelected}
+              selectedId={selected?.id}
+            />
+          )}
+        </div>
+
+        {total > PAGE_SIZE && (
+          <div className="flex items-center justify-between gap-3 border-t border-ink-100 px-5 py-3">
+            <p className="text-label tnum text-ink-500">
+              Page {page + 1} of {lastPage + 1}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0 || loading}
+              >
+                Previous
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
+                disabled={page >= lastPage || loading}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      <TransactionDrawer
+        transaction={selected}
+        onClose={() => setSelected(null)}
+        onChanged={load}
+      />
+    </div>
+  );
+}
+
+// --- Add form --------------------------------------------------------------
+
+/**
+ * Kept deliberately short. There is no category picker here: the classifier
+ * chooses one from the description, and the drawer is where you correct it —
+ * offering a field the create endpoint ignores would be a control that lies.
+ */
+function AddTransactionForm({ onAdded }: { onAdded: () => void }) {
+  const [amount, setAmount] = useState("");
+  const [description, setDescription] = useState("");
+  const [type, setType] = useState<"income" | "expense">("expense");
+  const [date, setDate] = useState(localToday());
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const firstField = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    firstField.current?.focus();
+  }, []);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    const parsed = parseFloat(amount);
+    if (isNaN(parsed) || parsed <= 0) {
+      setError("Enter an amount greater than zero.");
+      return;
+    }
+    if (!description.trim()) {
+      setError("Enter a description.");
+      return;
+    }
+    if (date > localToday()) {
+      setError("Pick a date that is not in the future.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const res = await fetch("/api/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: parsed,
+          description: description.trim(),
+          type,
+          date,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Could not add that transaction.");
+        return;
+      }
+      setAmount("");
+      setDescription("");
+      onAdded();
+    } catch {
+      setError("Could not reach the server. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="animate-rise p-5" as="section">
+      <form id="add-transaction-form" onSubmit={submit} noValidate>
+        {error && (
+          <p role="alert" className="mb-4 rounded-md bg-negative-50 p-3 text-body text-negative-700">
+            {error}
+          </p>
+        )}
+
+        <div className="grid gap-4 sm:grid-cols-[auto_1fr_10rem_10rem]">
+          <div className="flex self-end rounded-md border border-ink-200 p-0.5">
+            {(["expense", "income"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setType(t)}
+                aria-pressed={type === t}
+                className={cx(
+                  "min-h-9 rounded-sm px-4 text-label font-medium transition-colors duration-[--duration-fast]",
+                  type === t ? "bg-ink-900 text-paper" : "text-ink-600 hover:text-ink-900"
+                )}
+              >
+                {t === "expense" ? "Money out" : "Money in"}
+              </button>
+            ))}
           </div>
 
-          {/* Amount */}
           <div>
-            <label htmlFor="amount" className="block text-sm font-medium text-ink-700 mb-1">
+            <label htmlFor="t-desc" className="mb-1.5 block text-label font-medium text-ink-700">
+              Description
+            </label>
+            <input
+              id="t-desc"
+              ref={firstField}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="e.g. Groceries at Shoprite"
+              maxLength={255}
+              className={field}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="t-amount" className="mb-1.5 block text-label font-medium text-ink-700">
               Amount
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 text-sm">₦</span>
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-label text-ink-400">
+                ₦
+              </span>
               <input
-                id="amount"
+                id="t-amount"
                 type="number"
                 step="0.01"
                 min="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
-                required
-                className="w-full min-h-[44px] pl-7 pr-3 py-2 text-base border border-ink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink-700 focus:border-transparent"
+                className={cx(field, "pl-7 tnum")}
               />
             </div>
           </div>
 
-          {/* Description */}
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-ink-700 mb-1">
-              Description
-            </label>
-            <input
-              id="description"
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. Grocery shopping at Shoprite"
-              required
-              maxLength={255}
-              className="w-full min-h-[44px] px-3 py-2 text-base border border-ink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink-700 focus:border-transparent"
-            />
-            <p className="mt-1 text-xs text-ink-400">
-              AI will auto-categorize based on description
-            </p>
-          </div>
-
-          {/* Date */}
-          <div>
-            <label htmlFor="date" className="block text-sm font-medium text-ink-700 mb-1">
+            <label htmlFor="t-date" className="mb-1.5 block text-label font-medium text-ink-700">
               Date
             </label>
             <input
-              id="date"
+              id="t-date"
               type="date"
               value={date}
+              max={localToday()}
               onChange={(e) => setDate(e.target.value)}
-              max={new Date().toISOString().split("T")[0]}
-              required
-              className="w-full min-h-[44px] px-3 py-2 text-base border border-ink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink-700 focus:border-transparent"
+              className={field}
             />
           </div>
-
-          {/* Category (optional override) */}
-          <div>
-            <label htmlFor="category" className="block text-sm font-medium text-ink-700 mb-1">
-              Category <span className="text-ink-400 font-normal">(optional)</span>
-            </label>
-            <select
-              id="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full min-h-[44px] px-3 py-2 text-base border border-ink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink-700 focus:border-transparent bg-paper"
-            >
-              <option value="">Auto-detect from description</option>
-              {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full min-h-[44px] rounded-lg bg-ink-900 px-4 py-2.5 text-sm font-medium text-paper hover:bg-ink-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {submitting ? "Adding..." : `Add ${type === "income" ? "Income" : "Expense"}`}
-          </button>
-        </form>
-      )}
-
-      {/* Transactions list */}
-      {loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-lg bg-ink-100" />
-          ))}
         </div>
-      ) : transactions.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="w-14 h-14 rounded-full bg-ink-100 flex items-center justify-center mx-auto mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7 text-ink-400">
-              <path d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 9a.75.75 0 0 0-1.5 0v2.25H9a.75.75 0 0 0 0 1.5h2.25V15a.75.75 0 0 0 1.5 0v-2.25H15a.75.75 0 0 0 0-1.5h-2.25V9Z" />
-            </svg>
-          </div>
-          <h3 className="text-sm font-medium text-ink-900 mb-1">No transactions yet</h3>
-          <p className="text-sm text-ink-500 mb-4">
-            Tap the Add button above to record your first transaction.
+
+        <div className="mt-4 flex items-center gap-3">
+          <Button type="submit" variant="primary" disabled={busy}>
+            {busy ? "Adding…" : "Add transaction"}
+          </Button>
+          <p className="text-label text-ink-500">
+            The assistant picks the category from your description.
           </p>
         </div>
-      ) : (
-        <div className="space-y-2">
-          {transactions.map((tx) => (
-            <TransactionCard
-              key={tx.id}
-              transaction={tx}
-              onChanged={fetchTransactions}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+      </form>
+    </Card>
   );
 }
 
+const field =
+  "min-h-10 w-full rounded-md border border-ink-200 px-3 text-body text-ink-900 transition-colors duration-[--duration-fast] focus:border-ink-900 focus:outline-none";
+
+function localToday(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}

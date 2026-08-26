@@ -6,6 +6,7 @@ import { classify } from '@/lib/classifier';
 import { getLLMClient } from '@/lib/llmClient';
 import { checkAlerts } from '@/lib/alertEngine';
 import { getCurrentMonthPeriod, getCurrentWeekPeriod } from '@/utils/dateUtils';
+import { parseListQuery } from '@/lib/transactionQuery';
 
 export const dynamic = 'force-dynamic';
 
@@ -203,12 +204,17 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const category = searchParams.get('category');
-    const from = searchParams.get('from');
-    const to = searchParams.get('to');
-    const type = searchParams.get('type');
-    const limit = parseInt(searchParams.get('limit') ?? '50', 10);
-    const offset = parseInt(searchParams.get('offset') ?? '0', 10);
+    const {
+      category,
+      from,
+      to,
+      type,
+      search,
+      limit,
+      offset,
+      sort,
+      ascending,
+    } = parseListQuery(searchParams);
 
     // Build query — RLS ensures user only gets their own data
     let query = supabase
@@ -224,12 +230,16 @@ export async function GET(request: NextRequest) {
     if (to) {
       query = query.lte('date', to);
     }
-    if (type && (type === 'income' || type === 'expense')) {
+    if (type) {
       query = query.eq('type', type);
+    }
+    if (search) {
+      query = query.ilike('description', `%${search}%`);
     }
 
     query = query
-      .order('date', { ascending: false })
+      .order(sort, { ascending })
+      // A stable tiebreak, so paging cannot show the same row twice.
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 

@@ -215,6 +215,23 @@ body {
   animation: drift 18s ease-in-out infinite;
 }
 
+/* A panel arriving from the right edge. Short and eased-out: the point is to
+   show where it came from, not to make you wait for it. */
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in var(--duration-slow) var(--ease-out-quart) both;
+}
+
 @keyframes rise {
   from {
     opacity: 0;
@@ -288,6 +305,7 @@ body {
   .animate-enter,
   .animate-grow,
   .animate-drift,
+  .animate-slide-in,
   .stagger > * {
     animation: none;
   }
