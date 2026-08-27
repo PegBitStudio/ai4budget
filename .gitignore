@@ -18,6 +18,12 @@
 .DS_Store
 *.pem
 
+# recordings — large binaries that don't belong in the repo history
+*.mp4
+*.mov
+*.mkv
+*.webm
+
 # debug
 npm-debug.log*
 yarn-debug.log*
