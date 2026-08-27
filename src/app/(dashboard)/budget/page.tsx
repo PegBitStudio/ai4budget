@@ -107,6 +107,8 @@ export default function BudgetPage() {
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState('');
   const [saving, setSaving] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Starting a budget by hand — from scratch, or from an uploaded template —
   // rather than from logged transactions.
@@ -240,6 +242,33 @@ export default function BudgetPage() {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setGenerating(false);
+    }
+  };
+
+  // Delete the current period's budget outright, rather than replacing it —
+  // for when what's there is wrong enough that even a fresh regenerate
+  // wouldn't be worth looking at first.
+  const handleDelete = async () => {
+    setDeleting(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/budget?period_type=${periodType}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok && res.status !== 204) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to delete budget');
+      }
+
+      setBudget(null);
+      setComparison(null);
+      setConfirmingDelete(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -572,14 +601,41 @@ export default function BudgetPage() {
               </div>
             </div>
 
-            {/* Regenerate button */}
-            <button
-              onClick={handleGenerate}
-              disabled={generating}
-              className="min-h-[44px] min-w-[44px] px-4 py-2 text-sm bg-ink-100 text-ink-700 font-medium rounded-lg hover:bg-ink-200 disabled:opacity-50 transition-colors"
-            >
-              {generating ? 'Regenerating...' : 'Regenerate Budget'}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={handleGenerate}
+                disabled={generating}
+                className="min-h-[44px] min-w-[44px] px-4 py-2 text-sm bg-ink-100 text-ink-700 font-medium rounded-lg hover:bg-ink-200 disabled:opacity-50 transition-colors"
+              >
+                {generating ? 'Regenerating...' : 'Regenerate Budget'}
+              </button>
+
+              {confirmingDelete ? (
+                <span className="flex items-center gap-2 text-sm text-negative-700">
+                  Delete this {periodType} budget?
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="min-h-[44px] rounded-lg bg-negative-600 px-3 py-2 text-sm font-medium text-paper hover:bg-negative-700 disabled:opacity-50"
+                  >
+                    {deleting ? 'Deleting...' : 'Yes, delete it'}
+                  </button>
+                  <button
+                    onClick={() => setConfirmingDelete(false)}
+                    className="min-h-[44px] rounded-lg border border-ink-300 px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100"
+                  >
+                    Cancel
+                  </button>
+                </span>
+              ) : (
+                <button
+                  onClick={() => setConfirmingDelete(true)}
+                  className="min-h-[44px] min-w-[44px] px-4 py-2 text-sm font-medium text-negative-700 rounded-lg hover:bg-negative-50 transition-colors"
+                >
+                  Delete budget
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Category Allocations */}

@@ -553,3 +553,66 @@ export async function PATCH(request: NextRequest) {
     );
   }
 }
+
+/**
+ * DELETE /api/budget?period_type=weekly|monthly
+ *
+ * Removes the budget for the current period, including every row "Regenerate"
+ * ever left behind for it — regenerating has always inserted a new row rather
+ * than replacing the old one, so more than one can exist for the same dates.
+ * Deleting all of them, not just the newest, is what makes the period
+ * genuinely empty again rather than falling back to whichever was created
+ * before it.
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+
+    const userId = request.headers.get('x-user-id');
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const periodValidation = PeriodTypeSchema.safeParse(
+      searchParams.get('period_type') ?? 'monthly'
+    );
+
+    if (!periodValidation.success) {
+      return NextResponse.json(
+        { error: 'Invalid period_type. Must be "weekly" or "monthly".' },
+        { status: 400 }
+      );
+    }
+
+    const periodType = periodValidation.data;
+    const currentPeriod =
+      periodType === 'monthly'
+        ? getCurrentMonthPeriod()
+        : getCurrentWeekPeriod();
+
+    const { error: deleteError } = await supabase
+      .from('budgets')
+      .delete()
+      .eq('period_type', periodType)
+      .eq('period_start', currentPeriod.start)
+      .eq('period_end', currentPeriod.end);
+
+    if (deleteError) {
+      console.error('[DELETE /api/budget] Failed to delete budget:', deleteError.message);
+      return NextResponse.json(
+        { error: 'Failed to delete budget' },
+        { status: 500 }
+      );
+    }
+
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    console.error('[DELETE /api/budget] Unexpected error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
