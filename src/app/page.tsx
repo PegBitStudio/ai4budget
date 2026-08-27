@@ -73,21 +73,13 @@ export default function LandingPage() {
 
         <div className="relative mx-auto grid max-w-6xl xl:max-w-7xl items-center gap-14 px-5 pb-24 pt-10 sm:px-8 sm:pt-16 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-12 lg:pb-28 xl:gap-16">
           <div className="animate-rise min-w-0">
-            <p className="inline-flex items-center gap-2 rounded-full border border-paper/15 bg-paper/5 px-3.5 py-1.5 text-eyebrow uppercase text-ink-300 backdrop-blur-sm">
-              <span aria-hidden="true" className="size-1.5 rounded-full bg-jade-500" />
-              {/* Built here, not limited to here. The local knowledge is the
-                  moat; the currency range is evidence it was engineered rather
-                  than hardcoded. */}
-              Built for Nigeria · Works in 8 currencies
-            </p>
-
             {/* Sized against the column it actually sits in, which is not the
                 same as the viewport: at `lg` the product card moves alongside
                 and the text column *narrows*, so the type steps back down
                 before opening up again at `xl` where the shell widens. Three
                 lines at every width. Tracking tightens as the size goes up, or
                 the words drift apart at display scale. */}
-            <h1 className="mt-6 text-[2.5rem] font-semibold leading-[1.02] tracking-[-0.03em] text-paper [text-wrap:balance] sm:text-[3.25rem] lg:text-[3.5rem] xl:text-[5.25rem] xl:tracking-[-0.024em]">
+            <h1 className="text-[2.5rem] font-semibold leading-[1.02] tracking-[-0.03em] text-paper [text-wrap:balance] sm:text-[3.25rem] lg:text-[3.5rem] xl:text-[5.25rem] xl:tracking-[-0.024em]">
               You earned well this month.{" "}
               <span className="text-ink-500">So where did it all go?</span>
             </h1>
