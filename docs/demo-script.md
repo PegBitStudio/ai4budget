@@ -17,6 +17,8 @@ doing something, do not describe the product.**
 - [ ] Close every other tab. Hide bookmarks. Full screen.
 - [ ] Do one silent dry run — the paste step takes ~6 seconds and you need to
       know what that silence feels like
+- [ ] Don't improvise beyond this script — every claim and figure in it was
+      verified against the live app today. Anything ad-libbed hasn't been
 - [ ] Record at 1440×900 or wider so the sidebar is visible
 
 **Paste buffer** (copy this before you start):
