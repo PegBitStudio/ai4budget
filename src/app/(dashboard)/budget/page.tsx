@@ -468,7 +468,8 @@ export default function BudgetPage() {
               {errorReason === 'no-income' && (
                 <p className="mb-3 max-w-md text-sm leading-6 text-ink-600">
                   There is no spending history to build this from yet — log a
-                  transaction first, or switch to "Start from scratch" above.
+                  transaction first, or switch to &ldquo;Start from
+                  scratch&rdquo; above.
                 </p>
               )}
               <button
@@ -486,7 +487,7 @@ export default function BudgetPage() {
               <p className="mb-3 max-w-md text-sm leading-6 text-ink-600">
                 Every category starts at ₦0. Set each one to whatever fits
                 your life — free transport, an HMO that covers Health, or
-                anything else the defaults don't know about.
+                anything else the defaults don&apos;t know about.
               </p>
               <button
                 onClick={handleStartBlank}
