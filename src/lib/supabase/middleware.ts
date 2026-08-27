@@ -36,9 +36,19 @@ export async function updateSession(request: NextRequest) {
   // Refresh the auth token — this is the key call that keeps sessions alive.
   // Do not remove this line or wrap it in a condition. Always call getUser()
   // so expired tokens get refreshed before reaching server components/routes.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  //
+  // This runs on every request to a protected route, in Edge Middleware,
+  // ahead of every page and API route. A getUser() call that hangs — a slow
+  // or briefly unreachable Auth API — used to hang the middleware itself,
+  // and Vercel turns that into a GATEWAY_TIMEOUT on the entire site, not just
+  // the one request. Racing it against a timeout means a bad moment for the
+  // Auth API degrades to "signed out" for that request instead of taking the
+  // whole app down; RLS on every table is the real access boundary regardless
+  // of what this function decides.
+  const user = await Promise.race([
+    supabase.auth.getUser().then(({ data }) => data.user),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
+  ]);
 
   return { supabaseResponse, user };
 }
