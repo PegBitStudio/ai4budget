@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KoboPilot Shooting Script</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --paper: #faf8f4;
+    --paper-raised: #ffffff;
+    --ink-950: #16181a;
+    --ink-800: #2b2e31;
+    --ink-600: #5b6165;
+    --ink-400: #8b9195;
+    --ink-200: #dcd8d0;
+    --ink-100: #eae7e0;
+    --jade-700: #0d6b56;
+    --jade-600: #0f7a63;
+    --jade-100: #dceee7;
+    --amber-700: #8a5a10;
+    --amber-100: #f6e9d2;
+    --red-700: #9c3428;
+    --red-100: #f5e0dc;
+    --code-bg: #1c1e1f;
+    --code-ink: #e9e6de;
+    --code-accent: #6fd8b8;
+    --shadow: 0 1px 2px rgba(20,18,14,0.04), 0 8px 24px -12px rgba(20,18,14,0.14);
+    --serif: "Fraunces", Georgia, "Times New Roman", serif;
+    --sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #121314;
+      --paper-raised: #1a1c1d;
+      --ink-950: #f3f1ec;
+      --ink-800: #d8d5cd;
+      --ink-600: #a3a09a;
+      --ink-400: #726f6a;
+      --ink-200: #33322f;
+      --ink-100: #26282a;
+      --jade-700: #7ee0c2;
+      --jade-600: #5fc9a9;
+      --jade-100: #1b332c;
+      --amber-700: #e8c583;
+      --amber-100: #3a2f18;
+      --red-700: #e8a99c;
+      --red-100: #3a201b;
+      --code-bg: #0a0b0b;
+      --code-ink: #e9e6de;
+      --code-accent: #6fd8b8;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #121314;
+    --paper-raised: #1a1c1d;
+    --ink-950: #f3f1ec;
+    --ink-800: #d8d5cd;
+    --ink-600: #a3a09a;
+    --ink-400: #726f6a;
+    --ink-200: #33322f;
+    --ink-100: #26282a;
+    --jade-700: #7ee0c2;
+    --jade-600: #5fc9a9;
+    --jade-100: #1b332c;
+    --amber-700: #e8c583;
+    --amber-100: #3a2f18;
+    --red-700: #e8a99c;
+    --red-100: #3a201b;
+    --code-bg: #0a0b0b;
+    --code-ink: #e9e6de;
+    --code-accent: #6fd8b8;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink-950);
+    font-family: var(--sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 6rem;
+  }
+
+  header.masthead {
+    margin-bottom: 2.25rem;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--jade-700);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .eyebrow .dot {
+    width: 6px; height: 6px; border-radius: 999px;
+    background: var(--jade-600);
+    display: inline-block;
+  }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(1.9rem, 4vw, 2.5rem);
+    letter-spacing: -0.01em;
+    margin: 0.5rem 0 0.6rem;
+    text-wrap: balance;
+  }
+  .limit-line {
+    font-size: 1rem;
+    color: var(--ink-600);
+    margin: 0 0 0.9rem;
+    line-height: 1.6;
+  }
+  .limit-line strong { color: var(--ink-950); }
+  .rule-box {
+    background: var(--jade-100);
+    border: 1px solid var(--jade-600);
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+    font-size: 0.95rem;
+    color: var(--ink-800);
+  }
+  .rule-box strong { color: var(--jade-700); }
+  .warn-box {
+    background: var(--amber-100);
+    border: 1px solid var(--amber-700);
+    border-radius: 10px;
+    padding: 0.85rem 1.05rem;
+    font-size: 0.9rem;
+    color: var(--ink-800);
+    margin-top: 0.75rem;
+    line-height: 1.6;
+  }
+  .warn-box strong { color: var(--amber-700); }
+
+  /* quick nav */
+  nav.toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 1.75rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  nav.toc a {
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    color: var(--ink-600);
+    background: var(--paper-raised);
+    border: 1px solid var(--ink-200);
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    text-decoration: none;
+    transition: border-color 120ms ease, color 120ms ease;
+  }
+  nav.toc a:hover { border-color: var(--jade-600); color: var(--jade-700); }
+
+  section { margin-top: 2.75rem; }
+  h2 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 1.3rem;
+    letter-spacing: -0.005em;
+    margin: 0 0 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--ink-200);
+  }
+
+  /* checklist */
+  ul.checklist { list-style: none; margin: 0; padding: 0; }
+  ul.checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--ink-100);
+    font-size: 0.96rem;
+    color: var(--ink-800);
+  }
+  ul.checklist li:last-child { border-bottom: none; }
+  ul.checklist input[type="checkbox"] {
+    appearance: none;
+    width: 19px; height: 19px;
+    border: 1.5px solid var(--ink-400);
+    border-radius: 5px;
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+    cursor: pointer;
+    position: relative;
+    background: var(--paper-raised);
+  }
+  ul.checklist input[type="checkbox"]:checked {
+    background: var(--jade-600);
+    border-color: var(--jade-600);
+  }
+  ul.checklist input[type="checkbox"]:checked::after {
+    content: "";
+    position: absolute;
+    left: 5px; top: 1px;
+    width: 5px; height: 10px;
+    border: solid var(--paper);
+    border-width: 0 2px 2px 0;
+    transform: rotate(40deg);
+  }
+  ul.checklist li.checked label { color: var(--ink-400); text-decoration: line-through; }
+  ul.checklist label { cursor: pointer; }
+  ul.checklist code {
+    font-family: var(--mono);
+    background: var(--ink-100);
+    padding: 0.1rem 0.35rem;
+    border-radius: 5px;
+    font-size: 0.85em;
+  }
+
+  /* code / paste buffer */
+  .codeblock-wrap { position: relative; margin-top: 0.9rem; }
+  pre.pastebuf {
+    background: var(--code-bg);
+    color: var(--code-ink);
+    font-family: var(--mono);
+    font-size: 0.83rem;
+    line-height: 1.65;
+    padding: 1.25rem 1.1rem;
+    border-radius: 12px;
+    overflow-x: auto;
+    white-space: pre;
+    margin: 0;
+    box-shadow: var(--shadow);
+  }
+  .copy-btn {
+    position: absolute;
+    top: 0.7rem; right: 0.7rem;
+    font-family: var(--sans);
+    font-size: 0.76rem;
+    font-weight: 600;
+    background: rgba(255,255,255,0.08);
+    color: var(--code-accent);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 7px;
+    padding: 0.4rem 0.7rem;
+    cursor: pointer;
+    transition: background 120ms ease;
+  }
+  .copy-btn:hover { background: rgba(255,255,255,0.16); }
+  .copy-btn.copied { color: #fff; background: var(--jade-600); border-color: var(--jade-600); }
+  .buf-note {
+    font-size: 0.88rem;
+    color: var(--ink-600);
+    margin-top: 0.75rem;
+    line-height: 1.6;
+  }
+  .buf-note strong { color: var(--ink-800); }
+
+  /* timed sections */
+  .shot {
+    background: var(--paper-raised);
+    border: 1px solid var(--ink-200);
+    border-radius: 14px;
+    padding: 1.4rem 1.5rem 1.6rem;
+    box-shadow: var(--shadow);
+  }
+  .shot + .shot { margin-top: 1.5rem; }
+  .timecode {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--jade-700);
+    background: var(--jade-100);
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    font-weight: 500;
+    margin-bottom: 0.9rem;
+  }
+  .beat { margin-top: 1rem; }
+  .beat:first-of-type { margin-top: 0; }
+  .stage {
+    font-family: var(--sans);
+    font-style: italic;
+    font-size: 0.84rem;
+    color: var(--ink-600);
+    margin: 0 0 0.4rem;
+  }
+  .stage::before { content: "▸ "; color: var(--jade-600); font-style: normal; }
+  blockquote.line {
+    margin: 0;
+    padding: 0 0 0 0.95rem;
+    border-left: 2.5px solid var(--jade-600);
+    font-family: var(--serif);
+    font-size: 1.08rem;
+    line-height: 1.55;
+    color: var(--ink-950);
+  }
+  blockquote.line p { margin: 0 0 0.5rem; }
+  blockquote.line p:last-child { margin-bottom: 0; }
+  .callout {
+    margin-top: 1.1rem;
+    font-size: 0.87rem;
+    color: var(--ink-800);
+    background: var(--ink-100);
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+    line-height: 1.55;
+  }
+  .callout strong { color: var(--ink-950); }
+
+  /* cut list */
+  ol.cutlist {
+    margin: 0;
+    padding-left: 1.3rem;
+    font-size: 0.95rem;
+    color: var(--ink-800);
+    line-height: 1.75;
+  }
+  .never-cut {
+    margin-top: 1rem;
+    background: var(--red-100);
+    border-radius: 8px;
+    padding: 0.75rem 0.95rem;
+    font-size: 0.9rem;
+    color: var(--red-700);
+    font-weight: 600;
+  }
+
+  /* marks list */
+  ul.marks { list-style: none; margin: 0; padding: 0; }
+  ul.marks li {
+    display: flex;
+    gap: 0.7rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--ink-100);
+    font-size: 0.93rem;
+    color: var(--ink-800);
+    line-height: 1.55;
+  }
+  ul.marks li:last-child { border-bottom: none; }
+  ul.marks .x {
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    border-radius: 999px;
+    background: var(--amber-100);
+    color: var(--amber-700);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 0.1rem;
+  }
+  ul.marks strong { color: var(--ink-950); }
+
+  footer.foot {
+    margin-top: 3.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--ink-200);
+    font-size: 0.82rem;
+    color: var(--ink-400);
+    text-align: center;
+  }
+
+  @media (max-width: 480px) {
+    .wrap { padding: 2rem 1.1rem 4rem; }
+    .shot { padding: 1.1rem 1.1rem 1.3rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow"><span class="dot"></span>AI BuildFest 2026 — Track 3</p>
+    <h1>KoboPilot shooting script</h1>
+    <p class="limit-line"><strong>Limit: 3 minutes.</strong> This version targets about 2:15 written, on purpose. The last take ran 3:24 against a script estimated at 2:50 — a ~20% overrun in delivery. Read this one a little brisker than feels natural.</p>
+    <div class="rule-box">
+      Judges score <em>Presentation &amp; Storytelling</em> at 15%, and it's the
+      only criterion entirely within your control on the day. The single rule:
+      <strong>show the product doing something, do not describe the product.</strong>
+    </div>
+    <div class="warn-box">
+      <strong>Pacing lesson from the last take:</strong> if your timed dry run
+      lands past 2:45, cut before you record for real — don't find out live.
+    </div>
+
+    <nav class="toc" aria-label="Jump to section">
+      <a href="#before">Before you record</a>
+      <a href="#s1">0:00 Open</a>
+      <a href="#s2">0:10 Overview</a>
+      <a href="#s3">0:25 Hook</a>
+      <a href="#s4">1:05 Budget</a>
+      <a href="#s5">1:25 Insights</a>
+      <a href="#s6">1:45 Ask it</a>
+      <a href="#s7">2:05 Close</a>
+      <a href="#cut">If you run long</a>
+      <a href="#marks">Costs marks</a>
+    </nav>
+  </header>
+
+  <section id="before">
+    <h2>Before you record</h2>
+    <ul class="checklist" id="checklist"></ul>
+
+    <div class="codeblock-wrap">
+      <pre class="pastebuf" id="pastebuf">GTBank Alert
+Txn: NGN6,200.00
+Acc: ****4471
+Desc: POS/WEB PURCHASE/CHOWDECK LAGOS
+Date: 24-AUG-2026
+
+Debit Alert
+Amount: NGN 15,000.00
+Description: TOTAL FILLING STATION LEKKI
+Date &amp; Time: 23-Aug-2026 07:41:02
+
+Zenith Bank
+Amt: NGN 3,500.00 DR
+Desc: BOLT RIDE
+Date: 22/08/2026
+
+You sent ₦18,400.00 to JUMIA NIGERIA on 21 Aug 2026.
+
+Opay: You received ₦25,000.00 from ADEBAYO T. on 20 Aug 2026.
+
+Dear customer, your transaction OTP is 771204. Never share this code.</pre>
+      <button class="copy-btn" id="copyBtn" type="button">Copy buffer</button>
+    </div>
+    <p class="buf-note">
+      That buffer is deliberate: five banks, five formats, one credit, and an
+      OTP that must be ignored. <strong>Verified against production</strong> —
+      it returns exactly five transactions in about four seconds.
+    </p>
+  </section>
+
+  <section id="s1">
+    <h2>0:00 – 0:10 · Open</h2>
+    <div class="shot">
+      <span class="timecode">LANDING PAGE → EXPLORE THE DEMO ACCOUNT</span>
+      <div class="beat">
+        <blockquote class="line"><p>"KoboPilot turns your bank alerts into a budget you never had to type in yourself."</p></blockquote>
+      </div>
+      <div class="callout">
+        <strong>No preamble.</strong> No name, no track number, no "the problem is." One sentence, then click.
+      </div>
+    </div>
+  </section>
+
+  <section id="s2">
+    <h2>0:10 – 0:25 · Overview</h2>
+    <div class="shot">
+      <span class="timecode">DASHBOARD</span>
+      <div class="beat">
+        <blockquote class="line"><p>"A month, already read and sorted. Over ₦750,000 spent against ₦535,000 earned — and it already told me Shopping is the problem."</p></blockquote>
+      </div>
+      <div class="callout">
+        The exact spent figure drifts a little day to day as the demo data ages — that's why this line says "over ₦750,000" rather than an exact number. Don't pin it to a specific figure.
+      </div>
+    </div>
+  </section>
+
+  <section id="s3">
+    <h2>0:25 – 1:05 · The hook — paste your alerts</h2>
+    <div class="shot">
+      <span class="timecode">TRANSACTIONS → IMPORT YOUR SPENDING</span>
+      <div class="beat">
+        <p class="stage">Paste the buffer → "Read these alerts"</p>
+        <blockquote class="line"><p>"Five alerts, five banks — exactly how they arrive."</p></blockquote>
+      </div>
+      <div class="beat">
+        <p class="stage">While it reads — ~5 seconds. One sentence, then silence:</p>
+        <blockquote class="line"><p>"Reading them now."</p></blockquote>
+      </div>
+      <div class="beat">
+        <p class="stage">Review table appears</p>
+        <blockquote class="line"><p>"Numbers stripped, everything categorised, nothing saved yet."</p></blockquote>
+      </div>
+      <div class="beat">
+        <p class="stage">Click "Add 5 transactions"</p>
+      </div>
+      <div class="callout">
+        <strong>Still the strongest 40 seconds in the video.</strong> Don't rush the paste itself — trim words elsewhere, not here.
+      </div>
+    </div>
+  </section>
+
+  <section id="s4">
+    <h2>1:05 – 1:25 · Budget</h2>
+    <div class="shot">
+      <span class="timecode">BUDGET PAGE</span>
+      <div class="beat">
+        <blockquote class="line"><p>"The budget is fully mine to edit — change one category and only that one moves. Shopping's already ₦300,500 against a ₦20,000 plan."</p></blockquote>
+      </div>
+    </div>
+  </section>
+
+  <section id="s5">
+    <h2>1:25 – 1:45 · Insights</h2>
+    <div class="shot">
+      <span class="timecode">INSIGHTS PAGE — point at the anomaly</span>
+      <div class="beat">
+        <blockquote class="line"><p>"It catches what I'd miss myself — this purchase is 18 times my usual Shopping spend, and it's put my savings goal three months further away."</p></blockquote>
+      </div>
+    </div>
+  </section>
+
+  <section id="s6">
+    <h2>1:45 – 2:05 · Ask it anything</h2>
+    <div class="shot">
+      <span class="timecode">ASSISTANT PAGE</span>
+      <div class="beat">
+        <p class="stage">Click the starter chip "What should I cut first?"</p>
+        <blockquote class="line"><p>"And I can just ask."</p></blockquote>
+      </div>
+      <div class="beat">
+        <p class="stage">Answer appears</p>
+        <blockquote class="line"><p>"Same numbers, in plain English."</p></blockquote>
+      </div>
+    </div>
+  </section>
+
+  <section id="s7">
+    <h2>2:05 – 2:15 · Close</h2>
+    <div class="shot">
+      <span class="timecode">ANY PAGE</span>
+      <div class="beat">
+        <blockquote class="line"><p>"Every figure here is computed, tested code. The AI only reads it back to you. KoboPilot."</p></blockquote>
+      </div>
+    </div>
+  </section>
+
+  <section id="cut">
+    <h2>What to cut if you run long</h2>
+    <ol class="cutlist">
+      <li>The Insights beat (1:25–1:45) — Budget already showed the over-plan number</li>
+      <li>Trim the Overview line to just the two figures, drop "already told me..."</li>
+      <li>The Assistant beat — keep it only if you're still under 2:30 without it</li>
+    </ol>
+    <p class="never-cut">Never cut the paste demo. That is the entry.</p>
+  </section>
+
+  <section id="marks">
+    <h2>Things that will cost you marks</h2>
+    <ul class="marks">
+      <li><span class="x">✕</span><span><strong>Reading the UI aloud.</strong> "Here's the dashboard, here are the cards." Judges can see it. Say what it means.</span></li>
+      <li><span class="x">✕</span><span><strong>Apologising.</strong> No "this is just a prototype", no "I didn't have time to".</span></li>
+      <li><span class="x">✕</span><span><strong>Dead air during the parse.</strong> Say one sentence, then let it land.</span></li>
+      <li><span class="x">✕</span><span><strong>Talking about the stack.</strong> Nobody scores you for Next.js. The written summary covers tools; the video is for the product.</span></li>
+      <li><span class="x">✕</span><span><strong>Starting with your name and the track number.</strong> Start with the product.</span></li>
+      <li><span class="x">✕</span><span><strong>Reading slower than your dry run.</strong> That's exactly how the last take ran 34 seconds long. Match your dry-run pace, not a more "presentational" one.</span></li>
+    </ul>
+  </section>
+
+  <footer class="foot">KoboPilot · AI BuildFest 2026 · Track 3, AI for Everyday Life</footer>
+</div>
+
+<script>
+  (function () {
+    var items = [
+      'Open <strong>kobopilot.vercel.app</strong> in a <strong>private window</strong> — no stale service worker, no logged-in session, and it proves the demo path works cold',
+      'Run <code>node scripts/seed-demo.mjs</code> so the demo account is clean and current',
+      'Have the alert text below <strong>already copied to your clipboard</strong>',
+      'Close every other tab. Hide bookmarks. Full screen.',
+      'Do one silent dry run, timed. If it runs past 2:45, cut before you record for real — don’t find out live.',
+      "Don't improvise beyond this script — every claim and figure in it was verified against the live app today. Anything ad-libbed hasn't been",
+      'Record at 1440×900 or wider so the sidebar is visible'
+    ];
+    var list = document.getElementById('checklist');
+    items.forEach(function (html, i) {
+      var li = document.createElement('li');
+      var id = 'chk-' + i;
+      li.innerHTML = '<input type="checkbox" id="' + id + '"><label for="' + id + '">' + html + '</label>';
+      list.appendChild(li);
+      var cb = li.querySelector('input');
+      cb.addEventListener('change', function () {
+        li.classList.toggle('checked', cb.checked);
+        try {
+          var state = JSON.parse(localStorage.getItem('kobopilot-script-checklist-v2') || '{}');
+          state[i] = cb.checked;
+          localStorage.setItem('kobopilot-script-checklist-v2', JSON.stringify(state));
+        } catch (e) {}
+      });
+      try {
+        var saved = JSON.parse(localStorage.getItem('kobopilot-script-checklist-v2') || '{}');
+        if (saved[i]) { cb.checked = true; li.classList.add('checked'); }
+      } catch (e) {}
+    });
+
+    var copyBtn = document.getElementById('copyBtn');
+    var buf = document.getElementById('pastebuf');
+    copyBtn.addEventListener('click', function () {
+      var text = buf.innerText;
+      function done() {
+        copyBtn.textContent = 'Copied';
+        copyBtn.classList.add('copied');
+        setTimeout(function () {
+          copyBtn.textContent = 'Copy buffer';
+          copyBtn.classList.remove('copied');
+        }, 1600);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function () {
+          fallbackCopy(text, done);
+        });
+      } else {
+        fallbackCopy(text, done);
+      }
+    });
+    function fallbackCopy(text, cb) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      cb();
+    }
+  })();
+</script>
+</body>
+</html>
