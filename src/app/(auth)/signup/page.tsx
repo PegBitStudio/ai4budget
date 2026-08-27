@@ -6,15 +6,26 @@ import Link from "next/link";
 import { CURRENCIES, DEFAULT_CURRENCY_CODE } from "@/config/currencies";
 import { createClient } from "@/lib/supabase/client";
 
+/**
+ * Confirming the email, not the typing.
+ *
+ * A "confirm password" field only catches a typo — it says nothing about
+ * whether the address is real or theirs. A code sent to that address does
+ * both jobs: it is its own confirmation field, and it proves the account is
+ * reachable before it is trusted with anything.
+ */
 export default function SignupPage() {
   const router = useRouter();
+  const [stage, setStage] = useState<"details" | "verify">("details");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [currency, setCurrency] = useState(DEFAULT_CURRENCY_CODE);
   const [disclaimerAcknowledged, setDisclaimerAcknowledged] = useState(false);
+  const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -22,11 +33,6 @@ export default function SignupPage() {
 
     if (password.length < 6) {
       setError("Password must be at least 6 characters");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
       return;
     }
 
@@ -55,11 +61,137 @@ export default function SignupPage() {
         return;
       }
 
-      router.push("/dashboard");
+      setLoading(false);
+      setStage("verify");
     } catch {
       setError("An unexpected error occurred. Please try again.");
       setLoading(false);
     }
+  }
+
+  async function handleVerify(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+
+    const token = code.trim();
+    if (token.length !== 6) {
+      setError("Enter the 6-digit code from your email.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const supabase = createClient();
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: "signup",
+      });
+
+      if (verifyError) {
+        setError("That code is incorrect or has expired. Request a new one below.");
+        setLoading(false);
+        return;
+      }
+
+      router.push("/dashboard");
+      router.refresh();
+    } catch {
+      setError("Could not reach the server. Please try again.");
+      setLoading(false);
+    }
+  }
+
+  async function handleResend() {
+    setError(null);
+    setResent(false);
+    setResending(true);
+
+    try {
+      const supabase = createClient();
+      const { error: resendError } = await supabase.auth.resend({
+        type: "signup",
+        email,
+      });
+
+      if (resendError) {
+        setError("Could not resend the code. Please try again shortly.");
+      } else {
+        setResent(true);
+      }
+    } catch {
+      setError("Could not reach the server. Please try again.");
+    } finally {
+      setResending(false);
+    }
+  }
+
+  if (stage === "verify") {
+    return (
+      <div>
+        <h1 className="text-3xl font-semibold tracking-[-0.025em] text-ink-950">
+          Check your email
+        </h1>
+        <p className="mt-3 text-body leading-relaxed text-ink-600">
+          We sent a 6-digit code to{" "}
+          <span className="font-medium text-ink-900">{email}</span>. Enter it
+          below to confirm the account.
+        </p>
+
+        <form onSubmit={handleVerify} noValidate className="mt-8 space-y-4">
+          {error && (
+            <p role="alert" className="rounded-md bg-negative-50 p-3 text-body text-negative-700">
+              {error}
+            </p>
+          )}
+
+          <div>
+            <label htmlFor="otp" className="mb-1.5 block text-label font-medium text-ink-700">
+              Verification code
+            </label>
+            <input
+              id="otp"
+              name="otp"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
+              autoComplete="one-time-code"
+              required
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              className={`${FIELD} tracking-[0.3em] text-center text-lg`}
+              placeholder="123456"
+              aria-required="true"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="min-h-11 w-full rounded-md bg-ink-900 px-4 text-body font-medium text-paper shadow-raised transition-[background-color,transform,box-shadow] duration-[--duration-base] ease-[--ease-out-quart] hover:-translate-y-0.5 hover:bg-ink-800 hover:shadow-overlay disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-ink-300 disabled:shadow-none motion-reduce:hover:translate-y-0"
+          >
+            {loading ? "Verifying…" : "Verify and continue"}
+          </button>
+
+          <p className="text-body text-ink-600">
+            Didn&apos;t get it?{" "}
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={resending}
+              className="rounded-xs font-medium text-ink-900 underline-offset-2 hover:underline disabled:text-ink-400"
+            >
+              {resending ? "Sending…" : "Resend code"}
+            </button>
+            {resent && (
+              <span className="ml-1 text-positive-700">Sent — check your inbox.</span>
+            )}
+          </p>
+        </form>
+      </div>
+    );
   }
 
   return (
@@ -121,29 +253,9 @@ export default function SignupPage() {
           aria-describedby="password-hint"
         />
         <p id="password-hint" className="mt-1 text-xs text-ink-500">
-          Must be at least 6 characters
+          Must be at least 6 characters. We&apos;ll email you a code next to
+          confirm it&apos;s really you.
         </p>
-      </div>
-
-      <div>
-        <label
-          htmlFor="confirm-password"
-          className="mb-1.5 block text-label font-medium text-ink-700"
-        >
-          Confirm Password
-        </label>
-        <input
-          id="confirm-password"
-          name="confirmPassword"
-          type="password"
-          required
-          autoComplete="new-password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          className={FIELD}
-          placeholder="Re-enter your password"
-          aria-required="true"
-        />
       </div>
 
       <div>
@@ -194,7 +306,7 @@ export default function SignupPage() {
         disabled={loading}
         className="min-h-11 w-full rounded-md bg-ink-900 px-4 text-body font-medium text-paper shadow-raised transition-[background-color,transform,box-shadow] duration-[--duration-base] ease-[--ease-out-quart] hover:-translate-y-0.5 hover:bg-ink-800 hover:shadow-overlay disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-ink-300 disabled:shadow-none motion-reduce:hover:translate-y-0"
       >
-        {loading ? "Creating account..." : "Create Account"}
+        {loading ? "Sending code…" : "Create Account"}
       </button>
 
       <p className="text-body text-ink-600">
