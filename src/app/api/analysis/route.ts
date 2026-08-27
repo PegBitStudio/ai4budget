@@ -27,13 +27,10 @@ export async function GET(request: Request) {
   try {
     const supabase = await createClient();
 
-    // Authenticate user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Authenticate user — validated once already, in middleware
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }

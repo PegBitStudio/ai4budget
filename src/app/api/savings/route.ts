@@ -13,21 +13,15 @@ export const dynamic = 'force-dynamic';
  * GET /api/savings
  * Returns the user's savings goals and a savings recommendation.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Authenticate user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Authenticate user — validated once already, in middleware
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Fetch savings goals
@@ -105,17 +99,11 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Authenticate user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Authenticate user — validated once already, in middleware
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Parse and validate body
@@ -135,7 +123,7 @@ export async function POST(request: NextRequest) {
     const { data: goal, error: insertError } = await supabase
       .from('savings_goals')
       .insert({
-        user_id: user.id,
+        user_id: userId,
         target_amount,
         deadline: deadline ?? null,
         current_amount: 0,
@@ -176,12 +164,9 @@ export async function PATCH(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -259,17 +244,11 @@ export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Authenticate user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Authenticate user — validated once already, in middleware
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);

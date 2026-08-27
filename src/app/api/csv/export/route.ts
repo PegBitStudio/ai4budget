@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { exportCSV, generateExportFilename, ExportTransaction } from '@/lib/csvService';
 
@@ -16,16 +16,13 @@ export const dynamic = 'force-dynamic';
  * - 404 if no transactions exist
  * - 500 for unexpected errors
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // Auth check
+    // Auth check — validated once already, in middleware
     const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -36,7 +33,7 @@ export async function GET() {
     const { data: transactions, error: queryError } = await supabase
       .from('transactions')
       .select('date, description, amount, category, type')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .order('date', { ascending: true });
 
     if (queryError) {

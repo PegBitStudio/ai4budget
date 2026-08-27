@@ -68,17 +68,11 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Authenticate user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Authenticate user — validated once already, in middleware
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Parse and validate body
@@ -133,7 +127,7 @@ export async function POST(request: NextRequest) {
       const { data: manualBudget, error: manualInsertError } = await supabase
         .from('budgets')
         .insert({
-          user_id: user.id,
+          user_id: userId,
           period_type: periodType,
           period_start: currentPeriod.start,
           period_end: currentPeriod.end,
@@ -322,7 +316,7 @@ export async function POST(request: NextRequest) {
     const { data: createdBudget, error: insertError } = await supabase
       .from('budgets')
       .insert({
-        user_id: user.id,
+        user_id: userId,
         period_type: periodType,
         period_start: currentPeriod.start,
         period_end: currentPeriod.end,
@@ -362,17 +356,11 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Authenticate user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Authenticate user — validated once already, in middleware
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -445,17 +433,11 @@ export async function PATCH(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Authenticate user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Authenticate user — validated once already, in middleware
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Parse and validate body

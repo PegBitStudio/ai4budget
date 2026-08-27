@@ -19,17 +19,11 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Authenticate user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Authenticate user — validated once already, in middleware
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Parse and validate body
@@ -49,7 +43,7 @@ export async function POST(request: NextRequest) {
     const { data: userRules } = await supabase
       .from('classification_rules')
       .select('description, category')
-      .eq('user_id', user.id);
+      .eq('user_id', userId);
 
     const userCorrections = new Map<string, Category>();
     if (userRules) {
@@ -70,7 +64,7 @@ export async function POST(request: NextRequest) {
     const { data: transaction, error: insertError } = await supabase
       .from('transactions')
       .insert({
-        user_id: user.id,
+        user_id: userId,
         amount,
         date,
         description,
@@ -92,7 +86,7 @@ export async function POST(request: NextRequest) {
 
     // Check for budget alerts (only for expenses)
     if (type === 'expense') {
-      await checkBudgetAlerts(supabase, user.id, classification.category, date);
+      await checkBudgetAlerts(supabase, userId, classification.category, date);
     }
 
     return NextResponse.json(
@@ -117,17 +111,11 @@ export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Authenticate user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Authenticate user — validated once already, in middleware
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -152,7 +140,7 @@ export async function DELETE(request: NextRequest) {
       const { error } = await supabase
         .from(table as 'transactions')
         .delete()
-        .eq('user_id', user.id);
+        .eq('user_id', userId);
       return error;
     };
 
@@ -198,17 +186,11 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Authenticate user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Authenticate user — validated once already, in middleware
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);

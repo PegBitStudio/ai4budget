@@ -50,5 +50,35 @@ export async function updateSession(request: NextRequest) {
     new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
   ]);
 
-  return { supabaseResponse, user };
+  // Every protected route was independently re-validating this exact same
+  // session with its own getUser() call — a second full Auth round trip on
+  // top of this one, for every single request, multiplied by however many
+  // API calls a page fires. Route handlers now read the id from here instead.
+  // This header is trustworthy specifically because it is set here, inside
+  // middleware, unconditionally overwriting whatever the incoming request
+  // carried — a client cannot forge it by sending its own x-user-id.
+  const requestHeaders = new Headers(request.headers);
+  if (user) {
+    requestHeaders.set('x-user-id', user.id);
+    // Currency lives in auth user_metadata, not a queryable table — the only
+    // other thing routes were calling getUser() a second time just to read.
+    const currency = user.user_metadata?.currency;
+    if (typeof currency === 'string') {
+      requestHeaders.set('x-user-currency', currency);
+    } else {
+      requestHeaders.delete('x-user-currency');
+    }
+  } else {
+    requestHeaders.delete('x-user-id');
+    requestHeaders.delete('x-user-currency');
+  }
+
+  const finalResponse = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
+  supabaseResponse.cookies.getAll().forEach((cookie) => {
+    finalResponse.cookies.set(cookie);
+  });
+
+  return { supabaseResponse: finalResponse, user };
 }

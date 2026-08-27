@@ -15,17 +15,11 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Authenticate user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Authenticate user — validated once already, in middleware
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Parse and validate body
@@ -101,7 +95,7 @@ export async function POST(request: NextRequest) {
 
     // Call QA engine
     const llmClient = getLLMClient();
-    const currency = await getUserCurrency();
+    const currency = getUserCurrency(request.headers.get('x-user-currency'));
     const result = await answerQuestion({
       symbol: currency.symbol,
       question: question.trim(),

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { buildSummaryData, generateSummary } from '@/lib/summaryGenerator';
 import { getLLMClient } from '@/lib/llmClient';
@@ -12,21 +12,15 @@ export const dynamic = 'force-dynamic';
  * GET /api/summary
  * Generates a plain-language financial summary for the current period using LLM.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Authenticate user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Authenticate user — validated once already, in middleware
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const currentPeriod = getCurrentMonthPeriod();
@@ -120,7 +114,7 @@ export async function GET() {
 
     // Generate summary with LLM
     const llmClient = getLLMClient();
-    const currency = await getUserCurrency();
+    const currency = getUserCurrency(request.headers.get('x-user-currency'));
     const summary = await generateSummary(summaryData, true, llmClient, currency);
 
     return NextResponse.json({

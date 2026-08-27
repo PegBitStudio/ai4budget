@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { deriveAlerts } from '@/lib/alertEngine';
 import { getCurrentMonthPeriod } from '@/utils/dateUtils';
@@ -15,16 +15,13 @@ export const dynamic = 'force-dynamic';
  * time. That means they appear for spending logged before the budget existed,
  * stay accurate as more is spent, and clear when an allocation is raised.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

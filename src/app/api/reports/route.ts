@@ -18,16 +18,13 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const currency = await getUserCurrency();
+    const currency = getUserCurrency(request.headers.get('x-user-currency'));
     const { searchParams } = new URL(request.url);
 
     const requestedKind = searchParams.get('kind');

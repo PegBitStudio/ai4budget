@@ -29,12 +29,9 @@ const DUPLICATE_WINDOW_DAYS = 120;
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -139,7 +136,7 @@ export async function POST(request: NextRequest) {
     const { data: corrections } = await supabase
       .from('classification_rules')
       .select('description, category')
-      .eq('user_id', user.id);
+      .eq('user_id', userId);
 
     const userCorrections = new Map<string, Category>();
     for (const rule of corrections ?? []) {

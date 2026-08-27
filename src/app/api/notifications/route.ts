@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { deriveAlerts } from '@/lib/alertEngine';
 import {
@@ -27,20 +27,17 @@ export const dynamic = 'force-dynamic';
  * the moment anything else changes, and stale money warnings are worse than
  * none.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const currency = await getUserCurrency();
+    const currency = getUserCurrency(request.headers.get('x-user-currency'));
     const period = getCurrentMonthPeriod();
     const today = localToday();
     const progress = getPeriodProgress(period.start, period.end, today);

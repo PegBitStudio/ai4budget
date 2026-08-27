@@ -31,12 +31,9 @@ const BulkBodySchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -64,7 +61,7 @@ export async function POST(request: NextRequest) {
     const { transactions, source } = parsed.data;
 
     const rows = transactions.map((t) => ({
-      user_id: user.id,
+      user_id: userId,
       amount: t.amount,
       date: t.date,
       description: t.description,

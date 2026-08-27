@@ -1,19 +1,12 @@
-import { createClient } from '@/lib/supabase/server';
 import { currencyByCode, type Currency } from '@/config/currencies';
 
 /**
- * The signed-in account's currency, resolved per request.
+ * The signed-in account's currency.
  *
- * Deliberately a function rather than a module-level value: one server process
- * serves every account at once, so anything cached at module scope would sooner
- * or later show one user another user's money.
+ * Reads the value middleware already extracted from the validated session —
+ * this used to call getUser() again itself, a second Auth round trip for a
+ * value the request already carried by the time a route handler runs it.
  */
-export async function getUserCurrency(): Promise<Currency> {
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase.auth.getUser();
-    return currencyByCode(data.user?.user_metadata?.currency as string | undefined);
-  } catch {
-    return currencyByCode(null);
-  }
+export function getUserCurrency(currencyHeader: string | null): Currency {
+  return currencyByCode(currencyHeader ?? undefined);
 }

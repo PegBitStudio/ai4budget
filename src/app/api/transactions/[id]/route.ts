@@ -54,17 +54,11 @@ export async function PATCH(
     const supabase = await createClient();
     const { id } = await params;
 
-    // Authenticate user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Authenticate user — validated once already, in middleware
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Parse and validate body
@@ -128,7 +122,7 @@ export async function PATCH(
     if (category !== undefined) {
       await supabase.from('classification_rules').upsert(
         {
-          user_id: user.id,
+          user_id: userId,
           description: transaction.description,
           category,
         },
@@ -151,24 +145,18 @@ export async function PATCH(
  * Delete a transaction by id. RLS ensures user can only delete their own.
  */
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
     const { id } = await params;
 
-    // Authenticate user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Authenticate user — validated once already, in middleware
+    const userId = request.headers.get('x-user-id');
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Delete the transaction — RLS ensures user can only delete their own
