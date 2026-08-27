@@ -60,7 +60,7 @@ export default function RecurringCharges({
         they are easy to miss.
       </p>
 
-      <div className="mt-4 rounded-lg bg-[#27235b] p-5 text-paper shadow-card sm:p-6">
+      <div className="surface-deep mt-4 rounded-lg bg-[#27235b] p-5 text-paper shadow-card sm:p-6">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-200">
           Leaving your account every month
         </p>
