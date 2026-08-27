@@ -1,6 +1,9 @@
 # Demo video script — KoboPilot
 
-**Limit: 3 minutes.** This runs to about 2:50, which leaves room to breathe.
+**Limit: 3 minutes.** This version targets about 2:15 written, on purpose —
+your last take ran 3:24 against a script estimated at 2:50, a ~20% overrun in
+delivery. Read this one a little brisker than feels natural, and it should
+land around 2:30–2:45 with real margin to spare.
 
 Judges score *Presentation & Storytelling* at 15%, and it is the only criterion
 entirely within your control on the day. The single rule: **show the product
@@ -15,8 +18,8 @@ doing something, do not describe the product.**
 - [ ] Run `node scripts/seed-demo.mjs` so the demo account is clean and current
 - [ ] Have the alert text below **already copied to your clipboard**
 - [ ] Close every other tab. Hide bookmarks. Full screen.
-- [ ] Do one silent dry run — the paste step takes ~6 seconds and you need to
-      know what that silence feels like
+- [ ] Do one silent dry run, timed. If it runs past 2:45, cut before you
+      record for real — don't find out live.
 - [ ] Don't improvise beyond this script — every claim and figure in it was
       verified against the live app today. Anything ad-libbed hasn't been
 - [ ] Record at 1440×900 or wider so the sidebar is visible
@@ -53,117 +56,91 @@ transactions in about four seconds.
 
 ---
 
-## 0:00 – 0:25 · The problem
+## 0:00 – 0:10 · Open
 
-> *[Landing page]*
+> *[Landing page → click "Explore the demo account"]*
 >
-> "Every month, millions of Nigerians earn well and still can't say where the
-> money went.
->
-> Not because they're careless. Because recording it is the work — and nobody
-> types their expenses into an app for more than two weeks.
->
-> But every one of those transactions already sent them a bank alert. Hundreds
-> of them, sitting in their messages, completely unused."
+> "KoboPilot turns your bank alerts into a budget you never had to type in
+> yourself."
 
-> *[Click "Explore the demo account"]*
->
-> "This is KoboPilot. It reads them."
-
-**Note:** don't say "I built an AI budgeting app." Every entry is an AI app. Lead
-with the problem, and let the product be the answer.
+**No preamble.** No name, no track number, no "the problem is." One sentence,
+then click.
 
 ---
 
-## 0:25 – 1:15 · The hook — paste your alerts
+## 0:10 – 0:25 · Overview
+
+> *[Dashboard]*
+>
+> "A month, already read and sorted. Over ₦750,000 spent against ₦535,000
+> earned — and it already told me Shopping is the problem."
+
+---
+
+## 0:25 – 1:05 · The hook — paste your alerts
 
 > *[Transactions → "Import your spending" → paste the buffer → "Read these alerts"]*
 >
-> "These are five alerts from five different banks. Different formats, mixed
-> together — exactly how they arrive."
+> "Five alerts, five banks — exactly how they arrive."
 
-> *[While it reads — ~6 seconds. Don't fill the silence with filler; say this:]*
+> *[While it reads — ~5 seconds. One sentence, then silence:]*
 >
-> "It's reading each one now."
+> "Reading them now."
 
 > *[Review table appears]*
 >
-> "Five transactions. It stripped the account numbers. It worked out that the
-> Opay one was money coming *in*, not going out. And it ignored the OTP —
-> that's not a transaction.
->
-> Every one is already categorised. Chowdeck is Dining. Total is Transport.
->
-> And nothing is saved yet. It's showing me first."
+> "Numbers stripped, everything categorised, nothing saved yet."
 
 > *[Click "Add 5 transactions"]*
 
-**This is your strongest 50 seconds.** Do not rush it. If one thing lands with
-the judges, it is watching unstructured mess become a categorised month.
+**Still the strongest 40 seconds in the video.** Don't rush the paste itself —
+trim words elsewhere, not here.
 
 ---
 
-## 1:15 – 2:05 · The insight — what it found
+## 1:05 – 1:25 · Budget
 
-> *[Insights page]*
+> *[Budget page]*
 >
-> "Now the part that's actually hard."
-
-> *[Point at the anomaly]*
->
-> "One unusual transaction this month — a phone, at 18 times my usual Shopping
-> spend. Not my rent, not my gym membership. Those repeat every month, so
-> they're not surprises."
-
-> *[Point at the goal-impact line]*
->
-> "And here's the line I care about most. It doesn't just say I spent ₦285,000.
-> It says that's **three months further from my savings goal**, at the rate I'm
-> actually saving.
->
-> That's a number I can make a decision with."
-
-> *[Scroll to Money on autopilot]*
->
-> "And this — ₦463,800 a month leaving on autopilot across 18 recurring charges.
-> Almost ₦26,000 a month more than it used to be. Nobody notices ₦26,000 a month.
-> Over a year it costs more than the phone I'd agonise over."
+> "The budget is fully mine to edit — change one category and only that one
+> moves. Shopping's already ₦300,500 against a ₦20,000 plan."
 
 ---
 
-## 2:05 – 2:35 · Ask it anything
+## 1:25 – 1:45 · Insights
 
-> *[Assistant page — click the starter chip "What should I cut first?"]*
+> *[Insights page, point at the anomaly]*
+>
+> "It catches what I'd miss myself — this purchase is 18 times my usual
+> Shopping spend, and it's put my savings goal three months further away."
+
+---
+
+## 1:45 – 2:05 · Ask it anything
+
+> *[Assistant page → click the starter chip "What should I cut first?"]*
 >
 > "And I can just ask."
 
 > *[Answer appears]*
 >
-> "It answers against my actual numbers — in Naira, with the categories that are
-> genuinely over, and what to do about each one."
+> "Same numbers, in plain English."
 
 ---
 
-## 2:35 – 2:50 · Close
+## 2:05 – 2:15 · Close
 
-> *[Back to Overview]*
->
-> "Everything you saw came from pasted bank alerts.
->
-> The AI reads them and explains them. Every figure on this screen — the
-> budgets, the alerts, the savings maths — is computed, tested code. The model
-> never invents a number.
->
-> KoboPilot. Built for AI BuildFest 2026."
+> "Every figure here is computed, tested code. The AI only reads it back to
+> you. KoboPilot."
 
 ---
 
 ## What to cut if you run long
 
 In this order:
-1. The Assistant section (2:05–2:35) — the paste and the insight are stronger
-2. The autopilot card — keep the goal-impact line, it's the memorable one
-3. Trim the opening to two sentences
+1. The Insights beat (1:25–1:45) — Budget already showed the over-plan number
+2. Trim the Overview line to just the two figures, drop "already told me..."
+3. The Assistant beat — keep it only if you're still under 2:30 without it
 
 **Never cut the paste demo.** That is the entry.
 
@@ -177,4 +154,6 @@ In this order:
 - **Dead air during the parse.** Say one sentence, then let it land.
 - **Talking about the stack.** Nobody scores you for Next.js. The written
   summary covers tools; the video is for the product.
-- **Starting with your name and the track number.** Start with the problem.
+- **Starting with your name and the track number.** Start with the product.
+- **Reading slower than your dry run.** That's exactly how the last take ran
+  34 seconds long. Match your dry-run pace, not a more "presentational" one.
