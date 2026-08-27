@@ -3,11 +3,12 @@ import { createClient } from '@/lib/supabase/server';
 import {
   generateBudget,
   modifyAllocation,
+  normalizeToMonthly,
   normalizeToWeekly,
   Frequency,
 } from '@/lib/budgetEngine';
-import { CategorySchema } from '@/models/category';
-import { PeriodTypeSchema } from '@/models/budget';
+import { CATEGORIES, CategorySchema } from '@/models/category';
+import { PeriodTypeSchema, CreateManualBudgetSchema } from '@/models/budget';
 import {
   getCurrentMonthPeriod,
   getCurrentWeekPeriod,
@@ -16,6 +17,47 @@ import {
 import type { Json } from '@/lib/supabase/types';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * What is actually left to divide across categories, after commitments and
+ * savings — the same arithmetic generateBudget does internally. GET and
+ * PATCH don't call generateBudget, but the page still needs this figure: an
+ * edited allocation no longer forces the total back to it automatically, so
+ * the page has to show it instead, or a fresh budget looks like two-thirds
+ * of it went missing.
+ */
+async function getAvailableIncome(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  totalIncome: number,
+  periodType: 'weekly' | 'monthly'
+): Promise<number> {
+  const { data: commitments } = await supabase
+    .from('commitments')
+    .select('amount, frequency');
+
+  const totalCommitments = (commitments ?? []).reduce((sum, c) => {
+    const normalized =
+      periodType === 'monthly'
+        ? normalizeToMonthly(c.amount, c.frequency as Frequency)
+        : normalizeToWeekly(c.amount, c.frequency as Frequency);
+    return sum + normalized;
+  }, 0);
+
+  const { data: savingsGoals } = await supabase
+    .from('savings_goals')
+    .select('monthly_contribution');
+
+  const monthlySavings = (savingsGoals ?? []).reduce(
+    (sum, g) => sum + Number(g.monthly_contribution),
+    0
+  );
+  const totalSavingsContribution =
+    periodType === 'weekly'
+      ? normalizeToWeekly(monthlySavings, 'monthly')
+      : monthlySavings;
+
+  return totalIncome - totalCommitments - totalSavingsContribution;
+}
 
 /**
  * POST /api/budget
@@ -57,6 +99,65 @@ export async function POST(request: NextRequest) {
       periodType === 'monthly'
         ? getCurrentMonthPeriod()
         : getCurrentWeekPeriod();
+
+    // A budget built by hand — from scratch, or from an uploaded template —
+    // skips every step below that derives numbers from transactions. Nothing
+    // needs to have been logged yet; the categories left out of the request
+    // simply start at 0.
+    if (body?.mode === 'manual') {
+      const manualValidation = CreateManualBudgetSchema.safeParse({
+        period_type: body.period_type,
+        total_income: body.total_income,
+        allocations: body.allocations,
+      });
+
+      if (!manualValidation.success) {
+        return NextResponse.json(
+          { error: 'Validation failed', details: manualValidation.error.issues },
+          { status: 400 }
+        );
+      }
+
+      const given = new Map(
+        manualValidation.data.allocations.map((a) => [a.category, a.amount])
+      );
+      const allocations = CATEGORIES.map((category) => ({
+        category,
+        amount: given.get(category) ?? 0,
+        is_fixed: false,
+      }));
+
+      const suppliedTotal = allocations.reduce((sum, a) => sum + a.amount, 0);
+      const totalIncome = manualValidation.data.total_income ?? suppliedTotal;
+
+      const { data: manualBudget, error: manualInsertError } = await supabase
+        .from('budgets')
+        .insert({
+          user_id: user.id,
+          period_type: periodType,
+          period_start: currentPeriod.start,
+          period_end: currentPeriod.end,
+          total_income: totalIncome,
+          allocations: allocations as unknown as Json,
+        })
+        .select()
+        .single();
+
+      if (manualInsertError) {
+        console.error('[POST /api/budget] Failed to store manual budget:', manualInsertError.message);
+        return NextResponse.json(
+          { error: 'Failed to store budget' },
+          { status: 500 }
+        );
+      }
+
+      const availableIncome = await getAvailableIncome(supabase, totalIncome, periodType);
+
+      return NextResponse.json(
+        { ...manualBudget, availableIncome },
+        { status: 201 }
+      );
+    }
 
     // 1. Work out the income to divide up.
     //
@@ -239,7 +340,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(createdBudget, { status: 201 });
+    return NextResponse.json(
+      { ...createdBudget, availableIncome: budgetResult.availableIncome },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('[POST /api/budget] Unexpected error:', error);
     return NextResponse.json(
@@ -316,7 +420,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(budget, { status: 200 });
+    const availableIncome = await getAvailableIncome(
+      supabase,
+      Number(budget.total_income),
+      periodType
+    );
+
+    return NextResponse.json({ ...budget, availableIncome }, { status: 200 });
   } catch (error) {
     console.error('[GET /api/budget] Unexpected error:', error);
     return NextResponse.json(
@@ -399,17 +509,10 @@ export async function PATCH(request: NextRequest) {
       is_fixed: boolean;
     }>;
 
-    // Calculate available income (total_income minus fixed commitments already accounted for in generation)
-    const availableIncome = currentAllocations.reduce(
-      (sum, a) => sum + a.amount,
-      0
-    );
-
     const updatedAllocations = modifyAllocation(
       currentAllocations as import('@/models/budget').CategoryAllocation[],
       category,
-      amount,
-      availableIncome
+      amount
     );
 
     // Update the budget in the database
@@ -428,7 +531,16 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(updatedBudget, { status: 200 });
+    const availableIncome = await getAvailableIncome(
+      supabase,
+      Number(updatedBudget.total_income),
+      updatedBudget.period_type as 'weekly' | 'monthly'
+    );
+
+    return NextResponse.json(
+      { ...updatedBudget, availableIncome },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('[PATCH /api/budget] Unexpected error:', error);
     return NextResponse.json(

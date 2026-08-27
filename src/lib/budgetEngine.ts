@@ -211,74 +211,28 @@ function allocateWith503020(availableIncome: number): CategoryAllocation[] {
 // --- Budget Modification ---
 
 /**
- * Modify a single category's allocation and redistribute the difference
- * proportionally across all other non-fixed categories.
+ * Set a single category's allocation, and touch nothing else.
  *
- * Maintains invariant: sum of all allocations = availableIncome (±0.01).
- * If newAmount > availableIncome, it is clamped.
+ * This used to redistribute the difference across every other category, to
+ * hold the total at exactly the income figure. That is the right invariant
+ * for a spreadsheet, but not for a person editing their own budget: raising
+ * Housing quietly shrank Groceries, Transport and everything else by a few
+ * percent each, with no visible cause. A budget you cannot change one line
+ * of without every other line moving is not one you can trust enough to
+ * present. Each category is now yours alone to set — the page shows the
+ * running total against income so being over or under is visible instead of
+ * hidden by an automatic correction.
  */
 export function modifyAllocation(
   allocations: CategoryAllocation[],
   category: Category,
-  newAmount: number,
-  availableIncome: number
+  newAmount: number
 ): CategoryAllocation[] {
-  // Clamp newAmount
-  const clampedAmount = Math.min(newAmount, availableIncome);
+  const clampedAmount = round2(Math.max(0, newAmount));
 
-  const result = allocations.map((a) => ({ ...a }));
-
-  const targetIndex = result.findIndex((a) => a.category === category);
-  if (targetIndex === -1) {
-    return result;
-  }
-
-  const oldAmount = result[targetIndex].amount;
-  const difference = oldAmount - clampedAmount;
-
-  // Set the new amount
-  result[targetIndex].amount = clampedAmount;
-
-  // Find non-fixed categories to redistribute across (excluding the modified one)
-  const redistributable = result.filter(
-    (a, i) => i !== targetIndex && !a.is_fixed
+  return allocations.map((a) =>
+    a.category === category ? { ...a, amount: clampedAmount } : a
   );
-
-  if (redistributable.length === 0) {
-    // No categories to redistribute to; just set and return
-    return fixRoundingError(result, availableIncome);
-  }
-
-  const redistributableTotal = redistributable.reduce((sum, a) => sum + a.amount, 0);
-
-  if (redistributableTotal === 0) {
-    // Distribute equally if all other categories are at 0
-    const perCategory = difference / redistributable.length;
-    for (const alloc of redistributable) {
-      const match = result.find((r) => r.category === alloc.category && !r.is_fixed);
-      if (match) {
-        match.amount += perCategory;
-      }
-    }
-  } else {
-    // Distribute proportionally
-    for (const alloc of redistributable) {
-      const match = result.find((r) => r.category === alloc.category && !r.is_fixed);
-      if (match) {
-        const proportion = alloc.amount / redistributableTotal;
-        match.amount += difference * proportion;
-      }
-    }
-  }
-
-  // Ensure no negative allocations
-  for (const alloc of result) {
-    if (alloc.amount < 0) {
-      alloc.amount = 0;
-    }
-  }
-
-  return fixRoundingError(result, availableIncome);
 }
 
 // --- Helpers ---

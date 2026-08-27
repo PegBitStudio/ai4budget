@@ -1,4 +1,5 @@
 import Papa from 'papaparse';
+import { CATEGORIES, type Category } from '@/models/category';
 
 /**
  * CSV Service for importing and exporting financial transaction data.
@@ -228,6 +229,104 @@ export function exportCSV(transactions: ExportTransaction[]): string {
  */
 function escapeCSVFormula(value: string): string {
   return /^[=+\-@]/.test(value) ? `\t${value}` : value;
+}
+
+export interface ParsedBudgetRow {
+  category: Category;
+  amount: number;
+}
+
+const MAX_BUDGET_AMOUNT = 999999999.99;
+
+/**
+ * Parse a filled-in budget template into category amounts.
+ *
+ * Columns: category, amount. A header row is detected and skipped, the same
+ * way transaction imports handle one, so a template edited in Excel or
+ * Sheets — which tends to keep the header — imports without hand-editing.
+ * A category is matched case-insensitively so "housing" and "HOUSING" both
+ * resolve to "Housing" rather than being rejected as unknown.
+ */
+export function parseBudgetCSV(csvContent: string): {
+  allocations: ParsedBudgetRow[];
+  errors: CSVError[];
+} {
+  const allocations: ParsedBudgetRow[] = [];
+  const errors: CSVError[] = [];
+
+  const result = Papa.parse<string[]>(csvContent, {
+    header: false,
+    skipEmptyLines: true,
+  });
+
+  let rows = result.data;
+  let rowOffset = 0;
+
+  const first = rows[0]?.[0]?.trim().toLowerCase();
+  if (first === 'category') {
+    rows = rows.slice(1);
+    rowOffset = 1;
+  }
+
+  const byLowerCase = new Map<string, Category>(
+    CATEGORIES.map((c) => [c.toLowerCase(), c])
+  );
+  const seen = new Set<Category>();
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNumber = i + 1 + rowOffset;
+
+    const categoryStr = row[0]?.trim() ?? '';
+    const amountStr = row[1]?.trim() ?? '';
+
+    const category = byLowerCase.get(categoryStr.toLowerCase());
+    if (!category) {
+      errors.push({
+        row: rowNumber,
+        field: 'category',
+        message: categoryStr
+          ? `"${categoryStr}" is not one of the budget categories`
+          : 'Category is missing',
+      });
+      continue;
+    }
+
+    if (seen.has(category)) {
+      errors.push({
+        row: rowNumber,
+        field: 'category',
+        message: `${category} appears more than once — only the first row was used`,
+      });
+      continue;
+    }
+
+    const amount = Number(amountStr);
+    if (amountStr === '' || isNaN(amount) || !isFinite(amount) || amount < 0 || amount > MAX_BUDGET_AMOUNT) {
+      errors.push({
+        row: rowNumber,
+        field: 'amount',
+        message: `Amount must be a number between 0 and ${MAX_BUDGET_AMOUNT}`,
+      });
+      continue;
+    }
+
+    seen.add(category);
+    allocations.push({ category, amount });
+  }
+
+  return { allocations, errors };
+}
+
+/**
+ * The blank template offered for download — every category listed once,
+ * ready to fill in.
+ */
+export function generateBudgetTemplateCSV(): string {
+  return Papa.unparse({
+    fields: ['category', 'amount'],
+    data: CATEGORIES.map((c) => [c, '0']),
+  });
 }
 
 /**

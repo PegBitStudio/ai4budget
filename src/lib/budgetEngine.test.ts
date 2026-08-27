@@ -251,73 +251,64 @@ describe('generateBudget', () => {
 });
 
 describe('modifyAllocation', () => {
-  it('redistributes difference proportionally across other non-fixed categories', () => {
+  it('changes only the targeted category', () => {
     const allocations = [
       { category: 'Groceries' as Category, amount: 500, is_fixed: false },
       { category: 'Transport' as Category, amount: 300, is_fixed: false },
       { category: 'Entertainment' as Category, amount: 200, is_fixed: false },
     ];
-    const availableIncome = 1000;
 
-    // Reduce Groceries from 500 to 400 (frees up 100)
-    const result = modifyAllocation(allocations, 'Groceries', 400, availableIncome);
+    const result = modifyAllocation(allocations, 'Groceries', 400);
 
     const groceries = result.find((a) => a.category === 'Groceries');
     expect(groceries?.amount).toBe(400);
 
-    // Transport had 300/500 of remaining = 60%, so gets 60 more = 360
+    // Nobody else moves — the whole point is that one edit is one change.
     const transport = result.find((a) => a.category === 'Transport');
-    expect(transport?.amount).toBeCloseTo(360, 1);
+    expect(transport?.amount).toBe(300);
 
-    // Entertainment had 200/500 of remaining = 40%, so gets 40 more = 240
     const entertainment = result.find((a) => a.category === 'Entertainment');
-    expect(entertainment?.amount).toBeCloseTo(240, 1);
+    expect(entertainment?.amount).toBe(200);
   });
 
-  it('maintains total equals available income after modification', () => {
+  it('allows the total to land above or below income', () => {
     const allocations = [
       { category: 'Groceries' as Category, amount: 400, is_fixed: false },
       { category: 'Transport' as Category, amount: 300, is_fixed: false },
-      { category: 'Entertainment' as Category, amount: 200, is_fixed: false },
-      { category: 'Dining' as Category, amount: 100, is_fixed: false },
     ];
-    const availableIncome = 1000;
 
-    const result = modifyAllocation(allocations, 'Transport', 500, availableIncome);
+    // Raising one category is allowed to push the total past income — that
+    // is now visible to the person editing, not silently prevented.
+    const result = modifyAllocation(allocations, 'Transport', 900);
 
     const total = result.reduce((sum, a) => sum + a.amount, 0);
-    expect(Math.abs(total - availableIncome)).toBeLessThanOrEqual(0.01);
+    expect(total).toBe(1300);
   });
 
-  it('clamps newAmount to availableIncome', () => {
+  it('does not allow a negative allocation', () => {
     const allocations = [
       { category: 'Groceries' as Category, amount: 500, is_fixed: false },
-      { category: 'Transport' as Category, amount: 500, is_fixed: false },
     ];
-    const availableIncome = 1000;
 
-    const result = modifyAllocation(allocations, 'Groceries', 1500, availableIncome);
+    const result = modifyAllocation(allocations, 'Groceries', -50);
 
     const groceries = result.find((a) => a.category === 'Groceries');
-    expect(groceries?.amount).toBeLessThanOrEqual(availableIncome);
+    expect(groceries?.amount).toBe(0);
   });
 
-  it('does not modify fixed categories during redistribution', () => {
+  it('leaves a fixed category editable, same as any other', () => {
     const allocations = [
       { category: 'Housing' as Category, amount: 500, is_fixed: true },
       { category: 'Groceries' as Category, amount: 300, is_fixed: false },
-      { category: 'Transport' as Category, amount: 200, is_fixed: false },
     ];
-    const availableIncome = 1000;
 
-    // Reduce Groceries by 100 → only Transport should absorb it
-    const result = modifyAllocation(allocations, 'Groceries', 200, availableIncome);
+    const result = modifyAllocation(allocations, 'Housing', 550);
 
     const housing = result.find((a) => a.category === 'Housing');
-    expect(housing?.amount).toBe(500); // Fixed, unchanged
+    expect(housing?.amount).toBe(550);
 
-    const transport = result.find((a) => a.category === 'Transport');
-    expect(transport?.amount).toBeCloseTo(300, 1); // Absorbed the 100
+    const groceries = result.find((a) => a.category === 'Groceries');
+    expect(groceries?.amount).toBe(300);
   });
 });
 

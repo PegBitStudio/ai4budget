@@ -3,8 +3,11 @@ import {
   parseCSV,
   exportCSV,
   generateExportFilename,
+  parseBudgetCSV,
+  generateBudgetTemplateCSV,
   ExportTransaction,
 } from './csvService';
+import { CATEGORIES } from '@/models/category';
 
 describe('csvService', () => {
   describe('parseCSV', () => {
@@ -388,6 +391,61 @@ describe('csvService', () => {
       const { transactions } = parseCSV(exportCSV(original));
 
       expect(transactions[0].description).toBe('The "best" coffee, twice');
+    });
+  });
+
+  describe('parseBudgetCSV', () => {
+    it('parses category,amount rows', () => {
+      const csv = 'Housing,150000\nGroceries,70000';
+      const { allocations, errors } = parseBudgetCSV(csv);
+
+      expect(errors).toHaveLength(0);
+      expect(allocations).toEqual([
+        { category: 'Housing', amount: 150000 },
+        { category: 'Groceries', amount: 70000 },
+      ]);
+    });
+
+    it('skips a header row', () => {
+      const csv = 'category,amount\nHousing,150000';
+      const { allocations, errors } = parseBudgetCSV(csv);
+
+      expect(errors).toHaveLength(0);
+      expect(allocations).toEqual([{ category: 'Housing', amount: 150000 }]);
+    });
+
+    it('matches a category case-insensitively', () => {
+      const { allocations, errors } = parseBudgetCSV('housing,1000');
+      expect(errors).toHaveLength(0);
+      expect(allocations[0].category).toBe('Housing');
+    });
+
+    it('rejects a category that is not one of the ten', () => {
+      const { allocations, errors } = parseBudgetCSV('Rent,1000');
+      expect(allocations).toHaveLength(0);
+      expect(errors).toHaveLength(1);
+      expect(errors[0].field).toBe('category');
+    });
+
+    it('rejects a negative or non-numeric amount', () => {
+      const { allocations, errors } = parseBudgetCSV('Housing,-5\nGroceries,abc');
+      expect(allocations).toHaveLength(0);
+      expect(errors).toHaveLength(2);
+    });
+
+    it('keeps only the first row for a repeated category', () => {
+      const { allocations, errors } = parseBudgetCSV('Housing,1000\nHousing,2000');
+      expect(allocations).toEqual([{ category: 'Housing', amount: 1000 }]);
+      expect(errors).toHaveLength(1);
+    });
+  });
+
+  describe('generateBudgetTemplateCSV', () => {
+    it('lists every category once with a zero amount', () => {
+      const { allocations, errors } = parseBudgetCSV(generateBudgetTemplateCSV());
+      expect(errors).toHaveLength(0);
+      expect(allocations).toHaveLength(CATEGORIES.length);
+      expect(allocations.every((a) => a.amount === 0)).toBe(true);
     });
   });
 });

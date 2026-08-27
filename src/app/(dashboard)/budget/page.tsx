@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { formatCurrency } from '@/utils/formatters';
 import BudgetProgress from '@/components/budget/BudgetProgress';
 import BudgetForecast from '@/components/budget/BudgetForecast';
 import { PageHeader } from "@/components/ui/primitives";
+import { parseBudgetCSV, generateBudgetTemplateCSV } from '@/lib/csvService';
 
 // --- Types ---
 
@@ -21,6 +22,10 @@ interface Budget {
   period_start: string;
   period_end: string;
   total_income: number;
+  /** Income minus commitments and savings — what allocations are actually
+      divided from. Computed on read, not stored, so it stays correct even
+      after commitments or savings goals change. */
+  availableIncome?: number;
   allocations: CategoryAllocation[];
   created_at: string;
 }
@@ -102,6 +107,13 @@ export default function BudgetPage() {
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // Starting a budget by hand — from scratch, or from an uploaded template —
+  // rather than from logged transactions.
+  const [startMode, setStartMode] = useState<'auto' | 'manual' | 'upload'>('auto');
+  const [manualBusy, setManualBusy] = useState(false);
+  const [csvErrors, setCsvErrors] = useState<string[] | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch existing budget for the selected period
   const fetchBudget = useCallback(async () => {
@@ -231,6 +243,84 @@ export default function BudgetPage() {
     }
   };
 
+  // Create a budget by hand — no income transaction required. Shared by
+  // "start from scratch" (no allocations, every category lands on 0 and is
+  // edited from there) and the CSV upload (allocations already parsed).
+  const createManualBudget = async (
+    allocations: { category: string; amount: number }[]
+  ) => {
+    setManualBusy(true);
+    setError(null);
+    setShortfall(null);
+    setErrorReason(null);
+    setCsvErrors(null);
+
+    try {
+      const res = await fetch('/api/budget', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ period_type: periodType, mode: 'manual', allocations }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to create budget');
+      }
+
+      const budgetData: Budget = await res.json();
+      setBudget(budgetData);
+      await fetchComparison(budgetData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setManualBusy(false);
+    }
+  };
+
+  const handleStartBlank = () => createManualBudget([]);
+
+  const handleDownloadTemplate = () => {
+    const blob = new Blob([generateBudgetTemplateCSV()], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'budget-template.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleUploadCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setCsvErrors(null);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? '');
+      const { allocations, errors } = parseBudgetCSV(text);
+
+      if (allocations.length === 0) {
+        setCsvErrors(
+          errors.length > 0
+            ? errors.map((err) => `Row ${err.row}: ${err.message}`)
+            : ['The file has no usable rows.']
+        );
+        return;
+      }
+
+      // Partial errors don't block the rows that did parse — the person can
+      // fix the file and re-upload for the rest, same as transaction import.
+      if (errors.length > 0) {
+        setCsvErrors(errors.map((err) => `Row ${err.row}: ${err.message}`));
+      }
+
+      createManualBudget(allocations);
+    };
+    reader.readAsText(file);
+  };
+
   // Start editing an allocation
   const startEditing = (category: string, currentAmount: number) => {
     setEditingCategory(category);
@@ -324,31 +414,8 @@ export default function BudgetPage() {
         </button>
       </div>
 
-      {/* Nothing to budget yet — a first-run state, not a failure */}
-      {error && errorReason === 'no-income' && (
-        <div
-          className="mb-6 rounded-lg border border-ink-200 bg-ink-50 p-5"
-          role="status"
-        >
-          <p className="font-semibold text-ink-950">
-            Add your income first
-          </p>
-          <p className="mt-1 text-sm leading-6 text-ink-900">
-            A budget divides up what you earn, so there is nothing to work with
-            yet. Record your salary or any money coming in, and this page will
-            build a plan around it.
-          </p>
-          <a
-            href="/transactions"
-            className="mt-4 inline-flex min-h-[44px] items-center rounded-lg bg-ink-900 px-5 text-sm font-semibold text-paper transition-colors hover:bg-ink-900"
-          >
-            Add your income
-          </a>
-        </div>
-      )}
-
       {/* A real shortfall: income exists but is already committed */}
-      {error && errorReason !== 'no-income' && (
+      {error && errorReason === 'shortfall' && (
         <div
           className="mb-6 rounded-lg border border-negative-100 bg-negative-50 p-4 text-negative-700"
           role="alert"
@@ -363,36 +430,121 @@ export default function BudgetPage() {
       )}
 
       {/* No Budget State — stays available so a failed attempt can be retried */}
-      {!budget && errorReason !== 'no-income' && (
-        <div className="text-center py-12 bg-ink-50 rounded-lg border border-ink-200">
-          <svg
-            className="mx-auto h-12 w-12 text-ink-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <h2 className="mt-4 text-lg font-semibold text-ink-900">
+      {!budget && (
+        <div className="rounded-lg border border-ink-200 bg-ink-50 p-6 sm:p-8">
+          <h2 className="text-lg font-semibold text-ink-900">
             No budget for this period
           </h2>
-          <p className="mt-2 text-ink-600 max-w-sm mx-auto">
-            Create a budget to start tracking your spending against planned
-            allocations.
+          <p className="mt-2 max-w-md text-ink-600">
+            A budget from your spending history is one option — building your
+            own from a blank slate, or from a spreadsheet, is another. Neither
+            needs a transaction logged first.
           </p>
-          <button
-            onClick={handleGenerate}
-            disabled={generating}
-            className="mt-6 min-h-[44px] min-w-[44px] px-6 py-3 bg-ink-900 text-paper font-medium rounded-lg hover:bg-ink-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {generating ? 'Generating...' : `Generate ${periodType} budget`}
-          </button>
+
+          <div className="mt-5 max-w-xs">
+            <label
+              htmlFor="start-mode"
+              className="mb-1.5 block text-sm font-medium text-ink-700"
+            >
+              How do you want to build this budget?
+            </label>
+            <select
+              id="start-mode"
+              value={startMode}
+              onChange={(e) => {
+                setStartMode(e.target.value as typeof startMode);
+                setCsvErrors(null);
+              }}
+              className="min-h-[44px] w-full rounded-lg border border-ink-300 bg-paper px-3 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-ink-700"
+            >
+              <option value="auto">From my transactions</option>
+              <option value="manual">Start from scratch</option>
+              <option value="upload">Upload a spreadsheet</option>
+            </select>
+          </div>
+
+          {startMode === 'auto' && (
+            <div className="mt-5">
+              {errorReason === 'no-income' && (
+                <p className="mb-3 max-w-md text-sm leading-6 text-ink-600">
+                  There is no spending history to build this from yet — log a
+                  transaction first, or switch to "Start from scratch" above.
+                </p>
+              )}
+              <button
+                onClick={handleGenerate}
+                disabled={generating}
+                className="min-h-[44px] px-6 py-3 bg-ink-900 text-paper font-medium rounded-lg hover:bg-ink-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {generating ? 'Generating...' : `Generate ${periodType} budget`}
+              </button>
+            </div>
+          )}
+
+          {startMode === 'manual' && (
+            <div className="mt-5">
+              <p className="mb-3 max-w-md text-sm leading-6 text-ink-600">
+                Every category starts at ₦0. Set each one to whatever fits
+                your life — free transport, an HMO that covers Health, or
+                anything else the defaults don't know about.
+              </p>
+              <button
+                onClick={handleStartBlank}
+                disabled={manualBusy}
+                className="min-h-[44px] px-6 py-3 bg-ink-900 text-paper font-medium rounded-lg hover:bg-ink-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {manualBusy ? 'Creating...' : 'Start from scratch'}
+              </button>
+            </div>
+          )}
+
+          {startMode === 'upload' && (
+            <div className="mt-5">
+              <p className="mb-3 max-w-md text-sm leading-6 text-ink-600">
+                Download the template, fill in an amount for each category in
+                Excel or Sheets, and upload it back.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={handleDownloadTemplate}
+                  className="min-h-[44px] rounded-lg border border-ink-300 bg-paper px-5 text-sm font-medium text-ink-800 transition-colors hover:bg-ink-100"
+                >
+                  Download template
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={manualBusy}
+                  className="min-h-[44px] rounded-lg bg-ink-900 px-5 text-sm font-medium text-paper transition-colors hover:bg-ink-800 disabled:opacity-50"
+                >
+                  {manualBusy ? 'Uploading...' : 'Upload your filled-in template'}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={handleUploadCSV}
+                  className="hidden"
+                  aria-label="Upload budget spreadsheet"
+                />
+              </div>
+              {csvErrors && csvErrors.length > 0 && (
+                <div className="mt-3 rounded-lg border border-warning-100 bg-warning-50 p-3 text-sm text-warning-700">
+                  <p className="font-medium">
+                    {csvErrors.length === 1
+                      ? 'One row could not be used:'
+                      : `${csvErrors.length} rows could not be used:`}
+                  </p>
+                  <ul className="mt-1 list-disc pl-5">
+                    {csvErrors.map((msg, i) => (
+                      <li key={i}>{msg}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -430,9 +582,54 @@ export default function BudgetPage() {
 
           {/* Category Allocations */}
           <div className="bg-paper border border-ink-200 rounded-lg p-4 sm:p-6">
-            <h2 className="text-lg font-semibold text-ink-900 mb-4">
-              Budget Allocations
-            </h2>
+            <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <h2 className="text-lg font-semibold text-ink-900">
+                Budget Allocations
+              </h2>
+              {/* Editing a category changes only that category — nothing else
+                  moves. This is what shows whether the total still adds up,
+                  since nothing does that silently anymore. */}
+              {(() => {
+                const target = budget.availableIncome ?? budget.total_income;
+                const allocated = budget.allocations.reduce((sum, a) => sum + a.amount, 0);
+                const remaining = target - allocated;
+                // A genuinely blank budget has no target yet — commitments
+                // and savings still subtract from a income of ₦0, which
+                // would otherwise show as a nonsensical negative figure.
+                if (target <= 0) {
+                  return (
+                    <p className="text-sm text-ink-600">
+                      Allocated{" "}
+                      <span className="font-semibold tabular-nums text-ink-900">
+                        {formatCurrency(allocated)}
+                      </span>
+                    </p>
+                  );
+                }
+                return (
+                  <p className="text-sm text-ink-600">
+                    Allocated{" "}
+                    <span className="font-semibold tabular-nums text-ink-900">
+                      {formatCurrency(allocated)}
+                    </span>{" "}
+                    of {formatCurrency(target)}
+                    {Math.abs(remaining) > 0.01 && (
+                      <span
+                        className={
+                          remaining > 0
+                            ? "ml-1 font-medium text-ink-500"
+                            : "ml-1 font-medium text-negative-700"
+                        }
+                      >
+                        {remaining > 0
+                          ? `— ${formatCurrency(remaining)} unallocated`
+                          : `— ${formatCurrency(Math.abs(remaining))} over`}
+                      </span>
+                    )}
+                  </p>
+                );
+              })()}
+            </div>
             <div className="space-y-3">
               {budget.allocations.map((alloc) => (
                 <div
