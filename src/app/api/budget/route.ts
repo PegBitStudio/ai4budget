@@ -459,12 +459,34 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const category = categoryValidation.data;
+    // Which budget to edit is not implicit. "Most recently created" quietly
+    // edited the wrong row the moment an account had more than one budget on
+    // file — a blank one started from scratch, say, created after the real
+    // monthly budget it sat unrelated to. The edit landed on that instead,
+    // and the budget actually on screen never changed at all. Scoped the same
+    // way GET resolves "the current budget": by period type and period dates.
+    const periodValidation = PeriodTypeSchema.safeParse(body?.period_type);
+    if (!periodValidation.success) {
+      return NextResponse.json(
+        { error: 'Invalid period_type. Must be "weekly" or "monthly".' },
+        { status: 400 }
+      );
+    }
 
-    // Load the most recent budget for the user
+    const category = categoryValidation.data;
+    const periodType = periodValidation.data;
+    const currentPeriod =
+      periodType === 'monthly'
+        ? getCurrentMonthPeriod()
+        : getCurrentWeekPeriod();
+
+    // Load the budget for this exact period
     const { data: budget, error: queryError } = await supabase
       .from('budgets')
       .select('*')
+      .eq('period_type', periodType)
+      .eq('period_start', currentPeriod.start)
+      .eq('period_end', currentPeriod.end)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();

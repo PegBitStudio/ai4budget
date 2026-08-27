@@ -342,6 +342,7 @@ export default function BudgetPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          period_type: periodType,
           category: editingCategory,
           amount: newAmount,
         }),
