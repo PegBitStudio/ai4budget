@@ -74,8 +74,8 @@ export default function SignupPage() {
     setError(null);
 
     const token = code.trim();
-    if (token.length !== 6) {
-      setError("Enter the 6-digit code from your email.");
+    if (!token) {
+      setError("Enter the code from your email.");
       return;
     }
 
@@ -134,7 +134,7 @@ export default function SignupPage() {
           Check your email
         </h1>
         <p className="mt-3 text-body leading-relaxed text-ink-600">
-          We sent a 6-digit code to{" "}
+          We sent a confirmation code to{" "}
           <span className="font-medium text-ink-900">{email}</span>. Enter it
           below to confirm the account.
         </p>
@@ -156,13 +156,13 @@ export default function SignupPage() {
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
-              maxLength={6}
+              maxLength={12}
               autoComplete="one-time-code"
               required
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 12))}
               className={`${FIELD} tracking-[0.3em] text-center text-lg`}
-              placeholder="123456"
+              placeholder="Enter code"
               aria-required="true"
             />
           </div>
